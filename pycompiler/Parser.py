@@ -1,16 +1,42 @@
+from __future__ import annotations
+
 import abc
 import typing
+import io
 
 from pycompiler import Lexer
-import io
+
+
+class Scope:
+    def __init__(self):
+        self.parent: Scope | None = None
+
+        self.module_file: str | None = None
+        self.class_name_stack: typing.List[str] = []
+
+        self.exposed_type_names: typing.Dict[str, ClassDefinitionNode] = {}
+
+    def expose_type_name(self, name: str, definition: ClassDefinitionNode):
+        assert name != "", "name must not be empty"
+        assert name.isidentifier(), "name must be valid identifier"
+
+        full_name = ".".join(self.class_name_stack)
+
+        if full_name:
+            full_name += "."
+
+        full_name += name
+        self.exposed_type_names[full_name] = definition
 
 
 class AbstractASTNode(abc.ABC):
-    pass
+    def __init__(self):
+        self.scope = None
 
 
 class PyNewlineNode(AbstractASTNode):
     def __init__(self, token: Lexer.Token):
+        super().__init__()
         self.token = token
 
     def __eq__(self, other):
@@ -22,6 +48,7 @@ class PyNewlineNode(AbstractASTNode):
 
 class PyCommentNode(AbstractASTNode):
     def __init__(self, base_token: Lexer.Token, inner_string: Lexer.Token):
+        super().__init__()
         self.base_token = base_token
         self.inner_string = inner_string
 
@@ -34,6 +61,7 @@ class PyCommentNode(AbstractASTNode):
 
 class AssignmentExpression(AbstractASTNode):
     def __init__(self, lhs: typing.List[AbstractASTNode], eq_sign: Lexer.Token, rhs: AbstractASTNode):
+        super().__init__()
         self.lhs = lhs
         self.eq_sign = eq_sign
         self.rhs = rhs
@@ -47,6 +75,7 @@ class AssignmentExpression(AbstractASTNode):
 
 class NameAccessExpression(AbstractASTNode):
     def __init__(self, name: Lexer.Token):
+        super().__init__()
         self.name = name
 
     def __eq__(self, other):
@@ -58,6 +87,7 @@ class NameAccessExpression(AbstractASTNode):
 
 class AttributeExpression(AbstractASTNode):
     def __init__(self, base: AbstractASTNode, dot: Lexer.Token, attribute: Lexer.Token):
+        super().__init__()
         self.base = base
         self.dot = dot
         self.attribute = attribute
@@ -71,6 +101,7 @@ class AttributeExpression(AbstractASTNode):
 
 class SubscriptionExpression(AbstractASTNode):
     def __init__(self, base: AbstractASTNode, lhs_bracket: Lexer.Token, expression: AbstractASTNode, rhs_bracket: Lexer.Token):
+        super().__init__()
         self.base = base
         self.lhs_bracket = lhs_bracket
         self.expression = expression
@@ -81,6 +112,14 @@ class SubscriptionExpression(AbstractASTNode):
 
     def __repr__(self):
         return f"SUBSCRIPTION({self.base}|{self.lhs_bracket}|{self.expression}|{self.rhs_bracket})"
+
+
+class FunctionDefinitionNode(AbstractASTNode):
+    pass
+
+
+class ClassDefinitionNode(AbstractASTNode):
+    pass
 
 
 class SyntaxTreeVisitor:
@@ -99,6 +138,10 @@ class SyntaxTreeVisitor:
             return self.visit_attribute_expression(obj)
         elif obj_type == SubscriptionExpression:
             return self.visit_subscription_expression(obj)
+        elif obj_type == FunctionDefinitionNode:
+            return self.visit_function_definition(obj)
+        elif obj_type == ClassDefinitionNode:
+            return self.visit_class_definition(obj)
         else:
             raise RuntimeError(obj)
 
@@ -119,6 +162,12 @@ class SyntaxTreeVisitor:
 
     def visit_subscription_expression(self, expression: SubscriptionExpression):
         return self.visit_any(expression.base), self.visit_any(expression.expression)
+
+    def visit_function_definition(self, node: FunctionDefinitionNode):
+        pass
+
+    def visit_class_definition(self, node: ClassDefinitionNode):
+        pass
 
 
 class Parser:
