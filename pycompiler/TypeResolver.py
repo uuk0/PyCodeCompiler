@@ -3,11 +3,11 @@ from __future__ import annotations
 import typing
 import warnings
 
-from pycompiler.Parser import SyntaxTreeVisitor, Scope, ParentAttributeSection, ConstantAccessExpression
+from pycompiler.Parser import SyntaxTreeVisitor, Scope, ParentAttributeSection, ConstantAccessExpression, NameAccessExpression
 
 
 if typing.TYPE_CHECKING:
-    from pycompiler.Parser import ClassDefinitionNode, FunctionDefinitionNode, AssignmentExpression, NameAccessExpression, AbstractASTNode, AttributeExpression, SubscriptionExpression
+    from pycompiler.Parser import ClassDefinitionNode, FunctionDefinitionNode, AssignmentExpression, AbstractASTNode, AttributeExpression, SubscriptionExpression
 
 
 class ResolveParentAttribute(SyntaxTreeVisitor):

@@ -69,6 +69,7 @@ class Scope:
         :param strong_value: optionally the value of the variable; May only be set when
             the value is guaranteed
         """
+        self.variable_name_stack.add(name)
 
     def get_static_value_or_fail(self, name: str):
         pass
