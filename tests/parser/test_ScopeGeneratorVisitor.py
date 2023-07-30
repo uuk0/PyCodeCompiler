@@ -9,6 +9,7 @@ class TestScopeGeneratorVisitor(TestCase):
         scope = Parser.Scope()
         visitor = TypeResolver.ScopeGeneratorVisitor(scope)
 
+# sourcery skip: no-loop-in-tests
         for item in expr:
             visitor.visit_any(item)
 

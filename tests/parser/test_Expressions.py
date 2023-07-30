@@ -84,4 +84,70 @@ class TestExpressions(TestCase):
             expression,
         )
 
+    def test_string_double_quotes_single(self):
+        parser = Parser.Parser('"hello world"')
+        expression = parser.try_parse_expression()
+        self.assertEqual(
+            Parser.ConstantAccessExpression("hello world"),
+            expression,
+        )
+
+    def test_string_double_quotes_single_escapes(self):
+        parser = Parser.Parser('"hello world\\""')
+        expression = parser.try_parse_expression()
+        self.assertEqual(parser.lexer.get_chars(1), None)
+        self.assertEqual(
+            Parser.ConstantAccessExpression("hello world\""),
+            expression,
+        )
+
+    def test_string_double_quotes_triple(self):
+        parser = Parser.Parser('"""hello world"""')
+        expression = parser.try_parse_expression()
+        self.assertEqual(
+            Parser.ConstantAccessExpression("hello world"),
+            expression,
+        )
+
+    def test_string_double_quotes_triple_linebreak(self):
+        parser = Parser.Parser('"""hello \nworld\n"""')
+        expression = parser.try_parse_expression()
+        self.assertEqual(
+            Parser.ConstantAccessExpression("hello \nworld\n"),
+            expression,
+        )
+
+    def test_string_single_quotes_single(self):
+        parser = Parser.Parser("'hello world'")
+        expression = parser.try_parse_expression()
+        self.assertEqual(
+            Parser.ConstantAccessExpression("hello world"),
+            expression,
+        )
+
+    def test_string_single_quotes_single_escapes(self):
+        parser = Parser.Parser("'hello world\\''")
+        expression = parser.try_parse_expression()
+        self.assertEqual(parser.lexer.get_chars(1), None)
+        self.assertEqual(
+            Parser.ConstantAccessExpression("hello world\'"),
+            expression,
+        )
+
+    def test_string_single_quotes_triple(self):
+        parser = Parser.Parser("'''hello world'''")
+        expression = parser.try_parse_expression()
+        self.assertEqual(
+            Parser.ConstantAccessExpression("hello world"),
+            expression,
+        )
+
+    def test_string_single_quotes_triple_linebreak(self):
+        parser = Parser.Parser("'''hello \nworld\n'''")
+        expression = parser.try_parse_expression()
+        self.assertEqual(
+            Parser.ConstantAccessExpression("hello \nworld\n"),
+            expression,
+        )
+
 

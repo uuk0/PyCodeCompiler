@@ -177,7 +177,7 @@ class ConstantAccessExpression(AbstractASTNode):
         return type(other) == ConstantAccessExpression and self.value == other.value
 
     def __repr__(self):
-        return f"CONSTANT({self.value})"
+        return f"CONSTANT({repr(self.value)})"
 
 
 class AttributeExpression(AbstractASTNode):
@@ -343,30 +343,20 @@ class Parser:
 
         if identifier is None:
             c = self.lexer.get_chars(1)
+            self.lexer.give_back(c)
 
-            if not (c.isdigit() or c == "-" or c == "."):
-                self.lexer.give_back(c)
+            if not c:
                 return
 
-            # try parse integer
-            self.lexer.give_back(c)
-            self.lexer.save_state()
+            if c.isdigit() or c == "-" or c == ".":
+                base = self.try_parse_integer_or_float()
 
-            c = self.lexer.get_chars(1)
-            text = c
-
-            while True:
-                c = self.lexer.get_chars(1)
-
-                if c and c.isdigit():
-                    text += c
-                elif c == "." and "." not in text:
-                    text += c
-                else:
-                    break
-
-            self.lexer.give_back(c)
-            base = ConstantAccessExpression(int(text) if "." not in text else float(text))
+            elif c == "'":
+                base = self.parse_quoted_string("'")
+            elif c == '"':
+                base = self.parse_quoted_string('"')
+            else:
+                return
 
         else:
             base = NameAccessExpression(identifier)
@@ -406,6 +396,88 @@ class Parser:
 
         self.lexer.try_parse_whitespaces()
         return base
+
+    def parse_quoted_string(self, quote_type: str) -> ConstantAccessExpression:
+        self.lexer.get_chars(1)
+        text = ""
+        escapes = 0
+
+        while (c := self.lexer.get_chars(1)) != quote_type or escapes % 2 == 1:
+            if c is None:
+                raise SyntaxError
+
+            if c == "\\":
+                escapes += 1
+
+                if escapes % 2 == 0:
+                    text += c
+
+            elif c == "\n":
+                raise SyntaxError
+            else:
+                escapes = 0
+                text += c
+
+        if text == "":
+            c = self.lexer.get_chars(1)
+
+            if c == quote_type:
+                return self.parse_multiline_quoted_string(quote_type)
+            else:
+                self.lexer.give_back(c)
+
+        return ConstantAccessExpression(text)
+
+    def parse_multiline_quoted_string(self, quote_type: str) -> ConstantAccessExpression:
+        text = ""
+        escapes = 0
+        quotes = 0
+
+        while True:
+            c = self.lexer.get_chars(1)
+
+            if c is None:
+                raise SyntaxError((c, quotes))
+
+            if c == "\\":
+                escapes += 1
+                quotes = 0
+
+            elif c == quote_type:
+                if quotes == 2:
+                    break
+
+                if escapes:
+                    escapes -= 1
+                else:
+                    quotes += 1
+
+            else:
+                escapes = 0
+                quotes = 0
+
+            text += c
+
+        text = text.removesuffix(quote_type * 2)
+
+        return ConstantAccessExpression(text)
+
+    def try_parse_integer_or_float(self) -> ConstantAccessExpression:
+        c = self.lexer.get_chars(1)
+        text = c
+
+        while True:
+            c = self.lexer.get_chars(1)
+
+            if c and c.isdigit():
+                text += c
+            elif c == "." and "." not in text:
+                text += c
+            else:
+                break
+
+        self.lexer.give_back(c)
+        return ConstantAccessExpression(int(text) if "." not in text else float(text))
 
     def try_parse_comment(self) -> PyCommentNode | None:
         if comment_start := self.lexer.try_parse_hashtag():
