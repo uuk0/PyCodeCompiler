@@ -19,6 +19,12 @@ class PyCommentNode(AbstractASTNode):
         self.base_token = base_token
         self.inner_string = inner_string
 
+    def __eq__(self, other):
+        return type(other) == PyCommentNode and self.base_token == other.base_token and self.inner_string == other.inner_string
+
+    def __repr__(self):
+        return f"COMMENT({self.base_token}|{self.inner_string})"
+
 
 class Parser:
     def __init__(self, source: str):
@@ -26,7 +32,7 @@ class Parser:
         self.stream = io.StringIO(source)
         self.lexer = Lexer.Lexer(self.stream)
 
-    def parse(self):
+    def parse(self) -> typing.List[AbstractASTNode]:
         ast_stream: typing.List[AbstractASTNode] = []
 
         while self.lexer.has_text():
@@ -36,6 +42,8 @@ class Parser:
             if comment := self.try_parse_comment():
                 ast_stream.append(comment)
                 continue
+
+        return ast_stream
 
     def try_parse_comment(self) -> PyCommentNode | None:
         if comment_start := self.lexer.try_parse_hashtag():

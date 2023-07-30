@@ -53,11 +53,20 @@ class TokenType(enum.Enum):
 
     REMAINING_STRING = enum.auto()
 
+    def __call__(self, text: str):
+        return Token(self, text)
+
 
 class Token:
     def __init__(self, token_type: TokenType, text: str):
         self.token_type = token_type
         self.text = text
+
+    def __eq__(self, other):
+        return type(other) == Token and self.token_type == other.token_type and self.text == other.text
+
+    def __repr__(self):
+        return f"{self.token_type.name}({repr(self.text)})"
 
 
 class Lexer:
@@ -134,7 +143,7 @@ class Lexer:
         if c == "\n":
             return Token(TokenType.REMAINING_STRING, "")
 
-        text = ""
+        text = c
         c = self.get_chars(1)
 
         while c and c != "\n":
