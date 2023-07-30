@@ -45,6 +45,44 @@ class AssignmentExpression(AbstractASTNode):
         return f"ASSIGNMENT({self.lhs}|{self.eq_sign}|{self.rhs})"
 
 
+class NameAccessExpression(AbstractASTNode):
+    def __init__(self, name: Lexer.Token):
+        self.name = name
+
+    def __eq__(self, other):
+        return type(other) == NameAccessExpression and self.name == other.name
+
+    def __repr__(self):
+        return f"VARIABLE({self.name})"
+
+
+class AttributeExpression(AbstractASTNode):
+    def __init__(self, base: AbstractASTNode, dot: Lexer.Token, attribute: Lexer.Token):
+        self.base = base
+        self.dot = dot
+        self.attribute = attribute
+
+    def __eq__(self, other):
+        return type(other) == AttributeExpression and self.base == other.base and self.dot == other.dot and self.attribute == other.attribute
+
+    def __repr__(self):
+        return f"ATTRIBUTE({self.base}|{self.dot}|{self.attribute})"
+
+
+class SubscriptionExpression(AbstractASTNode):
+    def __init__(self, base: AbstractASTNode, lhs_bracket: Lexer.Token, expression: AbstractASTNode, rhs_bracket: Lexer.Token):
+        self.base = base
+        self.lhs_bracket = lhs_bracket
+        self.expression = expression
+        self.rhs_bracket = rhs_bracket
+
+    def __eq__(self, other):
+        return type(other) == SubscriptionExpression and self.base == other.base and self.lhs_bracket == other.lhs_bracket and self.expression == other.expression and self.rhs_bracket == other.rhs_bracket
+
+    def __repr__(self):
+        return f"SUBSCRIPTION({self.base}|{self.lhs_bracket}|{self.expression}|{self.rhs_bracket})"
+
+
 class Parser:
     def __init__(self, source: str):
         self.source = source
@@ -68,11 +106,70 @@ class Parser:
 
         return ast_stream
 
-    def try_parse_assignment_target(self) -> AbstractASTNode:
-        pass
+    def try_parse_assignment_target(self) -> AbstractASTNode | None:
+        identifier = self.lexer.try_parse_identifier()
 
-    def try_parse_expression(self) -> AbstractASTNode:
-        pass
+        if identifier is None:
+            return
+
+        base = NameAccessExpression(identifier)
+
+        while True:
+            if opening_square_bracket := self.lexer.try_parse_opening_square_bracket():
+                expression = self.try_parse_expression()
+
+                if expression is None or (closing_bracket := self.lexer.try_parse_closing_square_bracket()):
+                    raise SyntaxError
+
+                base = SubscriptionExpression(
+                    base,
+                    opening_square_bracket,
+                    expression,
+                    closing_bracket,
+                )
+
+            else:
+                break
+
+        return base
+
+    def try_parse_expression(self) -> AbstractASTNode | None:
+        identifier = self.lexer.try_parse_identifier()
+
+        if identifier is None:
+            return
+
+        base = NameAccessExpression(identifier)
+
+        while True:
+            if opening_square_bracket := self.lexer.try_parse_opening_square_bracket():
+                expression = self.try_parse_expression()
+
+                if expression is None or not (closing_bracket := self.lexer.try_parse_closing_square_bracket()):
+                    raise SyntaxError
+
+                base = SubscriptionExpression(
+                    base,
+                    opening_square_bracket,
+                    expression,
+                    closing_bracket,
+                )
+
+            elif dot := self.lexer.try_parse_dot():
+                identifier = self.lexer.try_parse_identifier()
+
+                if identifier is None:
+                    raise SyntaxError
+
+                base = AttributeExpression(base, dot, identifier)
+
+            elif opening_round_bracket := self.lexer.try_parse_opening_round_bracket():
+                raise NotImplementedError
+
+            else:
+                break
+
+        return base
 
     def try_parse_comment(self) -> PyCommentNode | None:
         if comment_start := self.lexer.try_parse_hashtag():

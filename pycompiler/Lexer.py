@@ -39,6 +39,7 @@ class TokenType(enum.Enum):
     OPENING_CURLY_BRACKET = enum.auto()  # todo
     CLOSING_CURLY_BRACKET = enum.auto()  # todo
 
+    DOT = enum.auto()
     COLON = enum.auto()  # todo
     SEMICOLON = enum.auto()  # todo
     PLUS = enum.auto()  # todo
@@ -232,4 +233,62 @@ class Lexer:
             self.give_back(c)
         else:
             return Token(TokenType.HASHTAG, c)
+
+    def try_parse_dot(self) -> Token | None:
+        c = self.get_chars(1)
+
+        if c != ".":
+            self.give_back(c)
+        else:
+            return Token(TokenType.DOT, c)
+
+    def try_parse_opening_round_bracket(self) -> Token | None:
+        c = self.get_chars(1)
+
+        if c != "(":
+            self.give_back(c)
+        else:
+            return Token(TokenType.OPENING_ROUND_BRACKET, c)
+
+
+    def try_parse_closing_round_bracket(self) -> Token | None:
+        c = self.get_chars(1)
+
+        if c != ")":
+            self.give_back(c)
+        else:
+            return Token(TokenType.CLOSING_ROUND_BRACKET, c)
+
+
+    def try_parse_opening_square_bracket(self) -> Token | None:
+        c = self.get_chars(1)
+
+        if c != "[":
+            self.give_back(c)
+        else:
+            return Token(TokenType.OPENING_SQUARE_BRACKET, c)
+
+    def try_parse_closing_square_bracket(self) -> Token | None:
+        c = self.get_chars(1)
+
+        if c != "]":
+            self.give_back(c)
+        else:
+            return Token(TokenType.CLOSING_SQUARE_BRACKET, c)
+
+    def try_parse_opening_curly_bracket(self) -> Token | None:
+        c = self.get_chars(1)
+
+        if c != "{":
+            self.give_back(c)
+        else:
+            return Token(TokenType.OPENING_CURLY_BRACKET, c)
+
+    def try_parse_closing_curly_bracket(self) -> Token | None:
+        c = self.get_chars(1)
+
+        if c != "}":
+            self.give_back(c)
+        else:
+            return Token(TokenType.CLOSING_CURLY_BRACKET, c)
 
