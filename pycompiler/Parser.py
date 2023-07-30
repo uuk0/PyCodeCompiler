@@ -17,8 +17,14 @@ class Scope:
 
         self.exposed_type_names: typing.Dict[str, ClassDefinitionNode] = {}
 
-        self.generic_name_stack: typing.List[typing.Set[str]] = [set()]
-        self.variable_name_stack: typing.List[typing.Set[str]] = [set()]
+        self.generic_name_stack: typing.Set[str] = set()
+        self.variable_name_stack: typing.Set[str] = set()
+
+    def has_name_access(self, name: str) -> bool:
+        if name in self.generic_name_stack or name in self.variable_name_stack:
+            return True
+
+        return self.parent and self.parent.has_name_access(name)
 
     def copy(self) -> Scope:
         scope = Scope()
@@ -26,8 +32,6 @@ class Scope:
         scope.module_file = self.module_file
         scope.class_name_stack += self.class_name_stack
         scope.exposed_type_names = self.exposed_type_names
-        scope.generic_name_stack = self.generic_name_stack + scope.generic_name_stack
-        scope.variable_name_stack = self.variable_name_stack + scope.variable_name_stack
         return scope
 
     def close(self, export_local_name: str | None = None):

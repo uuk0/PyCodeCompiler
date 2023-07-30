@@ -73,6 +73,14 @@ class ScopeGeneratorVisitor(SyntaxTreeVisitor):
                 self.scope.export_variable_name(target.name.text)
 
 
+class LocalNameValidator(SyntaxTreeVisitor):
+    def visit_name_access(self, access: NameAccessExpression):
+        super().visit_name_access(access)
+
+        if not access.scope.has_name_access(access.name.text):
+            raise NameError(f"Cannot find {access.name.text} at {access} in scope {access.scope}")
+
+
 class ResolveStaticNames(SyntaxTreeVisitor):
     def visit_name_access(self, access: NameAccessExpression):
         super().visit_name_access(access)
