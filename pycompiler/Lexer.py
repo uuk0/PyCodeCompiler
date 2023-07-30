@@ -224,7 +224,7 @@ class Lexer:
         if c != "=":
             self.give_back(c)
         else:
-            return Token(TokenType.HASHTAG, c)
+            return Token(TokenType.EQUAL_SIGN, c)
 
     def try_parse_hashtag(self) -> Token | None:
         c = self.get_chars(1)

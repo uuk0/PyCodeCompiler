@@ -134,6 +134,7 @@ class Parser:
         return base
 
     def try_parse_expression(self) -> AbstractASTNode | None:
+        self.lexer.try_parse_whitespaces()
         identifier = self.lexer.try_parse_identifier()
 
         if identifier is None:
@@ -142,6 +143,9 @@ class Parser:
         base = NameAccessExpression(identifier)
 
         while True:
+            self.lexer.try_parse_whitespaces()
+
+            # todo: allow slices
             if opening_square_bracket := self.lexer.try_parse_opening_square_bracket():
                 expression = self.try_parse_expression()
 
@@ -156,6 +160,8 @@ class Parser:
                 )
 
             elif dot := self.lexer.try_parse_dot():
+                self.lexer.try_parse_whitespaces()
+
                 identifier = self.lexer.try_parse_identifier()
 
                 if identifier is None:
@@ -169,6 +175,7 @@ class Parser:
             else:
                 break
 
+        self.lexer.try_parse_whitespaces()
         return base
 
     def try_parse_comment(self) -> PyCommentNode | None:
@@ -181,21 +188,26 @@ class Parser:
         if assigned_variables[0] is None:
             return
 
+        whitespace = self.lexer.try_parse_whitespaces()
+
         eq_sign = self.lexer.try_parse_equal_sign()
 
         if eq_sign is None:
-            self.lexer.give_back(eq_sign)
+            self.lexer.give_back([whitespace, eq_sign])
             return
 
         while True:
+            self.lexer.try_parse_whitespaces()
             expression = self.try_parse_assignment_target()
+            self.lexer.try_parse_whitespaces()
 
             if expression is None:
                 break
 
-            eq_sign = self.lexer.try_parse_equal_sign()
+            inner_eq_sign = self.lexer.try_parse_equal_sign()
+            self.lexer.try_parse_whitespaces()
 
-            if eq_sign is None:
+            if inner_eq_sign is None:
                 break
 
             assigned_variables.append(expression)
