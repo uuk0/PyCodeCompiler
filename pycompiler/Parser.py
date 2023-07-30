@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import abc
+import enum
 import typing
 import io
 
@@ -16,6 +17,24 @@ class Scope:
 
         self.exposed_type_names: typing.Dict[str, ClassDefinitionNode] = {}
 
+        self.generic_name_stack: typing.List[typing.Set[str]] = [set()]
+        self.variable_name_stack: typing.List[typing.Set[str]] = [set()]
+
+    def copy(self) -> Scope:
+        scope = Scope()
+        scope.parent = self
+        scope.module_file = self.module_file
+        scope.class_name_stack += self.class_name_stack
+        scope.exposed_type_names = self.exposed_type_names
+        scope.generic_name_stack = self.generic_name_stack + scope.generic_name_stack
+        scope.variable_name_stack = self.variable_name_stack + scope.variable_name_stack
+        return scope
+
+    def close(self, export_local_name: str | None = None):
+        # sourcery skip: remove-empty-nested-block, remove-redundant-if
+        if export_local_name:
+            pass  # todo: do we want to hint this for warnings?
+
     def expose_type_name(self, name: str, definition: ClassDefinitionNode):
         assert name != "", "name must not be empty"
         assert name.isidentifier(), "name must be valid identifier"
@@ -28,10 +47,55 @@ class Scope:
         full_name += name
         self.exposed_type_names[full_name] = definition
 
+    def export_valid_generic(self, name: str):
+        """
+        Exports a generic name for inner use in the scope
+
+        :param name:
+        :return:
+        """
+
+    _NO_VALUE = object()
+
+    def export_variable_name(self, name: str, strong_value: typing.Any = _NO_VALUE):
+        """
+        Exports a variable name in the current scope level
+
+        :param name: the name of the variable
+        :param strong_value: optionally the value of the variable; May only be set when
+            the value is guaranteed
+        """
+
+    def get_static_value_or_fail(self, name: str):
+        pass
+
+
+class FilledScope:
+    def __init__(self, scope: Scope):
+        self.scope = scope
+        # todo: also allow generic's as targets
+        self.generic_name_fillings: typing.List[typing.Dict[str, ClassDefinitionNode]] = [{} for _ in range(len(scope.generic_name_stack))]
+
+    def copy_for_child(self, scope: Scope) -> FilledScope:
+        filled_scope = FilledScope(scope)
+        filled_scope.generic_name_fillings[:len(self.generic_name_fillings)] = self.generic_name_fillings
+        return filled_scope
+
+
+class ParentAttributeSection(enum.Enum):
+    LHS = enum.auto()
+    RHS = enum.auto()
+
+    PARAMETER = enum.auto()
+
 
 class AbstractASTNode(abc.ABC):
     def __init__(self):
         self.scope = None
+        self.parent: typing.Tuple[AbstractASTNode, ParentAttributeSection] | None = None
+
+    def try_replace_child(self, original: AbstractASTNode | None, replacement: AbstractASTNode, position: ParentAttributeSection) -> bool:
+        return False
 
 
 class PyNewlineNode(AbstractASTNode):
@@ -72,6 +136,18 @@ class AssignmentExpression(AbstractASTNode):
     def __repr__(self):
         return f"ASSIGNMENT({self.lhs}|{self.eq_sign}|{self.rhs})"
 
+    def try_replace_child(self, original: AbstractASTNode | None, replacement: AbstractASTNode, position: ParentAttributeSection) -> bool:
+        if position == ParentAttributeSection.LHS:
+            if original is None:
+                return False
+
+            self.lhs.replace(original, replacement)
+        elif position == ParentAttributeSection.RHS:
+            self.rhs = replacement
+        else:
+            return False
+        return True
+
 
 class NameAccessExpression(AbstractASTNode):
     def __init__(self, name: Lexer.Token):
@@ -83,6 +159,18 @@ class NameAccessExpression(AbstractASTNode):
 
     def __repr__(self):
         return f"VARIABLE({self.name})"
+
+
+class ConstantAccessExpression(AbstractASTNode):
+    def __init__(self, value: typing.Any):
+        super().__init__()
+        self.value = value
+
+    def __eq__(self, other):
+        return type(other) == ConstantAccessExpression and self.value == other.value
+
+    def __repr__(self):
+        return f"CONSTANT({self.value})"
 
 
 class AttributeExpression(AbstractASTNode):
@@ -98,6 +186,13 @@ class AttributeExpression(AbstractASTNode):
     def __repr__(self):
         return f"ATTRIBUTE({self.base}|{self.dot}|{self.attribute})"
 
+    def try_replace_child(self, original: AbstractASTNode | None, replacement: AbstractASTNode, position: ParentAttributeSection) -> bool:
+        if position != ParentAttributeSection.LHS:
+            return False
+
+        self.base = replacement
+        return True
+
 
 class SubscriptionExpression(AbstractASTNode):
     def __init__(self, base: AbstractASTNode, lhs_bracket: Lexer.Token, expression: AbstractASTNode, rhs_bracket: Lexer.Token):
@@ -112,6 +207,16 @@ class SubscriptionExpression(AbstractASTNode):
 
     def __repr__(self):
         return f"SUBSCRIPTION({self.base}|{self.lhs_bracket}|{self.expression}|{self.rhs_bracket})"
+
+    def try_replace_child(self, original: AbstractASTNode | None, replacement: AbstractASTNode, position: ParentAttributeSection) -> bool:
+        if position == ParentAttributeSection.LHS:
+            self.base = replacement
+        elif position == ParentAttributeSection.RHS:
+            self.expression = replacement
+        else:
+            return False
+
+        return True
 
 
 class FunctionDefinitionNode(AbstractASTNode):
@@ -142,6 +247,8 @@ class SyntaxTreeVisitor:
             return self.visit_function_definition(obj)
         elif obj_type == ClassDefinitionNode:
             return self.visit_class_definition(obj)
+        elif obj_type == ConstantAccessExpression:
+            return self.visit_constant(obj)
         else:
             raise RuntimeError(obj)
 
@@ -167,6 +274,9 @@ class SyntaxTreeVisitor:
         pass
 
     def visit_class_definition(self, node: ClassDefinitionNode):
+        pass
+
+    def visit_constant(self, constant: ConstantAccessExpression):
         pass
 
 
