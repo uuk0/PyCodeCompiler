@@ -12,3 +12,15 @@ class TestCommentParser(TestCase):
             tree,
         )
 
+    def test_with_newline_simple(self):
+        parser = pycompiler.Parser.Parser("\n# test comment\n")
+        tree = parser.parse()
+        self.assertEqual(
+            [
+                pycompiler.Parser.PyNewlineNode(pycompiler.Lexer.TokenType.NEWLINE("\n")),
+                pycompiler.Parser.PyCommentNode(pycompiler.Lexer.TokenType.HASHTAG("#"), pycompiler.Lexer.TokenType.REMAINING_STRING(" test comment")),
+                pycompiler.Parser.PyNewlineNode(pycompiler.Lexer.TokenType.NEWLINE("\n")),
+            ],
+            tree,
+        )
+

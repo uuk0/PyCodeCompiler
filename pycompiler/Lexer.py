@@ -46,6 +46,7 @@ class TokenType(enum.Enum):
     STAR = enum.auto()  # todo
     TILDE = enum.auto()  # todo
     PERCENT = enum.auto()  # todo
+    EQUAL_SIGN = enum.auto()
     HASHTAG = enum.auto()
 
     SINGLE_QUOTE = enum.auto()  # todo
@@ -82,6 +83,7 @@ class Lexer:
             TokenType.IDENTIFIER: self.try_parse_identifier,
             TokenType.KEYWORD: self.try_parse_keyword,
             TokenType.HASHTAG: self.try_parse_hashtag,
+            TokenType.EQUAL_SIGN: self.try_parse_equal_sign,
         }
 
     def has_text(self) -> bool:
@@ -122,9 +124,19 @@ class Lexer:
         self.read_blocks.append(text)
         return text
 
-    def give_back(self, text: str | None):
-        if text:
+    def give_back(self, text: str | Token | typing.List[str | Token | None] | None):
+        if text is None:
+            return self
+
+        if isinstance(text, str):
             self._file_cache += text
+        elif isinstance(text, Token):
+            self._file_cache += text.text
+        elif isinstance(text, list):
+            for e in text:
+                self.give_back(e)
+        else:
+            raise ValueError(text)
 
         return self
 
@@ -204,6 +216,14 @@ class Lexer:
             return identifier
 
         self.give_back(identifier.text)
+
+    def try_parse_equal_sign(self) -> Token | None:
+        c = self.get_chars(1)
+
+        if c != "=":
+            self.give_back(c)
+        else:
+            return Token(TokenType.HASHTAG, c)
 
     def try_parse_hashtag(self) -> Token | None:
         c = self.get_chars(1)
