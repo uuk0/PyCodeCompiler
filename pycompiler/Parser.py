@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import abc
 import enum
+import string
 import typing
 import io
 
@@ -167,9 +168,10 @@ class NameAccessExpression(AbstractASTNode):
 
 
 class ConstantAccessExpression(AbstractASTNode):
-    def __init__(self, value: typing.Any):
+    def __init__(self, value: typing.Any, token=None):
         super().__init__()
         self.value = value
+        self.token = token
 
     def __eq__(self, other):
         return type(other) == ConstantAccessExpression and self.value == other.value
@@ -340,9 +342,34 @@ class Parser:
         identifier = self.lexer.try_parse_identifier()
 
         if identifier is None:
-            return
+            c = self.lexer.get_chars(1)
 
-        base = NameAccessExpression(identifier)
+            if not (c.isdigit() or c == "-" or c == "."):
+                self.lexer.give_back(c)
+                return
+
+            # try parse integer
+            self.lexer.give_back(c)
+            self.lexer.save_state()
+
+            c = self.lexer.get_chars(1)
+            text = c
+
+            while True:
+                c = self.lexer.get_chars(1)
+
+                if c and c.isdigit():
+                    text += c
+                elif c == "." and "." not in text:
+                    text += c
+                else:
+                    break
+
+            self.lexer.give_back(c)
+            base = ConstantAccessExpression(int(text) if "." not in text else float(text))
+
+        else:
+            base = NameAccessExpression(identifier)
 
         while True:
             self.lexer.try_parse_whitespaces()

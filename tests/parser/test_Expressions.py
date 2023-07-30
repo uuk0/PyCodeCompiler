@@ -52,4 +52,36 @@ class TestExpressions(TestCase):
             expression,
         )
 
+    def test_integer(self):
+        parser = Parser.Parser("100")
+        expression = parser.try_parse_expression()
+        self.assertEqual(
+            Parser.ConstantAccessExpression(100),
+            expression,
+        )
+
+    def test_integer_signed(self):
+        parser = Parser.Parser("-100")
+        expression = parser.try_parse_expression()
+        self.assertEqual(
+            Parser.ConstantAccessExpression(-100),
+            expression,
+        )
+
+    def test_float(self):
+        parser = Parser.Parser("100.2")
+        expression = parser.try_parse_expression()
+        self.assertEqual(
+            Parser.ConstantAccessExpression(100.2),
+            expression,
+        )
+
+    def test_float_signed(self):
+        parser = Parser.Parser("-100.4")
+        expression = parser.try_parse_expression()
+        self.assertEqual(
+            Parser.ConstantAccessExpression(-100.4),
+            expression,
+        )
+
 
