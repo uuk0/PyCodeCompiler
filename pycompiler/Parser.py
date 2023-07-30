@@ -83,6 +83,44 @@ class SubscriptionExpression(AbstractASTNode):
         return f"SUBSCRIPTION({self.base}|{self.lhs_bracket}|{self.expression}|{self.rhs_bracket})"
 
 
+class SyntaxTreeVisitor:
+    def visit_any(self, obj: AbstractASTNode):
+        obj_type = type(obj)
+
+        if obj_type == PyNewlineNode:
+            return self.visit_newline(obj)
+        elif obj_type == PyCommentNode:
+            return self.visit_comment(obj)
+        elif obj_type == AssignmentExpression:
+            return self.visit_assignment(obj)
+        elif obj_type == NameAccessExpression:
+            return self.visit_name_access(obj)
+        elif obj_type == AttributeExpression:
+            return self.visit_attribute_expression(obj)
+        elif obj_type == SubscriptionExpression:
+            return self.visit_subscription_expression(obj)
+        else:
+            raise RuntimeError(obj)
+
+    def visit_newline(self, newline: PyNewlineNode):
+        pass
+
+    def visit_comment(self, comment: PyCommentNode):
+        pass
+
+    def visit_assignment(self, assignment: AssignmentExpression):
+        return [self.visit_any(target) for target in assignment.lhs], self.visit_any(assignment.rhs)
+
+    def visit_name_access(self, access: NameAccessExpression):
+        pass
+
+    def visit_attribute_expression(self, expression: AttributeExpression):
+        return self.visit_any(expression.base),
+
+    def visit_subscription_expression(self, expression: SubscriptionExpression):
+        return self.visit_any(expression.base), self.visit_any(expression.expression)
+
+
 class Parser:
     def __init__(self, source: str):
         self.source = source
