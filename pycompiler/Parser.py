@@ -118,7 +118,7 @@ class Parser:
             if opening_square_bracket := self.lexer.try_parse_opening_square_bracket():
                 expression = self.try_parse_expression()
 
-                if expression is None or (closing_bracket := self.lexer.try_parse_closing_square_bracket()):
+                if expression is None or not (closing_bracket := self.lexer.try_parse_closing_square_bracket()):
                     raise SyntaxError
 
                 base = SubscriptionExpression(

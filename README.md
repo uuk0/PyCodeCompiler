@@ -40,8 +40,25 @@ or a holding container of such type.
 The compiler will create a function handling the code with only holding containers,
 and might decide to create functions with primitive arguments and return value.
 
+## Generics
+
+We support (only) the python >= 3.12 generic syntax, and count
+it like other type-hints as enforced.
+
+Type hints in python < 3.12 style via typing.TypeVar are ignored in type checking.
+
+Feature: the generic name is exported as a name in all children-scopes
+so you can do something like this:
+```python
+def test[X](arg) -> X:
+    return X(arg)
+```
+
 ## Goals
 
 Make the compiler compile itself
 
 Make the compiled code run not much slower than cpython's implementation
+
+Make the compiled test suite from python not fail in the major test cases
+(implementation internals are expected to fail)
