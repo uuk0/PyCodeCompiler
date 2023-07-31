@@ -227,7 +227,22 @@ class SubscriptionExpression(AbstractASTNode):
 
 
 class FunctionDefinitionNode(AbstractASTNode):
-    pass
+    class FunctionDefinitionParameter(AbstractASTNode):
+        pass
+
+    def __init__(self, name: Lexer.Token, generics: typing.List[Lexer.Token], parameters: typing.List[FunctionDefinitionNode.FunctionDefinitionParameter], body: typing.List[AbstractASTNode]):
+        super().__init__()
+        self.name = name
+        self.generics = generics
+        self.parameters = parameters
+        self.body = body
+
+    def __eq__(self, other):
+        return type(other) == FunctionDefinitionNode and self.name == other.name and self.generics == other.generics and self.parameters == other.parameters and self.body == other.body
+
+    def __repr__(self):
+        return f"FUNCTION({self.name}|{self.generics}|{self.parameters}|{self.body})"
+
 
 
 class ClassDefinitionNode(AbstractASTNode):
@@ -252,6 +267,8 @@ class SyntaxTreeVisitor:
             return self.visit_subscription_expression(obj)
         elif obj_type == FunctionDefinitionNode:
             return self.visit_function_definition(obj)
+        elif obj_type == FunctionDefinitionNode.FunctionDefinitionParameter:
+            return self.visit_function_definition_parameter(obj)
         elif obj_type == ClassDefinitionNode:
             return self.visit_class_definition(obj)
         elif obj_type == ConstantAccessExpression:
@@ -278,6 +295,13 @@ class SyntaxTreeVisitor:
         return self.visit_any(expression.base), self.visit_any(expression.expression)
 
     def visit_function_definition(self, node: FunctionDefinitionNode):
+        for param in node.parameters:
+            self.visit_function_definition_parameter(param)
+
+        for body_node in node.body:
+            self.visit_any(body_node)
+
+    def visit_function_definition_parameter(self, node: FunctionDefinitionNode.FunctionDefinitionParameter):
         pass
 
     def visit_class_definition(self, node: ClassDefinitionNode):
@@ -301,33 +325,39 @@ class Parser:
             while newline := self.lexer.try_parse_newline():
                 ast_stream.append(PyNewlineNode(newline))
 
-            if comment := self.try_parse_comment():
-                ast_stream.append(comment)
-                continue
+            node = self.parse_line()
 
-            if self.indent_level:
-                empty = self.lexer.try_parse_whitespaces()
-                if self.indent_markers:
-                    if not empty or empty[:self.indent_level] != self.indent_markers * self.indent_level:
-                        raise IndentationError
-
-                elif self.indent_level:
-                    if not empty or not empty.text:
-                        raise IndentationError
-
-                    self.indent_markers = empty.text[0]
-
-                    if empty[:self.indent_level] != self.indent_markers * self.indent_level:
-                        raise IndentationError
-
-            if function := self.try_parse_function_definition():
-                ast_stream.append(function)
-
-            if assignment := self.try_parse_assignment():
-                ast_stream.append(assignment)
-                continue
+            if node is not None:
+                ast_stream.append(node)
+            else:
+                raise SyntaxError
 
         return ast_stream
+
+    def parse_line(self) -> AbstractASTNode | None:
+        if comment := self.try_parse_comment():
+            return comment
+
+        if self.indent_level:
+            empty = self.lexer.try_parse_whitespaces()
+            if self.indent_markers:
+                if not empty or empty.text[:self.indent_level] != self.indent_markers * self.indent_level:
+                    raise IndentationError
+
+            elif self.indent_level:
+                if not empty or not empty.text:
+                    raise IndentationError(empty)
+
+                self.indent_markers = empty.text[0]
+
+                if empty.text[:self.indent_level] != self.indent_markers * self.indent_level:
+                    raise IndentationError
+
+        if function := self.try_parse_function_definition():
+            return function
+
+        if assignment := self.try_parse_assignment():
+            return assignment
 
     def try_parse_assignment_target(self) -> AbstractASTNode | None:
         identifier = self.lexer.try_parse_identifier()
@@ -547,8 +577,80 @@ class Parser:
 
     # def <name>['[' <generic parameters> ']'] '(' <parameters, some with *, ** or =, some with type hints> ')':
     def try_parse_function_definition(self) -> FunctionDefinitionNode | None:
-        identifier = self.lexer.get_chars(len("def "))
+        def_token = self.lexer.get_chars(len("def "))
 
-        if identifier != "def ":
-            self.lexer.give_back(identifier)
+        if def_token != "def ":
+            self.lexer.give_back(def_token)
             return
+
+        self.lexer.try_parse_whitespaces()
+
+        function_name = self.lexer.try_parse_identifier()
+
+        self.lexer.try_parse_whitespaces()
+
+        generic_names: typing.List[Lexer.Token] = []
+
+        # Generic Attribute
+        if self.lexer.inspect_chars(1) == "[":
+            self.lexer.get_chars(1)
+            self.lexer.try_parse_whitespaces()
+
+            if self.lexer.inspect_chars(1) != "]":
+                while (
+                    identifier := self.lexer.try_parse_identifier()
+                ) and identifier is not None:
+                    generic_names.append(identifier)
+                    self.lexer.try_parse_whitespaces(include_newline=True)
+
+                    if self.lexer.inspect_chars(1) != ",":
+                        break
+
+                    self.lexer.get_chars(1)
+                    self.lexer.try_parse_whitespaces(include_newline=True)
+
+                self.lexer.try_parse_whitespaces(include_newline=True)
+
+            if self.lexer.get_chars(1) != "]":
+                raise SyntaxError("Did you forgot to close the '['?")
+
+        self.lexer.try_parse_whitespaces(include_newline=True)
+
+        if self.lexer.get_chars(1) != "(":
+            raise SyntaxError("expected '(' after <function name> or <generic parameters>")
+
+        self.lexer.try_parse_whitespaces(include_newline=True)
+
+        parameters = []
+
+        self.lexer.try_parse_whitespaces(include_newline=True)
+
+        if self.lexer.get_chars(1) != ")":
+            raise SyntaxError("expected ')' after <parameter list>")
+
+        self.lexer.try_parse_whitespaces()
+
+        if self.lexer.get_chars(1) != ":":
+            raise SyntaxError("expected ':' after')'")
+
+        self.lexer.try_parse_whitespaces()
+
+        if self.lexer.inspect_chars(1) != "\n":
+            body = [
+                self.parse_line()
+            ]
+        else:
+            self.indent_level += 1
+            body = self.parse()
+
+            if len(body) == 0:
+                raise SyntaxError("expected <body>")
+
+            self.indent_level -= 1
+
+        return FunctionDefinitionNode(
+            function_name,
+            generic_names,
+            parameters,
+            body,
+        )

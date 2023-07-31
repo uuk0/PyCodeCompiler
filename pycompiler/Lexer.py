@@ -15,6 +15,7 @@ _KEYWORDS = [
     "for",
     "return",
     "yield",
+    "pass",
     "import",
     "from",
     "as",
@@ -109,7 +110,6 @@ class Lexer:
 
         text = self.file[self.file_cursor:self.file_cursor+count]
         self.file_cursor += count
-        print(count, text)
         return text
 
     def give_back(self, text: str | Token | typing.List[str | Token | None] | None):
@@ -167,11 +167,15 @@ class Lexer:
         else:
             return Token(TokenType.NEWLINE, c)
 
-    def try_parse_whitespaces(self) -> Token | None:
+    def try_parse_whitespaces(self, include_newline=False) -> Token | None:
         c = self.get_chars(1)
         text = ""
 
-        while c and c in _WHITESPACE:
+        search = _WHITESPACE
+        if include_newline:
+            search += "\n"
+
+        while c and c in search:
             text += c
             c = self.get_chars(1)
 

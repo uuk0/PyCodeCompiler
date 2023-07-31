@@ -57,13 +57,20 @@ class ScopeGeneratorVisitor(SyntaxTreeVisitor):
         outer_scope = self.scope
         self.scope = self.scope.copy()
 
+        for name in node.generics:
+            self.scope.export_variable_name(name.text)
+
         super().visit_function_definition(node)
 
         self.scope.close()
         self.scope = outer_scope
 
         self.scope.export_variable_name(node.name.text)
-        # todo: generics
+
+    def visit_function_definition_parameter(self, node: FunctionDefinitionNode.FunctionDefinitionParameter):
+        super().visit_function_definition_parameter(node)
+
+        self.scope.export_variable_name(node.name.text)
 
     def visit_assignment(self, assignment: AssignmentExpression):
         super().visit_assignment(assignment)
