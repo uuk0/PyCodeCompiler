@@ -89,3 +89,7 @@ class TestFunctionDefinition(TestCase):
             ],
         )], expr)
 
+    def test_generic_duplicate(self):
+        parser = Parser.Parser("def xy[a, a](): \n    x = 10")
+        self.assertRaises(NameError, parser.parse)
+
