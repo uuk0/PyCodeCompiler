@@ -226,6 +226,43 @@ class SubscriptionExpression(AbstractASTNode):
         return True
 
 
+class CallExpression(AbstractASTNode):
+    class ParameterType(enum.Enum):
+        NORMAL = enum.auto()
+        KEYWORD = enum.auto()
+        STAR = enum.auto()
+        STAR_STAR = enum.auto()
+
+    class CallExpressionArgument(AbstractASTNode):
+        def __init__(self, value: AbstractASTNode, mode: CallExpression.ParameterType, key: Lexer.Token = None):
+            super().__init__()
+
+            assert (mode == CallExpression.ParameterType.KEYWORD) == (key is not None)
+
+            self.value = value
+            self.mode = mode
+            self.key = key
+
+        def __eq__(self, other):
+            return type(other) == CallExpression.CallExpressionArgument and self.value == other.value and self.mode == other.mode and self.key == other.key
+
+        def __repr__(self):
+            return f"ARG({self.value}|{self.mode}|{self.key})"
+
+    def __init__(self, base: AbstractASTNode, l_bracket: Lexer.Token, args: typing.List[CallExpression.CallExpressionArgument], r_bracket: Lexer.Token):
+        super().__init__()
+        self.base = base
+        self.l_bracket = l_bracket
+        self.args = args
+        self.r_bracket = r_bracket
+
+    def __eq__(self, other):
+        return type(other) == CallExpression and self.base == other.base and self.l_bracket == other.l_bracket and self.args == other.args and self.r_bracket == other.r_bracket
+
+    def __repr__(self):
+        return f"CALL({self.base}|{self.l_bracket}|{self.args}|{self.r_bracket})"
+
+
 class ReturnStatement(AbstractASTNode):
     def __init__(self, return_value: AbstractASTNode):
         super().__init__()
@@ -297,6 +334,10 @@ class SyntaxTreeVisitor:
             return self.visit_attribute_expression(obj)
         elif obj_type == SubscriptionExpression:
             return self.visit_subscription_expression(obj)
+        elif obj_type == CallExpression:
+            return self.visit_call_expression(obj)
+        elif obj_type == CallExpression.CallExpressionArgument:
+            return self.visit_call_argument(obj)
         elif obj_type == FunctionDefinitionNode:
             return self.visit_function_definition(obj)
         elif obj_type == FunctionDefinitionNode.FunctionDefinitionParameter:
@@ -326,18 +367,30 @@ class SyntaxTreeVisitor:
     def visit_subscription_expression(self, expression: SubscriptionExpression):
         return self.visit_any(expression.base), self.visit_any(expression.expression)
 
-    def visit_function_definition(self, node: FunctionDefinitionNode):
-        for param in node.parameters:
-            self.visit_function_definition_parameter(param)
+    def visit_call_expression(self, node: CallExpression):
+        return self.visit_any(node.base), [
+            self.visit_call_argument(arg)
+            for arg in node.args
+        ]
 
-        for body_node in node.body:
+    def visit_call_argument(self, arg: CallExpression.CallExpressionArgument):
+        return self.visit_any(arg.value),
+
+    def visit_function_definition(self, node: FunctionDefinitionNode):
+        return [
+            self.visit_function_definition_parameter(param) for param in node.parameters
+        ], [
             self.visit_any(body_node)
+            for body_node in node.body
+        ]
 
     def visit_function_definition_parameter(self, node: FunctionDefinitionNode.FunctionDefinitionParameter):
         if node.mode == FunctionDefinitionNode.ParameterType.KEYWORD:
             assert node.default is not None
 
-            self.visit_any(node.default)
+            return self.visit_any(node.default),
+
+        return None,
 
     def visit_class_definition(self, node: ClassDefinitionNode):
         pass
@@ -346,7 +399,7 @@ class SyntaxTreeVisitor:
         pass
 
     def visit_return_statement(self, return_statement: ReturnStatement):
-        self.visit_any(return_statement.return_value)
+        return self.visit_any(return_statement.return_value),
 
 
 class Parser:

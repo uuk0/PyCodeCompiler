@@ -7,7 +7,7 @@ from pycompiler.Parser import SyntaxTreeVisitor, Scope, ParentAttributeSection, 
 
 
 if typing.TYPE_CHECKING:
-    from pycompiler.Parser import ClassDefinitionNode, FunctionDefinitionNode, AssignmentExpression, AbstractASTNode, AttributeExpression, SubscriptionExpression, ReturnStatement
+    from pycompiler.Parser import ClassDefinitionNode, FunctionDefinitionNode, AssignmentExpression, AbstractASTNode, AttributeExpression, SubscriptionExpression, ReturnStatement, CallExpression
 
 
 class ResolveParentAttribute(SyntaxTreeVisitor):
@@ -34,6 +34,18 @@ class ResolveParentAttribute(SyntaxTreeVisitor):
 
         for body_node in node.body:
             body_node.parent = node
+
+    def visit_call_expression(self, node: CallExpression):
+        super().visit_call_expression(node)
+
+        node.base.parent = node
+        for arg in node.args:
+            arg.parent = node
+
+    def visit_call_argument(self, arg: CallExpression.CallExpressionArgument):
+        super().visit_call_argument(arg)
+
+        arg.value.parent = arg
 
     def visit_function_definition_parameter(self, node: FunctionDefinitionNode.FunctionDefinitionParameter):
         super().visit_function_definition_parameter(node)
