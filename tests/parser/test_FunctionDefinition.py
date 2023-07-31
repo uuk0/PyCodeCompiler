@@ -46,6 +46,33 @@ class TestFunctionDefinition(TestCase):
         parser = Parser.Parser("def xy(): x = 10\n    x = 20")
         self.assertRaises(SyntaxError, parser.parse)
 
+    def test_simple_two_inner_lines(self):
+        parser = Parser.Parser("def xy(): \n    x = 10\n    y = 20")
+        expr = parser.parse()
+        self.assertEqual([FunctionDefinitionNode(
+            TokenType.IDENTIFIER("xy"),
+            [],
+            [],
+            [
+                PyNewlineNode(TokenType.NEWLINE("\n")),
+                AssignmentExpression(
+                    [
+                        NameAccessExpression(TokenType.IDENTIFIER("x"))
+                    ],
+                    TokenType.EQUAL_SIGN("="),
+                    ConstantAccessExpression(10),
+                ),
+                PyNewlineNode(TokenType.NEWLINE("\n")),
+                AssignmentExpression(
+                    [
+                        NameAccessExpression(TokenType.IDENTIFIER("y"))
+                    ],
+                    TokenType.EQUAL_SIGN("="),
+                    ConstantAccessExpression(20),
+                )
+            ],
+        )], expr)
+
     def test_generic_simple(self):
         parser = Parser.Parser("def xy[a](): \n    x = 10")
         expr = parser.parse()
