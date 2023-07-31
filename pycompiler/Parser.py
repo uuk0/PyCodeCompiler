@@ -455,6 +455,9 @@ class Parser:
         if assignment := self.try_parse_assignment():
             return assignment
 
+        if expression := self.try_parse_expression():
+            return expression
+
     def try_parse_assignment_target(self) -> AbstractASTNode | None:
         identifier = self.lexer.try_parse_identifier()
 

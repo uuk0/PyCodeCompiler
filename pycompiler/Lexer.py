@@ -200,6 +200,10 @@ class Lexer:
 
         self.give_back(c)
 
+        if text in _KEYWORDS:
+            self.give_back(text)
+            return
+
         return Token(TokenType.IDENTIFIER, text)
 
     def try_parse_keyword(self) -> Token | None:
