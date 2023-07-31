@@ -227,8 +227,28 @@ class SubscriptionExpression(AbstractASTNode):
 
 
 class FunctionDefinitionNode(AbstractASTNode):
+    class ParameterType(enum.Enum):
+        NORMAL = enum.auto()
+        KEYWORD = enum.auto()
+        STAR = enum.auto()
+        STAR_STAR = enum.auto()
+
     class FunctionDefinitionParameter(AbstractASTNode):
-        pass
+        def __init__(self, name: Lexer.Token, mode: FunctionDefinitionNode.ParameterType, hint=None, default=None):
+            super().__init__()
+
+            assert (default is not None) == (mode == FunctionDefinitionNode.ParameterType.KEYWORD)
+
+            self.name = name
+            self.mode = mode
+            self.hint = hint
+            self.default = default
+
+        def __eq__(self, other):
+            return type(other) == FunctionDefinitionNode.FunctionDefinitionParameter and self.name == other.name and self.mode == other.mode and self.hint == other.hint and self.default == other.default
+
+        def __repr__(self):
+            return f"PARAMETER({self.name}|{self.mode}|{self.hint}|{self.default})"
 
     def __init__(self, name: Lexer.Token, generics: typing.List[Lexer.Token], parameters: typing.List[FunctionDefinitionNode.FunctionDefinitionParameter], body: typing.List[AbstractASTNode]):
         super().__init__()
@@ -446,6 +466,9 @@ class Parser:
         self.lexer.try_parse_whitespaces()
         return base
 
+    def try_parse_type_hint(self):
+        return self.try_parse_expression()  # todo: do something more fancy here!
+
     def parse_quoted_string(self, quote_type: str) -> ConstantAccessExpression:
         self.lexer.get_chars(1)
         text = ""
@@ -598,9 +621,9 @@ class Parser:
 
             if self.lexer.inspect_chars(1) != "]":
                 while (
-                    identifier := self.lexer.try_parse_identifier()
-                ) and identifier is not None:
-                    generic_names.append(identifier)
+                    name := self.lexer.try_parse_identifier()
+                ) and name is not None:
+                    generic_names.append(name)
                     self.lexer.try_parse_whitespaces(include_newline=True)
 
                     if self.lexer.inspect_chars(1) != ",":
@@ -619,11 +642,100 @@ class Parser:
         if self.lexer.get_chars(1) != "(":
             raise SyntaxError("expected '(' after <function name> or <generic parameters>")
 
-        self.lexer.try_parse_whitespaces(include_newline=True)
-
         parameters = []
 
-        self.lexer.try_parse_whitespaces(include_newline=True)
+        while self.lexer.inspect_chars(1) != ")":
+            self.lexer.try_parse_whitespaces(include_newline=True)
+
+            if self.lexer.inspect_chars(2) == "**":
+                self.lexer.get_chars(2)
+                self.lexer.try_parse_whitespaces()
+
+                name = self.lexer.try_parse_identifier()
+
+                if name is None:
+                    raise SyntaxError
+
+                self.lexer.try_parse_whitespaces()
+
+                hint = None
+                if self.lexer.inspect_chars(1) == ":":
+                    self.lexer.get_chars(1)
+                    self.lexer.try_parse_whitespaces()
+                    hint = self.try_parse_type_hint()
+
+                    if hint is None:
+                        raise SyntaxError
+
+                parameters.append(FunctionDefinitionNode.FunctionDefinitionParameter(
+                    name,
+                    FunctionDefinitionNode.ParameterType.STAR_STAR,
+                    hint=hint,
+                ))
+
+            elif self.lexer.inspect_chars(1) == "*":
+                self.lexer.get_chars(1)
+                self.lexer.try_parse_whitespaces()
+
+                name = self.lexer.try_parse_identifier()
+
+                if name is None:
+                    raise SyntaxError
+
+                self.lexer.try_parse_whitespaces()
+
+                hint = None
+                if self.lexer.inspect_chars(1) == ":":
+                    self.lexer.get_chars(1)
+                    self.lexer.try_parse_whitespaces()
+                    hint = self.try_parse_type_hint()
+
+                    if hint is None:
+                        raise SyntaxError
+
+                parameters.append(FunctionDefinitionNode.FunctionDefinitionParameter(
+                    name,
+                    FunctionDefinitionNode.ParameterType.STAR,
+                    hint=hint,
+                ))
+
+            else:
+                name = self.lexer.try_parse_identifier()
+                if name is None:
+                    raise SyntaxError
+
+                self.lexer.try_parse_whitespaces()
+
+                hint = None
+                if self.lexer.inspect_chars(1) == ":":
+                    self.lexer.get_chars(1)
+                    self.lexer.try_parse_whitespaces()
+                    hint = self.try_parse_type_hint()
+
+                    if hint is None:
+                        raise SyntaxError
+
+                self.lexer.try_parse_whitespaces()
+
+                if self.lexer.inspect_chars(1) == "=":
+                    self.lexer.get_chars(1)
+                    default = self.try_parse_expression()
+
+                    if default is None:
+                        raise SyntaxError
+
+                    parameters.append(FunctionDefinitionNode.FunctionDefinitionParameter(
+                        name,
+                        FunctionDefinitionNode.ParameterType.KEYWORD,
+                        hint=hint,
+                        default=default
+                    ))
+                else:
+                    parameters.append(FunctionDefinitionNode.FunctionDefinitionParameter(
+                        name,
+                        FunctionDefinitionNode.ParameterType.NORMAL,
+                        hint=hint,
+                    ))
 
         if self.lexer.get_chars(1) != ")":
             raise SyntaxError("expected ')' after <parameter list>")
