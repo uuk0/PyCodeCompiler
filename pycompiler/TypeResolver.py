@@ -7,24 +7,28 @@ from pycompiler.Parser import SyntaxTreeVisitor, Scope, ParentAttributeSection, 
 
 
 if typing.TYPE_CHECKING:
-    from pycompiler.Parser import ClassDefinitionNode, FunctionDefinitionNode, AssignmentExpression, AbstractASTNode, AttributeExpression, SubscriptionExpression
+    from pycompiler.Parser import ClassDefinitionNode, FunctionDefinitionNode, AssignmentExpression, AbstractASTNode, AttributeExpression, SubscriptionExpression, ReturnStatement
 
 
 class ResolveParentAttribute(SyntaxTreeVisitor):
     def visit_assignment(self, assignment: AssignmentExpression):
+        super().visit_assignment(assignment)
         for target in assignment.lhs:
             target.parent = assignment, ParentAttributeSection.LHS
 
         assignment.rhs.parent = assignment, ParentAttributeSection.RHS
 
     def visit_attribute_expression(self, expression: AttributeExpression):
+        super().visit_attribute_expression(expression)
         expression.base.parent = expression, ParentAttributeSection.LHS
 
     def visit_subscription_expression(self, expression: SubscriptionExpression):
+        super().visit_subscription_expression(expression)
         expression.base.parent = expression, ParentAttributeSection.LHS
         expression.expression.parent = expression, ParentAttributeSection.RHS
 
     def visit_function_definition(self, node: FunctionDefinitionNode):
+        super().visit_function_definition(node)
         for param in node.parameters:
             param.parent = node
 
@@ -32,13 +36,18 @@ class ResolveParentAttribute(SyntaxTreeVisitor):
             body_node.parent = node
 
     def visit_function_definition_parameter(self, node: FunctionDefinitionNode.FunctionDefinitionParameter):
+        super().visit_function_definition_parameter(node)
         if node.mode == FunctionDefinitionNode.ParameterType.KEYWORD:
             assert node.default is not None
 
             node.default.parent = node
 
+    def visit_return_statement(self, return_statement: ReturnStatement):
+        super().visit_return_statement(return_statement)
+        return_statement.return_value.parent = return_statement
+
     def visit_class_definition(self, node: ClassDefinitionNode):
-        pass
+        super().visit_class_definition(node)
 
 
 class ScopeGeneratorVisitor(SyntaxTreeVisitor):

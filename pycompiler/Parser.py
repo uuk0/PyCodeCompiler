@@ -226,6 +226,18 @@ class SubscriptionExpression(AbstractASTNode):
         return True
 
 
+class ReturnStatement(AbstractASTNode):
+    def __init__(self, return_value: AbstractASTNode):
+        super().__init__()
+        self.return_value = return_value
+
+    def __eq__(self, other):
+        return type(other) == ReturnStatement and self.return_value == other.return_value
+
+    def __repr__(self):
+        return f"RETURN({self.return_value})"
+
+
 class FunctionDefinitionNode(AbstractASTNode):
     class ParameterType(enum.Enum):
         NORMAL = enum.auto()
@@ -333,6 +345,9 @@ class SyntaxTreeVisitor:
     def visit_constant(self, constant: ConstantAccessExpression):
         pass
 
+    def visit_return_statement(self, return_statement: ReturnStatement):
+        self.visit_any(return_statement.return_value)
+
 
 class Parser:
     def __init__(self, source: str):
@@ -340,6 +355,7 @@ class Parser:
         self.lexer = Lexer.Lexer(source)
         self.indent_level = 0
         self.indent_markers: str | None = None
+        self.is_in_function = False
 
     def parse(self) -> typing.List[AbstractASTNode]:
         ast_stream: typing.List[AbstractASTNode] = []
@@ -378,6 +394,9 @@ class Parser:
 
         if function := self.try_parse_function_definition():
             return function
+
+        if self.is_in_function and (return_statement := self.try_parse_return_statement()):
+            return return_statement
 
         if assignment := self.try_parse_assignment():
             return assignment
@@ -471,6 +490,21 @@ class Parser:
 
     def try_parse_type_hint(self):
         return self.try_parse_expression()  # todo: do something more fancy here!
+
+    def try_parse_return_statement(self) -> ReturnStatement | None:
+        keyword = self.lexer.get_chars(len("return "))
+
+        if keyword != "return ":
+            self.lexer.give_back(keyword)
+            return
+
+        return_value = self.try_parse_expression()
+
+        if return_value is None:
+            raise SyntaxError("expected <expression> after 'return'")
+
+        return ReturnStatement(return_value)
+
 
     def parse_quoted_string(self, quote_type: str) -> ConstantAccessExpression:
         self.lexer.get_chars(1)
@@ -665,6 +699,9 @@ class Parser:
 
         self.lexer.try_parse_whitespaces()
 
+        prev_in_function = self.is_in_function
+        self.is_in_function = True
+
         if self.lexer.inspect_chars(1) != "\n":
             body = [
                 self.parse_line()
@@ -677,6 +714,8 @@ class Parser:
                 raise SyntaxError("expected <body>")
 
             self.indent_level -= 1
+
+        self.is_in_function = prev_in_function
 
         return FunctionDefinitionNode(
             function_name,
