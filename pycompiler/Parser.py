@@ -105,6 +105,59 @@ class ParentAttributeSection(enum.Enum):
     PARAMETER = enum.auto()
 
 
+class CCodeEmitter:
+    class CExpressionBuilder:
+        def __init__(self):
+            self.snippets = []
+
+        def add_code(self, code: str):
+            self.snippets.append(code)
+
+        def get_result(self) -> str:
+            return "".join(self.snippets).rstrip()
+
+    class CFunction(CExpressionBuilder):
+        def __init__(self, name: str, parameter_decl: typing.List[str], return_type: str):
+            super().__init__()
+
+            self.name = name
+            self.parameter_decl = parameter_decl
+            self.return_type = return_type
+
+        def get_result(self) -> str:
+            lines = super().get_result().split("\n")
+
+            while lines and lines[0].strip() == "":
+                lines.pop(0)
+
+            while lines and lines[-1].strip() == "":
+                lines.pop(-1)
+
+            inner = "\n    ".join(lines)
+
+            if inner:
+                return f"""{self.return_type} {self.name}({' , '.join(self.parameter_decl)}){{
+    {inner}
+}}"""
+            return f"""{self.return_type} {self.name}({' , '.join(self.parameter_decl)}){{
+}}"""
+
+        def get_declaration(self) -> str:
+            return f"{self.return_type} {self.name}({' , '.join(self.parameter_decl)});"
+
+    def __init__(self):
+        self._fresh_name_counter = 0
+        self.functions: typing.List[CCodeEmitter.CFunction] = []
+
+    def get_fresh_name(self, base_name: str) -> str:
+        name = f"_{base_name}__{self._fresh_name_counter}"
+        self._fresh_name_counter += 1
+        return name
+
+    def add_function(self, function: CCodeEmitter.CFunction):
+        self.functions.append(function)
+
+
 class AbstractASTNode(abc.ABC):
     def __init__(self):
         self.scope = None
@@ -112,6 +165,13 @@ class AbstractASTNode(abc.ABC):
 
     def try_replace_child(self, original: AbstractASTNode | None, replacement: AbstractASTNode, position: ParentAttributeSection) -> bool:
         return False
+
+    def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder, is_target=False):
+        pass
+
+
+class AbstractASTNodeExpression(AbstractASTNode, abc.ABC):
+    pass
 
 
 class PyNewlineNode(AbstractASTNode):
@@ -125,6 +185,9 @@ class PyNewlineNode(AbstractASTNode):
     def __repr__(self):
         return "NEWLINE"
 
+    def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder, is_target=False):
+        context.add_code("\n")
+
 
 class PyCommentNode(AbstractASTNode):
     def __init__(self, base_token: Lexer.Token, inner_string: Lexer.Token):
@@ -137,6 +200,9 @@ class PyCommentNode(AbstractASTNode):
 
     def __repr__(self):
         return f"COMMENT({self.base_token}|{self.inner_string})"
+
+    def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder, is_target=False):
+        context.add_code(f"// SOURCE: {self.inner_string.text}\n")
 
 
 class AssignmentExpression(AbstractASTNode):
@@ -164,8 +230,20 @@ class AssignmentExpression(AbstractASTNode):
             return False
         return True
 
+    def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder, is_target=False):
+        # todo: do type stuff
+        temporary = base.get_fresh_name("tas")
 
-class NameAccessExpression(AbstractASTNode):
+        context.add_code(f"PyObjectContainer* {temporary} = ")
+        self.rhs.emit_c_code(base, context)
+        context.add_code(";\n")
+
+        for target in self.lhs:
+            target.emit_c_code(base, context, is_target=True)
+            context.add_code(f" = {temporary};")
+
+
+class NameAccessExpression(AbstractASTNodeExpression):
     def __init__(self, name: Lexer.Token):
         super().__init__()
         self.name = name
@@ -176,8 +254,14 @@ class NameAccessExpression(AbstractASTNode):
     def __repr__(self):
         return f"VARIABLE({self.name})"
 
+    def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder, is_target=False):
+        if is_target:
+            context.add_code(f"PyObjectContainer* {self.name.text}")
+        else:
+            context.add_code(self.name.text)
 
-class ConstantAccessExpression(AbstractASTNode):
+
+class ConstantAccessExpression(AbstractASTNodeExpression):
     def __init__(self, value: typing.Any, token=None):
         super().__init__()
         self.value = value
@@ -189,8 +273,14 @@ class ConstantAccessExpression(AbstractASTNode):
     def __repr__(self):
         return f"CONSTANT({repr(self.value)})"
 
+    def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder, is_target=False):
+        if isinstance(self.value, int):
+            context.add_code(f"PY_createInteger({self.value})")
+        else:
+            raise NotImplementedError(self.value)
 
-class AttributeExpression(AbstractASTNode):
+
+class AttributeExpression(AbstractASTNodeExpression):
     def __init__(self, base: AbstractASTNode, dot: Lexer.Token, attribute: Lexer.Token):
         super().__init__()
         self.base = base
@@ -210,8 +300,12 @@ class AttributeExpression(AbstractASTNode):
         self.base = replacement
         return True
 
+    def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder, is_target=False):
+        self.base.emit_c_code(base, context)
+        context.add_code(f" -> {self.attribute.text}")  # todo: decide based on type!
 
-class SubscriptionExpression(AbstractASTNode):
+
+class SubscriptionExpression(AbstractASTNodeExpression):
     def __init__(self, base: AbstractASTNode, lhs_bracket: Lexer.Token, expression: AbstractASTNode, rhs_bracket: Lexer.Token):
         super().__init__()
         self.base = base
@@ -235,8 +329,14 @@ class SubscriptionExpression(AbstractASTNode):
 
         return True
 
+    def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder, is_target=False):
+        self.base.emit_c_code(base, context)
+        context.add_code(" [ ")
+        self.expression.emit_c_code(base, context)
+        context.add_code(" ] ")
 
-class CallExpression(AbstractASTNode):
+
+class CallExpression(AbstractASTNodeExpression):
     class ParameterType(enum.Enum):
         NORMAL = enum.auto()
         KEYWORD = enum.auto()
@@ -288,6 +388,27 @@ class CallExpression(AbstractASTNode):
             return False
         return True
 
+    def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder, is_target=False):
+        if not isinstance(self.base, ConstantAccessExpression):
+            raise NotImplementedError  # this is more complex
+
+        func_name = typing.cast(ConstantAccessExpression, self.base).value
+
+        if isinstance(func_name, FunctionDefinitionNode):
+            func_name = func_name.name.text
+        elif isinstance(func_name, Lexer.Token):
+            func_name = func_name.text
+        else:
+            raise NotImplementedError(func_name)
+
+        context.add_code(f"{func_name} (")
+
+        for arg in self.args:
+            arg.emit_c_code(base, context)
+            context.add_code(" , ")
+
+        context.add_code(")")
+
 
 class ReturnStatement(AbstractASTNode):
     def __init__(self, return_value: AbstractASTNode):
@@ -305,6 +426,11 @@ class ReturnStatement(AbstractASTNode):
             self.return_value = replacement
             return True
         return False
+
+    def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder, is_target=False):
+        context.add_code("return ")
+        self.return_value.emit_c_code(base, context)
+        context.add_code(";")
 
 
 class FunctionDefinitionNode(AbstractASTNode):
@@ -353,6 +479,20 @@ class FunctionDefinitionNode(AbstractASTNode):
 
     def try_replace_child(self, original: AbstractASTNode | None, replacement: AbstractASTNode, position: ParentAttributeSection) -> bool:
         return False  # nothing to replace, needs to be replaced in the arg itself
+
+    def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder, is_target=False):
+        func_name = self.name.text  # todo: do better here!
+
+        func = base.CFunction(func_name, [f"PyObjectContainer* {param.name.text}" for param in self.parameters], "PyObjectContainer*")
+        base.add_function(func)
+
+        for line in self.body:
+            line.emit_c_code(base, func)
+
+            if isinstance(line, AbstractASTNodeExpression):
+                func.add_code(";\n")
+            else:
+                func.add_code("\n")
 
 
 
@@ -472,9 +612,40 @@ class Parser:
             if node is not None:
                 ast_stream.append(node)
             else:
+                print(self.lexer.file[self.lexer.file_cursor:])
                 raise SyntaxError("no valid instruction found")
 
         return ast_stream
+
+    def emit_c_code(self, expr: typing.List[AbstractASTNode] = None) -> str:
+        if expr is None:
+            expr = self.parse()
+
+        builder = CCodeEmitter()
+        main = builder.CFunction("_initialise", ["int argc", "char* argv[]"], "int")
+        builder.add_function(main)
+
+        for line in expr:
+            line.emit_c_code(builder, main)
+
+            if isinstance(line, AbstractASTNodeExpression):
+                main.add_code(";\n")
+            else:
+                main.add_code("\n")
+
+        code = "#include \"pyinclude.h\"\n\n// code compiled from python to c via PyCodeCompiler\n\n"
+
+        for func in builder.functions:
+            code += func.get_declaration()
+            code += "\n"
+
+        code += "\n\n// implementations\n\n"
+
+        for func in builder.functions:
+            code += func.get_result()
+            code += "\n\n"
+
+        return code
 
     def parse_line(self) -> AbstractASTNode | None:
         if comment := self.try_parse_comment():
