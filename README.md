@@ -73,3 +73,11 @@ Make the compiled code run not much slower than cpython's implementation
 
 Make the compiled test suite from python not fail in the major test cases
 (implementation internals are expected to fail)
+
+## Supported Syntax
+
+- constants and variables
+- variable assignments, including multiple lhs and complex lhs objects, like e.g. `target[0] = x.y = 10`
+- the subscription operator (`[]`), attribute access (`.`)
+- function calls (`()`)
+- function declarations (python 3.12 syntax with generics via `[]` after the function name)

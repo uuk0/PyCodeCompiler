@@ -609,10 +609,10 @@ class Parser:
                     if expr is None:
                         raise SyntaxError
 
-                    args.append(CallExpression.CallExpressionArgument(
+                    arg = CallExpression.CallExpressionArgument(
                         expr,
                         CallExpression.ParameterType.NORMAL,
-                    ))
+                    )
 
             args.append(arg)
 
