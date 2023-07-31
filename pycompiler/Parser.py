@@ -20,6 +20,7 @@ class Scope:
 
         self.generic_name_stack: typing.Set[str] = set()
         self.variable_name_stack: typing.Set[str] = set()
+        self.strong_variables: typing.Dict[str, object] = {}
 
     def has_name_access(self, name: str) -> bool:
         if name in self.generic_name_stack or name in self.variable_name_stack:
@@ -72,8 +73,17 @@ class Scope:
         """
         self.variable_name_stack.add(name)
 
+        if strong_value != self._NO_VALUE:
+            self.strong_variables[name] = strong_value
+
     def get_static_value_or_fail(self, name: str):
-        pass
+        if name in self.strong_variables:
+            return self.strong_variables[name]
+
+        if name in self.variable_name_stack or self.parent is None:
+            raise NameError(f"could not resolve static value of variable '{name}'")
+
+        return self.parent.get_static_value_or_fail(name)
 
 
 class FilledScope:
@@ -249,6 +259,12 @@ class CallExpression(AbstractASTNode):
         def __repr__(self):
             return f"ARG({self.value}|{self.mode}|{self.key})"
 
+        def try_replace_child(self, original: AbstractASTNode | None, replacement: AbstractASTNode, position: ParentAttributeSection) -> bool:
+            if position == ParentAttributeSection.PARAMETER:
+                self.value = replacement
+                return True
+            return False
+
     def __init__(self, base: AbstractASTNode, generics: typing.List[AbstractASTNode], l_bracket: Lexer.Token, args: typing.List[CallExpression.CallExpressionArgument], r_bracket: Lexer.Token):
         super().__init__()
         self.base = base
@@ -263,6 +279,15 @@ class CallExpression(AbstractASTNode):
     def __repr__(self):
         return f"CALL({self.base}|{self.generics}|{self.l_bracket}|{self.args}|{self.r_bracket})"
 
+    def try_replace_child(self, original: AbstractASTNode | None, replacement: AbstractASTNode, position: ParentAttributeSection) -> bool:
+        if position == ParentAttributeSection.LHS:
+            self.base = replacement
+        elif position == ParentAttributeSection.PARAMETER:
+            self.args.replace(original, replacement)
+        else:
+            return False
+        return True
+
 
 class ReturnStatement(AbstractASTNode):
     def __init__(self, return_value: AbstractASTNode):
@@ -274,6 +299,12 @@ class ReturnStatement(AbstractASTNode):
 
     def __repr__(self):
         return f"RETURN({self.return_value})"
+
+    def try_replace_child(self, original: AbstractASTNode | None, replacement: AbstractASTNode, position: ParentAttributeSection) -> bool:
+        if position == ParentAttributeSection.LHS:
+            self.return_value = replacement
+            return True
+        return False
 
 
 class FunctionDefinitionNode(AbstractASTNode):
@@ -300,6 +331,12 @@ class FunctionDefinitionNode(AbstractASTNode):
         def __repr__(self):
             return f"PARAMETER({self.name}|{self.mode}|{self.hint}|{self.default})"
 
+        def try_replace_child(self, original: AbstractASTNode | None, replacement: AbstractASTNode, position: ParentAttributeSection) -> bool:
+            if self.mode == FunctionDefinitionNode.ParameterType.KEYWORD and position == ParentAttributeSection.PARAMETER:
+                self.default = replacement
+                return True
+            return False
+
     def __init__(self, name: Lexer.Token, generics: typing.List[Lexer.Token], parameters: typing.List[FunctionDefinitionNode.FunctionDefinitionParameter], body: typing.List[AbstractASTNode]):
         super().__init__()
         self.name = name
@@ -312,6 +349,10 @@ class FunctionDefinitionNode(AbstractASTNode):
 
     def __repr__(self):
         return f"FUNCTION({self.name}|{self.generics}|{self.parameters}|{self.body})"
+
+
+    def try_replace_child(self, original: AbstractASTNode | None, replacement: AbstractASTNode, position: ParentAttributeSection) -> bool:
+        return False  # nothing to replace, needs to be replaced in the arg itself
 
 
 
