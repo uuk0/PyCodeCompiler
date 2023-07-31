@@ -350,7 +350,7 @@ class Parser:
             if node is not None:
                 ast_stream.append(node)
             else:
-                raise SyntaxError
+                raise SyntaxError("no valid instruction found")
 
         return ast_stream
 
@@ -613,7 +613,7 @@ class Parser:
         self.lexer.try_parse_whitespaces()
 
         generic_names: typing.List[Lexer.Token] = []
-        duplicate_generic_check = set()
+        duplicate_name_check = set()
 
         # Generic Attribute
         if self.lexer.inspect_chars(1) == "[":
@@ -621,23 +621,7 @@ class Parser:
             self.lexer.try_parse_whitespaces()
 
             if self.lexer.inspect_chars(1) != "]":
-                while (
-                    name := self.lexer.try_parse_identifier()
-                ) and name is not None:
-                    if name.text in duplicate_generic_check:
-                        raise NameError("duplicate generic name found in function declaration")
-
-                    generic_names.append(name)
-                    duplicate_generic_check.add(name.text)
-                    self.lexer.try_parse_whitespaces(include_newline=True)
-
-                    if self.lexer.inspect_chars(1) != ",":
-                        break
-
-                    self.lexer.get_chars(1)
-                    self.lexer.try_parse_whitespaces(include_newline=True)
-
-                self.lexer.try_parse_whitespaces(include_newline=True)
+                generic_names += self.try_parse_generic_parameters(duplicate_name_check)
 
             if self.lexer.get_chars(1) != "]":
                 raise SyntaxError("Did you forgot to close the '['?")
@@ -648,113 +632,25 @@ class Parser:
             raise SyntaxError("expected '(' after <function name> or <generic parameters>")
 
         parameters = []
-        duplicate_parameter_check = set()
 
+        # todo: add more constraints to order of parameters:
+        #   - normal only before keyword args
+        #   - star args only after their respective without-star variant
+        #   - no duplicate kind of a star
+        #   - allow the \ syntax
         while self.lexer.inspect_chars(1) != ")":
-            self.lexer.try_parse_whitespaces(include_newline=True)
+            param = self.try_parse_function_parameter()
 
-            if self.lexer.inspect_chars(2) == "**":
-                self.lexer.get_chars(2)
-                self.lexer.try_parse_whitespaces()
+            if param.name.text in duplicate_name_check:
+                raise NameError("duplicate parameter name found")
 
-                name = self.lexer.try_parse_identifier()
+            duplicate_name_check.add(param.name.text)
+            parameters.append(param)
 
-                if name is None:
-                    raise SyntaxError
+            if self.lexer.inspect_chars(1) != ",":
+                break
 
-                if name.text in duplicate_generic_check:
-                    raise NameError("duplicate parameter name!")
-
-                self.lexer.try_parse_whitespaces()
-
-                hint = None
-                if self.lexer.inspect_chars(1) == ":":
-                    self.lexer.get_chars(1)
-                    self.lexer.try_parse_whitespaces()
-                    hint = self.try_parse_type_hint()
-
-                    if hint is None:
-                        raise SyntaxError
-
-                parameters.append(FunctionDefinitionNode.FunctionDefinitionParameter(
-                    name,
-                    FunctionDefinitionNode.ParameterType.STAR_STAR,
-                    hint=hint,
-                ))
-                duplicate_parameter_check.add(name.text)
-
-            elif self.lexer.inspect_chars(1) == "*":
-                self.lexer.get_chars(1)
-                self.lexer.try_parse_whitespaces()
-
-                name = self.lexer.try_parse_identifier()
-
-                if name is None:
-                    raise SyntaxError
-
-                if name.text in duplicate_generic_check:
-                    raise NameError("duplicate parameter name!")
-
-                self.lexer.try_parse_whitespaces()
-
-                hint = None
-                if self.lexer.inspect_chars(1) == ":":
-                    self.lexer.get_chars(1)
-                    self.lexer.try_parse_whitespaces()
-                    hint = self.try_parse_type_hint()
-
-                    if hint is None:
-                        raise SyntaxError
-
-                parameters.append(FunctionDefinitionNode.FunctionDefinitionParameter(
-                    name,
-                    FunctionDefinitionNode.ParameterType.STAR,
-                    hint=hint,
-                ))
-                duplicate_parameter_check.add(name.text)
-
-            else:
-                name = self.lexer.try_parse_identifier()
-                if name is None:
-                    raise SyntaxError
-
-                if name.text in duplicate_generic_check:
-                    raise NameError("duplicate parameter name!")
-
-                self.lexer.try_parse_whitespaces()
-
-                hint = None
-                if self.lexer.inspect_chars(1) == ":":
-                    self.lexer.get_chars(1)
-                    self.lexer.try_parse_whitespaces()
-                    hint = self.try_parse_type_hint()
-
-                    if hint is None:
-                        raise SyntaxError
-
-                self.lexer.try_parse_whitespaces()
-
-                if self.lexer.inspect_chars(1) == "=":
-                    self.lexer.get_chars(1)
-                    default = self.try_parse_expression()
-
-                    if default is None:
-                        raise SyntaxError
-
-                    parameters.append(FunctionDefinitionNode.FunctionDefinitionParameter(
-                        name,
-                        FunctionDefinitionNode.ParameterType.KEYWORD,
-                        hint=hint,
-                        default=default
-                    ))
-                    duplicate_parameter_check.add(name.text)
-                else:
-                    parameters.append(FunctionDefinitionNode.FunctionDefinitionParameter(
-                        name,
-                        FunctionDefinitionNode.ParameterType.NORMAL,
-                        hint=hint,
-                    ))
-                    duplicate_parameter_check.add(name.text)
+            self.lexer.get_chars(1)
 
         if self.lexer.get_chars(1) != ")":
             raise SyntaxError("expected ')' after <parameter list>")
@@ -784,4 +680,128 @@ class Parser:
             generic_names,
             parameters,
             body,
+        )
+
+    def try_parse_generic_parameters(self, duplicate_name_check) -> typing.List[Lexer.Token]:
+        generic_names = []
+
+        while (
+                name := self.lexer.try_parse_identifier()
+        ) and name is not None:
+            if name.text in duplicate_name_check:
+                raise NameError("duplicate generic name found in function declaration")
+
+            generic_names.append(name)
+            duplicate_name_check.add(name.text)
+            self.lexer.try_parse_whitespaces(include_newline=True)
+
+            if self.lexer.inspect_chars(1) != ",":
+                break
+
+            self.lexer.get_chars(1)
+            self.lexer.try_parse_whitespaces(include_newline=True)
+        self.lexer.try_parse_whitespaces(include_newline=True)
+
+        return generic_names
+
+    def try_parse_function_parameter(self) -> FunctionDefinitionNode.FunctionDefinitionParameter | None:
+        self.lexer.try_parse_whitespaces(include_newline=True)
+
+        if self.lexer.inspect_chars(2) == "**":
+            param = self.parse_function_parameter_star_star()
+
+        elif self.lexer.inspect_chars(1) == "*":
+            param = self.parse_function_parameter_star()
+        else:
+            param = self.parse_function_parameter_no_star()
+
+        self.lexer.try_parse_whitespaces()
+        return param
+
+    def parse_function_parameter_no_star(self):
+        name = self.lexer.try_parse_identifier()
+        if name is None:
+            raise SyntaxError("no parameter name found")
+
+        self.lexer.try_parse_whitespaces()
+        if self.lexer.inspect_chars(1) == ":":
+            self.lexer.get_chars(1)
+            self.lexer.try_parse_whitespaces()
+            hint = self.try_parse_type_hint()
+
+            if hint is None:
+                raise SyntaxError
+        else:
+            hint = None
+
+        self.lexer.try_parse_whitespaces()
+
+        if self.lexer.inspect_chars(1) != "=":
+            return FunctionDefinitionNode.FunctionDefinitionParameter(
+                name,
+                FunctionDefinitionNode.ParameterType.NORMAL,
+                hint=hint,
+            )
+        self.lexer.get_chars(1)
+        default = self.try_parse_expression()
+
+        if default is None:
+            raise SyntaxError
+
+        return FunctionDefinitionNode.FunctionDefinitionParameter(
+            name,
+            FunctionDefinitionNode.ParameterType.KEYWORD,
+            hint=hint,
+            default=default,
+        )
+
+    def parse_function_parameter_star(self):
+        self.lexer.get_chars(1)
+
+        self.lexer.try_parse_whitespaces()
+        name = self.lexer.try_parse_identifier()
+        if name is None:
+            raise SyntaxError
+
+        self.lexer.try_parse_whitespaces()
+
+        if self.lexer.inspect_chars(1) == ":":
+            self.lexer.get_chars(1)
+            self.lexer.try_parse_whitespaces()
+            hint = self.try_parse_type_hint()
+
+            if hint is None:
+                raise SyntaxError
+        else:
+            hint = None
+
+        return FunctionDefinitionNode.FunctionDefinitionParameter(
+            name,
+            FunctionDefinitionNode.ParameterType.STAR,
+            hint=hint,
+        )
+
+    def parse_function_parameter_star_star(self):
+        self.lexer.get_chars(2)
+        self.lexer.try_parse_whitespaces()
+
+        name = self.lexer.try_parse_identifier()
+        if name is None:
+            raise SyntaxError
+
+        self.lexer.try_parse_whitespaces()
+        if self.lexer.inspect_chars(1) == ":":
+            self.lexer.get_chars(1)
+            self.lexer.try_parse_whitespaces()
+            hint = self.try_parse_type_hint()
+
+            if hint is None:
+                raise SyntaxError
+        else:
+            hint = None
+
+        return FunctionDefinitionNode.FunctionDefinitionParameter(
+            name,
+            FunctionDefinitionNode.ParameterType.STAR_STAR,
+            hint=hint,
         )
