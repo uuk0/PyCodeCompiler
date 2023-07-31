@@ -249,18 +249,19 @@ class CallExpression(AbstractASTNode):
         def __repr__(self):
             return f"ARG({self.value}|{self.mode}|{self.key})"
 
-    def __init__(self, base: AbstractASTNode, l_bracket: Lexer.Token, args: typing.List[CallExpression.CallExpressionArgument], r_bracket: Lexer.Token):
+    def __init__(self, base: AbstractASTNode, generics: typing.List[AbstractASTNode], l_bracket: Lexer.Token, args: typing.List[CallExpression.CallExpressionArgument], r_bracket: Lexer.Token):
         super().__init__()
         self.base = base
+        self.generics = generics
         self.l_bracket = l_bracket
         self.args = args
         self.r_bracket = r_bracket
 
     def __eq__(self, other):
-        return type(other) == CallExpression and self.base == other.base and self.l_bracket == other.l_bracket and self.args == other.args and self.r_bracket == other.r_bracket
+        return type(other) == CallExpression and self.base == other.base and self.generics == other.generics and self.l_bracket == other.l_bracket and self.args == other.args and self.r_bracket == other.r_bracket
 
     def __repr__(self):
-        return f"CALL({self.base}|{self.l_bracket}|{self.args}|{self.r_bracket})"
+        return f"CALL({self.base}|{self.generics}|{self.l_bracket}|{self.args}|{self.r_bracket})"
 
 
 class ReturnStatement(AbstractASTNode):
