@@ -19,7 +19,6 @@ class TestCommentParser(TestCase):
             [
                 pycompiler.Parser.PyNewlineNode(pycompiler.Lexer.TokenType.NEWLINE("\n")),
                 pycompiler.Parser.PyCommentNode(pycompiler.Lexer.TokenType.HASHTAG("#"), pycompiler.Lexer.TokenType.REMAINING_STRING(" test comment")),
-                pycompiler.Parser.PyNewlineNode(pycompiler.Lexer.TokenType.NEWLINE("\n")),
             ],
             tree,
         )

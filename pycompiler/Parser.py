@@ -290,8 +290,9 @@ class SyntaxTreeVisitor:
 class Parser:
     def __init__(self, source: str):
         self.source = source
-        self.stream = io.StringIO(source)
-        self.lexer = Lexer.Lexer(self.stream)
+        self.lexer = Lexer.Lexer(source)
+        self.indent_level = 0
+        self.indent_markers: str | None = None
 
     def parse(self) -> typing.List[AbstractASTNode]:
         ast_stream: typing.List[AbstractASTNode] = []
@@ -303,6 +304,24 @@ class Parser:
             if comment := self.try_parse_comment():
                 ast_stream.append(comment)
                 continue
+
+            if self.indent_level:
+                empty = self.lexer.try_parse_whitespaces()
+                if self.indent_markers:
+                    if not empty or empty[:self.indent_level] != self.indent_markers * self.indent_level:
+                        raise IndentationError
+
+                elif self.indent_level:
+                    if not empty or not empty.text:
+                        raise IndentationError
+
+                    self.indent_markers = empty.text[0]
+
+                    if empty[:self.indent_level] != self.indent_markers * self.indent_level:
+                        raise IndentationError
+
+            if function := self.try_parse_function_definition():
+                ast_stream.append(function)
 
             if assignment := self.try_parse_assignment():
                 ast_stream.append(assignment)
@@ -525,3 +544,11 @@ class Parser:
             eq_sign,
             expression,
         )
+
+    # def <name>['[' <generic parameters> ']'] '(' <parameters, some with *, ** or =, some with type hints> ')':
+    def try_parse_function_definition(self) -> FunctionDefinitionNode | None:
+        identifier = self.lexer.get_chars(len("def "))
+
+        if identifier != "def ":
+            self.lexer.give_back(identifier)
+            return

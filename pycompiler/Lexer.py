@@ -72,11 +72,10 @@ class Token:
 
 
 class Lexer:
-    def __init__(self, file: io.StringIO):
+    def __init__(self, file: str):
         self.file = file
-        self._file_cache = ""
-        self.read_blocks: typing.List[str] = []
-        self._state_block_indices: typing.List[int] = []
+        self.file_cursor = 0
+        self._saved_states: typing.List[int] = []
 
         self._token_parse_table: typing.Dict[TokenType, typing.Callable[[], Token | None]] = {
             TokenType.NEWLINE: self.try_parse_newline,
@@ -88,41 +87,29 @@ class Lexer:
         }
 
     def has_text(self) -> bool:
-        if self._file_cache:
-            return True
-
-        c = self.get_chars(1)
-        self.give_back(c)
-
-        return c is not None
+        return len(self.file) > self.file_cursor + 1
 
     def save_state(self):
-        self._state_block_indices.append(len(self.read_blocks))
+        self._saved_states.append(self.file_cursor)
 
     def rollback_state(self):
-        index = self._state_block_indices.pop(-1)
-        self._file_cache += "".join(self.read_blocks[index:])
-        del self.read_blocks[index:]
+        self.file_cursor = self._saved_states.pop(-1)
 
     def discard_save_state(self):
-        self._state_block_indices.pop(-1)
+        self._saved_states.pop(-1)
+
+    def inspect_chars(self, count: int) -> str | None:
+        if self.file_cursor + count > len(self.file):
+            return
+        return self.file[self.file_cursor:self.file_cursor + count]
 
     def get_chars(self, count: int) -> str | None:
-        if len(self._file_cache) > count:
-            text = self._file_cache[-count:]
-            self._file_cache = self._file_cache[:-count]
-            self.read_blocks.append(text)
-            return text
-
-        text = self._file_cache
-        self._file_cache = ""
-        text += self.file.read(count - len(text))
-
-        if len(text) < count:
-            self._file_cache += text
+        if self.file_cursor + count > len(self.file):
             return
 
-        self.read_blocks.append(text)
+        text = self.file[self.file_cursor:self.file_cursor+count]
+        self.file_cursor += count
+        print(count, text)
         return text
 
     def give_back(self, text: str | Token | typing.List[str | Token | None] | None):
@@ -130,12 +117,17 @@ class Lexer:
             return self
 
         if isinstance(text, str):
-            self._file_cache += text
+            self.file_cursor -= len(text)
+            assert self.inspect_chars(len(text)) == text
+
         elif isinstance(text, Token):
-            self._file_cache += text.text
+            self.file_cursor -= len(text.text)
+            assert self.inspect_chars(len(text.text)) == text.text
+
         elif isinstance(text, list):
             for e in text:
                 self.give_back(e)
+
         else:
             raise ValueError(text)
 
