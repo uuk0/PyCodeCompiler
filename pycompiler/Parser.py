@@ -384,12 +384,20 @@ class SyntaxTreeVisitor:
             return self.visit_function_definition(obj)
         elif obj_type == FunctionDefinitionNode.FunctionDefinitionParameter:
             return self.visit_function_definition_parameter(obj)
+        elif obj_type == ReturnStatement:
+            return self.visit_return_statement(obj)
         elif obj_type == ClassDefinitionNode:
             return self.visit_class_definition(obj)
         elif obj_type == ConstantAccessExpression:
             return self.visit_constant(obj)
         else:
             raise RuntimeError(obj)
+
+    def visit_any_list(self, objs: typing.List[AbstractASTNode]):
+        return [
+            self.visit_any(obj)
+            for obj in objs
+        ]
 
     def visit_newline(self, newline: PyNewlineNode):
         pass
