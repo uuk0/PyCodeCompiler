@@ -234,7 +234,7 @@ class FunctionDefinitionNode(AbstractASTNode):
         STAR_STAR = enum.auto()
 
     class FunctionDefinitionParameter(AbstractASTNode):
-        def __init__(self, name: Lexer.Token, mode: FunctionDefinitionNode.ParameterType, hint=None, default=None):
+        def __init__(self, name: Lexer.Token, mode: FunctionDefinitionNode.ParameterType, hint=None, default: AbstractASTNode = None):
             super().__init__()
 
             assert (default is not None) == (mode == FunctionDefinitionNode.ParameterType.KEYWORD)
@@ -322,7 +322,10 @@ class SyntaxTreeVisitor:
             self.visit_any(body_node)
 
     def visit_function_definition_parameter(self, node: FunctionDefinitionNode.FunctionDefinitionParameter):
-        pass
+        if node.mode == FunctionDefinitionNode.ParameterType.KEYWORD:
+            assert node.default is not None
+
+            self.visit_any(node.default)
 
     def visit_class_definition(self, node: ClassDefinitionNode):
         pass

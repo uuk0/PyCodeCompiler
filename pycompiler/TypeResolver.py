@@ -25,7 +25,17 @@ class ResolveParentAttribute(SyntaxTreeVisitor):
         expression.expression.parent = expression, ParentAttributeSection.RHS
 
     def visit_function_definition(self, node: FunctionDefinitionNode):
-        pass
+        for param in node.parameters:
+            param.parent = node
+
+        for body_node in node.body:
+            body_node.parent = node
+
+    def visit_function_definition_parameter(self, node: FunctionDefinitionNode.FunctionDefinitionParameter):
+        if node.mode == FunctionDefinitionNode.ParameterType.KEYWORD:
+            assert node.default is not None
+
+            node.default.parent = node
 
     def visit_class_definition(self, node: ClassDefinitionNode):
         pass
