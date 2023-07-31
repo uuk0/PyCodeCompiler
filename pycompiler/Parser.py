@@ -533,14 +533,106 @@ class Parser:
 
                 base = AttributeExpression(base, dot, identifier)
 
-            elif opening_round_bracket := self.lexer.try_parse_opening_round_bracket():
-                raise NotImplementedError
+            elif opening_bracket := self.lexer.try_parse_opening_round_bracket():
+                base = self.parse_function_call(base, opening_bracket)
 
             else:
                 break
 
         self.lexer.try_parse_whitespaces()
         return base
+
+    def parse_function_call(self, base: AbstractASTNode, opening_bracket: Lexer.Token) -> CallExpression:
+        generics = []  # todo: load from base if it is an subscription access
+        args = []
+
+        while not (closing_bracket := self.lexer.try_parse_closing_round_bracket()):
+            self.lexer.try_parse_whitespaces(include_newline=True)
+
+            arg = None
+
+            if self.lexer.inspect_chars(1) == "*":
+                if self.lexer.inspect_chars(2) == "**":
+                    self.lexer.get_chars(2)
+
+                    expr = self.try_parse_expression()
+
+                    if expr is None:
+                        raise SyntaxError
+
+                    arg = CallExpression.CallExpressionArgument(
+                        expr,
+                        CallExpression.ParameterType.STAR_STAR,
+                    )
+
+                else:
+                    self.lexer.get_chars(1)
+
+                    expr = self.try_parse_expression()
+
+                    if expr is None:
+                        raise SyntaxError
+
+                    arg = CallExpression.CallExpressionArgument(
+                        expr,
+                        CallExpression.ParameterType.STAR,
+                    )
+
+            else:
+                self.lexer.save_state()
+
+                identifier = self.lexer.try_parse_identifier()
+
+                if identifier is not None:
+                    self.lexer.try_parse_whitespaces(include_newline=True)
+                    if self.lexer.inspect_chars(1) == "=":
+                        self.lexer.get_chars(1)
+
+                        expr = self.try_parse_expression()
+
+                        if expr is None:
+                            raise SyntaxError
+
+                        arg = CallExpression.CallExpressionArgument(
+                            expr,
+                            CallExpression.ParameterType.KEYWORD,
+                            key=identifier,
+                        )
+
+                        self.lexer.discard_save_state()
+
+
+                if arg is None:
+                    self.lexer.rollback_state()
+                    expr = self.try_parse_expression()
+
+                    if expr is None:
+                        raise SyntaxError
+
+                    args.append(CallExpression.CallExpressionArgument(
+                        expr,
+                        CallExpression.ParameterType.NORMAL,
+                    ))
+
+            args.append(arg)
+
+            self.lexer.try_parse_whitespaces()
+
+            if self.lexer.inspect_chars(1) != ",":
+                if not (closing_bracket := self.lexer.try_parse_closing_round_bracket()):
+                    raise SyntaxError
+
+                break
+
+            self.lexer.get_chars(1)
+
+        return CallExpression(
+            base,
+            generics,
+            opening_bracket,
+            args,
+            closing_bracket,
+        )
 
     def try_parse_type_hint(self):
         return self.try_parse_expression()  # todo: do something more fancy here!

@@ -54,6 +54,17 @@ def test[X](arg) -> X:
     return X(arg)
 ```
 
+You can also specify the types for generic parameters for functions explicit like:
+```python
+def test[X](arg) -> X:
+    return X(arg)
+    
+test[int](10)
+```
+
+At runtime, if the function could not be resolved statically, the
+'[]' operator will return an optional boxed variant of itself for that type set
+
 ## Goals
 
 Make the compiler compile itself
