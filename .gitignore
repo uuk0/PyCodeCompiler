@@ -1,0 +1,5 @@
+/pycompiler/templates/CMakeLists.txt
+/pycompiler/templates/.idea/
+/pycompiler/templates/cmake-build-debug/
+/compiler.txt
+*.exe
