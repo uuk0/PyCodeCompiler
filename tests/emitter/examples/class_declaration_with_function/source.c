@@ -39,7 +39,7 @@ PyObjectContainer* target(PyObjectContainer* self) {
 }
 
 PyObjectContainer* test_target(PyObjectContainer* self) {
-    return PY_invokeBoxedMethod(self -> target, NULL, 0, NULL);
+    return PY_invokeBoxedMethod(PY_getObjectAttributeByNameOrStatic(self, "target"), NULL, 0, NULL);
 }
 
 PyObjectContainer* test_target_safeWrap(PyObjectContainer* self , uint8_t argc , PyObjectContainer** args) {

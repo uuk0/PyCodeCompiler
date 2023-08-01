@@ -319,8 +319,13 @@ class AttributeExpression(AbstractASTNodeExpression):
         return True
 
     def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder, is_target=False):
+        if is_target:
+            raise NotImplementedError
+        else:
+            context.add_code("PY_getObjectAttributeByNameOrStatic(")
+
         self.base.emit_c_code(base, context)
-        context.add_code(f" -> {self.attribute.text}")  # todo: decide based on type!
+        context.add_code(f", \"{self.attribute.text}\")")
 
 
 class SubscriptionExpression(AbstractASTNodeExpression):
