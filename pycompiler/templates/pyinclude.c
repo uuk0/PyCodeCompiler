@@ -6,6 +6,7 @@
 #include <errno.h>
 #include <assert.h>
 #include "pyinclude.h"
+#include <string.h>
 
 
 static bool initialized = false;

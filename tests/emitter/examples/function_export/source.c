@@ -2,16 +2,16 @@
 
 // code compiled from python to c via PyCodeCompiler
 
-int _initialise(int argc , char* argv[]);
+int _initialise();
 PyObjectContainer* test();
 
 
 // implementations
 
-int _initialise(int argc , char* argv[]){
+int _initialise() {
 }
 
-PyObjectContainer* test(){
+PyObjectContainer* test() {
     return PY_createInteger(10);
 }
 

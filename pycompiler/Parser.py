@@ -134,10 +134,10 @@ class CCodeEmitter:
                 lines.pop(-1)
 
             if inner := "\n    ".join(lines):
-                return f"""{self.return_type} {self.name}({' , '.join(self.parameter_decl)}){{
+                return f"""{self.return_type} {self.name}({' , '.join(self.parameter_decl)}) {{
     {inner}
 }}"""
-            return f"""{self.return_type} {self.name}({' , '.join(self.parameter_decl)}){{
+            return f"""{self.return_type} {self.name}({' , '.join(self.parameter_decl)}) {{
 }}"""
 
         def get_declaration(self) -> str:
@@ -684,7 +684,7 @@ class Parser:
             expr = self.parse()
 
         builder = CCodeEmitter()
-        main = builder.CFunction("_initialise", ["int argc", "char* argv[]"], "int")
+        main = builder.CFunction("_initialise", [], "int")
         builder.add_function(main)
         builder.init_function = main
 

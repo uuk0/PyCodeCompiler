@@ -72,3 +72,6 @@ class TestCCodeEmitter(TestCase):
     def test_function_export(self):
         self.run_named_folder_test("function_export")
 
+    def test_class_declaration(self):
+        self.run_named_folder_test("class_declaration")
+
