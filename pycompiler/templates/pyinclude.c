@@ -31,6 +31,38 @@ PyObjectContainer* createEmptyContainer(PyObjectType type)
     return container;
 }
 
+PyClassContainer* PY_createClassContainer(char* name)
+{
+    PyClassContainer* container = malloc(sizeof(PyClassContainer));
+
+    if (container == NULL)
+    {
+        perror("malloc");
+        exit(EXIT_FAILURE);
+    }
+
+    container->parents = NULL;
+    container->class_name = name;
+    container->attr_name_array = NULL;
+    container->static_attribute_names = NULL;
+    container->static_attribute_values = NULL;
+
+    return container;
+}
+
+void PY_ClassContainer_AllocateParentArray(PyClassContainer* cls, uint8_t count)
+{
+    assert(cls->parents == NULL);
+
+    cls->parents = calloc(count + 1, sizeof(PyClassContainer*));
+
+    if (cls->parents == NULL)
+    {
+        perror("malloc");
+        exit(EXIT_FAILURE);
+    }
+}
+
 PyObjectContainer* PY_createInteger(int64_t value)
 {
     uint64_t* value_holder = malloc(sizeof(uint64_t));

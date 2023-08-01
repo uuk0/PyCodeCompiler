@@ -57,6 +57,9 @@ extern PyObjectContainer* PY_TRUE;
 
 PyObjectContainer* createEmptyContainer(PyObjectType type);
 
+PyClassContainer* PY_createClassContainer(char* name);
+void PY_ClassContainer_AllocateParentArray(PyClassContainer* cls, uint8_t count);
+
 PyObjectContainer* PY_createInteger(int64_t value);
 int64_t PY_unpackInteger(PyObjectContainer* obj);
 

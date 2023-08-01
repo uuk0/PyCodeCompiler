@@ -29,37 +29,44 @@ class ResolveParentAttribute(SyntaxTreeVisitor):
 
     def visit_function_definition(self, node: FunctionDefinitionNode):
         super().visit_function_definition(node)
+
         for param in node.parameters:
-            param.parent = node
+            param.parent = node, None
 
         for body_node in node.body:
-            body_node.parent = node
+            body_node.parent = node, None
 
     def visit_call_expression(self, node: CallExpression):
         super().visit_call_expression(node)
 
-        node.base.parent = node
+        node.base.parent = node, ParentAttributeSection.LHS
         for arg in node.args:
-            arg.parent = node
+            arg.parent = node, ParentAttributeSection.RHS
 
     def visit_call_argument(self, arg: CallExpression.CallExpressionArgument):
         super().visit_call_argument(arg)
 
-        arg.value.parent = arg
+        arg.value.parent = arg, ParentAttributeSection.PARAMETER
 
     def visit_function_definition_parameter(self, node: FunctionDefinitionNode.FunctionDefinitionParameter):
         super().visit_function_definition_parameter(node)
         if node.mode == FunctionDefinitionNode.ParameterType.KEYWORD:
             assert node.default is not None
 
-            node.default.parent = node
+            node.default.parent = node, ParentAttributeSection.PARAMETER
 
     def visit_return_statement(self, return_statement: ReturnStatement):
         super().visit_return_statement(return_statement)
-        return_statement.return_value.parent = return_statement
+        return_statement.return_value.parent = return_statement, ParentAttributeSection.RHS
 
     def visit_class_definition(self, node: ClassDefinitionNode):
         super().visit_class_definition(node)
+
+        for parent in node.parents:
+            parent.parent = node, ParentAttributeSection.PARAMETER
+
+        for line in node.body:
+            line.parent = node, ParentAttributeSection.BODY
 
 
 class ScopeGeneratorVisitor(SyntaxTreeVisitor):
@@ -76,13 +83,15 @@ class ScopeGeneratorVisitor(SyntaxTreeVisitor):
         self.scope = self.scope.copy()
         self.scope.class_name_stack.append(node.name.text)
 
+        for name in node.generics:
+            self.scope.export_variable_name(name.text)
+
         super().visit_class_definition(node)
 
         self.scope.close(export_local_name=node.name.text)
         self.scope = outer_scope
 
         self.scope.export_variable_name(node.name.text)
-        # todo: generics
 
     def visit_function_definition(self, node: FunctionDefinitionNode):
         outer_scope = self.scope

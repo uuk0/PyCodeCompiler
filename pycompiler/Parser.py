@@ -102,6 +102,7 @@ class ParentAttributeSection(enum.Enum):
     RHS = enum.auto()
 
     PARAMETER = enum.auto()
+    BODY = enum.auto()
 
 
 class CCodeEmitter:
@@ -146,6 +147,9 @@ class CCodeEmitter:
         self._fresh_name_counter = 0
         self.functions: typing.List[CCodeEmitter.CFunction] = []
         self.includes: typing.List[str] = []
+        self.global_variables: typing.List[typing.Tuple[str, str]] = []
+        self.add_top_init = []
+        self.init_function: CCodeEmitter.CFunction | None = None
 
     def get_fresh_name(self, base_name: str) -> str:
         name = f"_{base_name}__{self._fresh_name_counter}"
@@ -157,6 +161,15 @@ class CCodeEmitter:
 
     def add_include(self, target: str):
         self.includes.append(target)
+
+    def add_global_variable(self, var_type: str, var_name: str):
+        self.global_variables.append((var_type, var_name))
+
+    def add_to_initializer_top(self, code: str):
+        self.add_top_init.append(code)
+
+    def add_to_initializer(self, code: str):
+        self.init_function.add_code(code)
 
 
 class AbstractASTNode(abc.ABC):
@@ -429,7 +442,7 @@ class ReturnStatement(AbstractASTNode):
         return f"RETURN({self.return_value})"
 
     def try_replace_child(self, original: AbstractASTNode | None, replacement: AbstractASTNode, position: ParentAttributeSection) -> bool:
-        if position == ParentAttributeSection.LHS:
+        if position == ParentAttributeSection.RHS:
             self.return_value = replacement
             return True
         return False
@@ -483,7 +496,6 @@ class FunctionDefinitionNode(AbstractASTNode):
     def __repr__(self):
         return f"FUNCTION({self.name}|{self.generics}|{self.parameters}|{self.body})"
 
-
     def try_replace_child(self, original: AbstractASTNode | None, replacement: AbstractASTNode, position: ParentAttributeSection) -> bool:
         return False  # nothing to replace, needs to be replaced in the arg itself
 
@@ -504,7 +516,53 @@ class FunctionDefinitionNode(AbstractASTNode):
 
 
 class ClassDefinitionNode(AbstractASTNode):
-    pass
+    def __init__(self, name: Lexer.Token, generics: typing.List[Lexer.Token], parents: typing.List[AbstractASTNode], body: typing.List[AbstractASTNode]):
+        super().__init__()
+        self.name = name
+        self.generics = generics
+        self.parents = parents
+        self.body = body
+
+    def __eq__(self, other):
+        return type(other) == ClassDefinitionNode and self.name == other.name and self.generics == other.generics and self.parents == other.parents and self.body == other.body
+
+    def __repr__(self):
+        return f"CLASS({self.name}|{self.generics}|{self.parents}|{self.body})"
+
+    def try_replace_child(self, original: AbstractASTNode | None, replacement: AbstractASTNode, position: ParentAttributeSection) -> bool:
+        if original is None:
+            return False
+
+        if position == ParentAttributeSection.PARAMETER:
+            self.parents[self.parents.index(original)] = replacement
+            return True
+        elif position == ParentAttributeSection.BODY:
+            self.body[self.body.index(original)] = replacement
+            return True
+
+        return False
+
+    def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder, is_target=False):
+        variable_name = f"PY_CLASS_{self.name.text}"
+
+        base.add_global_variable("PyClassContainer*", variable_name)
+
+        base.add_to_initializer_top(f"""
+// Create Class {variable_name} ({self.name.text} in source code)
+{variable_name} = PY_createClassContainer("{self.name.text}");
+PY_ClassContainer_AllocateParentArray({variable_name}, {len(self.parents)});
+""")  # todo: include all the other stuff here!
+
+        if self.parents:
+            base.add_to_initializer(f"\n// Create Parent Objects for class {self.name.text}")
+
+            for i, parent in enumerate(self.parents):
+                if isinstance(parent, ClassDefinitionNode):
+                    base.add_to_initializer(f"{variable_name} -> parents[{i}] = PY_CLASS_{parent.name.text};\n")
+                else:
+                    raise NotImplementedError
+
+            base.add_to_initializer("\n")
 
 
 class SyntaxTreeVisitor:
@@ -576,10 +634,7 @@ class SyntaxTreeVisitor:
     def visit_function_definition(self, node: FunctionDefinitionNode):
         return [
             self.visit_function_definition_parameter(param) for param in node.parameters
-        ], [
-            self.visit_any(body_node)
-            for body_node in node.body
-        ]
+        ], self.visit_any_list(node.body)
 
     def visit_function_definition_parameter(self, node: FunctionDefinitionNode.FunctionDefinitionParameter):
         if node.mode == FunctionDefinitionNode.ParameterType.KEYWORD:
@@ -590,7 +645,7 @@ class SyntaxTreeVisitor:
         return None,
 
     def visit_class_definition(self, node: ClassDefinitionNode):
-        pass
+        return self.visit_any_list(node.parents), self.visit_any_list(node.body)
 
     def visit_constant(self, constant: ConstantAccessExpression):
         pass
@@ -631,6 +686,7 @@ class Parser:
         builder = CCodeEmitter()
         main = builder.CFunction("_initialise", ["int argc", "char* argv[]"], "int")
         builder.add_function(main)
+        builder.init_function = main
 
         for line in expr:
             line.emit_c_code(builder, main)
@@ -652,7 +708,16 @@ class Parser:
             code += func.get_declaration()
             code += "\n"
 
+        if builder.global_variables:
+            code += "\n// Global Variables\n"
+            for var_type, var_name in builder.global_variables:
+                code += f"{var_type} {var_name};\n"
+
+            code += "\n"
+
         code += "\n\n// implementations\n\n"
+
+        main.snippets = builder.add_top_init + ["\n\n"] + main.snippets
 
         for func in builder.functions:
             code += func.get_result()
