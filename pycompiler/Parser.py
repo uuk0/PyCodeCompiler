@@ -408,7 +408,8 @@ class CallExpression(AbstractASTNodeExpression):
 
     def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder, is_target=False):
         if not isinstance(self.base, ConstantAccessExpression):
-            raise NotImplementedError(self.base)  # this is more complex
+            self.emit_c_code_any_call(base, context)
+            return
 
         obj = typing.cast(ConstantAccessExpression, self.base).value
 
@@ -432,6 +433,21 @@ class CallExpression(AbstractASTNodeExpression):
 
     def emit_c_code_constructor(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder):
         raise NotImplementedError
+
+    def emit_c_code_any_call(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder):
+        context.add_code("PY_invokeBoxedMethod(")
+        self.base.emit_c_code(base, context)
+
+        if self.args:
+            context.add_code(f", NULL, {len(self.args)}, {{")
+
+            for arg in self.args:
+                arg.emit_c_code(base, context)
+                context.add_code(" , ")
+
+            context.add_code("})")
+        else:
+            context.add_code(", NULL, 0, NULL)")
 
 
 class ReturnStatement(AbstractASTNode):
