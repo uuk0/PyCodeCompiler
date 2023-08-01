@@ -17,10 +17,14 @@ int main()
 {
     _initialise();
 
+    assert(PY_CLASS_test != NULL);
     PyObjectContainer* obj = PY_createClassInstance(PY_CLASS_test);
+    assert(obj != NULL);
     PyObjectContainer* func = PY_getObjectAttributeByNameOrStatic(obj, "test_target");
+    assert(func != NULL);
 
     PyObjectContainer* result = PY_invokeBoxedMethod(func, NULL, 1, &obj);
+    assert(result != NULL);
 
     assert(PY_unpackInteger(result) == 10);
 }

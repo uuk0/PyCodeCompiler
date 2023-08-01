@@ -69,12 +69,19 @@ PyObjectContainer* PY_createClassInstance(PyClassContainer* cls)
 {
     PyObjectContainer* obj = createEmptyContainer(PY_TYPE_PY_IMPL);
     obj->py_type = cls;
-    obj->attr_array = calloc(cls->attr_count, sizeof(PyObjectContainer*));
 
-    if (obj->attr_array == NULL)
+    if (cls->attr_count != 0)
     {
-        perror("malloc");
-        exit(EXIT_FAILURE);
+        obj->attr_array = calloc(cls->attr_count, sizeof(PyObjectContainer *));
+
+        if (obj->attr_array == NULL) {
+            perror("malloc");
+            exit(EXIT_FAILURE);
+        }
+    }
+    else
+    {
+        obj->attr_array = NULL;
     }
 
     return obj;
@@ -154,7 +161,7 @@ void PY_setObjectAttributeByName(PyObjectContainer* obj, char* name, PyObjectCon
         }
     }
 
-    assert(false);
+    assert(0 == "Attribute not found; Are you missing a declaration somewhere?");
 }
 
 void PY_setClassAttributeByName(PyClassContainer* cls, char* name, PyObjectContainer* value)
@@ -170,20 +177,20 @@ void PY_setClassAttributeByName(PyClassContainer* cls, char* name, PyObjectConta
         i++;
     }
 
-    assert(false);
+    assert(0 == "Failed to set attribute; attribute does not exist (did you not use PY_setClassAttributeByNameOrCreate?)");
 }
 
 void PY_setClassAttributeByNameOrCreate(PyClassContainer* cls, char* name, PyObjectContainer* value)
 {
     int i = 0;
-    while (cls->static_attribute_names[i] != NULL)
-    {
-        if (strcmp(cls->static_attribute_names[i], name) == 0)
-        {
-            cls->static_attribute_values[i] = value;
-            return;
+    if (cls->static_attribute_names != NULL) {
+        while (cls->static_attribute_names[i] != NULL) {
+            if (strcmp(cls->static_attribute_names[i], name) == 0) {
+                cls->static_attribute_values[i] = value;
+                return;
+            }
+            i++;
         }
-        i++;
     }
 
     cls->static_attribute_names = realloc(cls->static_attribute_names, (i + 2) * sizeof(char*));
@@ -193,19 +200,22 @@ void PY_setClassAttributeByNameOrCreate(PyClassContainer* cls, char* name, PyObj
         exit(EXIT_FAILURE);
     }
 
-    cls->static_attribute_values = realloc(cls->static_attribute_names, (i + 2) * sizeof(PyObjectContainer*));
+    cls->static_attribute_values = realloc(cls->static_attribute_values, (i + 2) * sizeof(PyObjectContainer*));
     if (cls->static_attribute_values == NULL)
     {
         perror("malloc");
         exit(EXIT_FAILURE);
     }
 
-    cls->static_attribute_names[i] = name;
+    cls->static_attribute_names[i] = strdup(name);  // create a copy for us
     cls->static_attribute_values[i] = value;
+    cls->static_attribute_names[i+1] = NULL;
+    cls->static_attribute_values[i+1] = NULL;
 }
 
 PyObjectContainer* PY_invokeBoxedMethod(PyObjectContainer* obj, PyObjectContainer* self, uint8_t param_count, PyObjectContainer** args)
 {
+    assert(obj != NULL);
     assert(obj->type == PY_TYPE_FUNC_POINTER);
 
     PY_FUNC_UNBOXED* function = (PY_FUNC_UNBOXED*)obj->raw_value;
