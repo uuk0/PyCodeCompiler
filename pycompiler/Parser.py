@@ -747,6 +747,9 @@ class Parser:
         if function := self.try_parse_function_definition():
             return function
 
+        if cls := self.try_parse_class_node():
+            return cls
+
         if self.is_in_function and (return_statement := self.try_parse_return_statement()):
             return return_statement
 
@@ -1189,6 +1192,7 @@ class Parser:
 
             self.lexer.get_chars(1)
             self.lexer.try_parse_whitespaces(include_newline=True)
+
         self.lexer.try_parse_whitespaces(include_newline=True)
 
         return generic_names
@@ -1293,4 +1297,56 @@ class Parser:
             name,
             FunctionDefinitionNode.ParameterType.STAR_STAR,
             hint=hint,
+        )
+
+    def try_parse_class_node(self) -> ClassDefinitionNode | None:
+        # class <xy> ['[' <generics> ']'] '(' <parent expressions> ')' ':' ...
+        class_token = self.lexer.get_chars(len("class "))
+
+        if class_token != "class ":
+            self.lexer.give_back(class_token)
+            return
+
+        self.lexer.try_parse_whitespaces()
+
+        class_name = self.lexer.try_parse_identifier()
+        if class_name is None:
+            raise SyntaxError("expected <class name>")
+
+        generics = []
+        if self.lexer.try_parse_opening_square_bracket():
+            generics = self.try_parse_generic_parameters(set())
+
+            if not self.lexer.try_parse_closing_square_bracket():
+                raise SyntaxError("missing ']'")
+
+        self.lexer.try_parse_whitespaces()
+
+        parents = []
+        if self.lexer.try_parse_opening_round_bracket():
+            while not self.lexer.try_parse_closing_round_bracket():
+                expression = self.try_parse_expression()
+
+                parents.append(expression)
+
+                if self.lexer.inspect_chars(1) != ",":
+                    if not self.lexer.try_parse_closing_round_bracket():
+                        raise SyntaxError("expected ')'")
+
+                    break
+
+                self.lexer.get_chars(1)
+
+        self.indent_level += 1
+        previous_in_func = self.is_in_function
+        self.is_in_function = False
+        body = self.parse()
+        self.is_in_function = previous_in_func
+        self.indent_level -= 1
+
+        return ClassDefinitionNode(
+            class_name,
+            generics,
+            parents,
+            body,
         )
