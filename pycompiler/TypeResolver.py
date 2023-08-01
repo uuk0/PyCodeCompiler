@@ -133,3 +133,15 @@ class ResolveStaticNames(SyntaxTreeVisitor):
         if not access.parent[0].try_replace_child(access, ConstantAccessExpression(value), access.parent[1]):
             warnings.warn(f"Could not replace node {access} as child of {access.parent[0]} with constant value access to {value}")
 
+    def visit_attribute_expression(self, expression: AttributeExpression):
+        super().visit_attribute_expression(expression)
+
+        if isinstance(expression.base, ConstantAccessExpression) and isinstance(expression.base.value, ClassDefinitionNode):
+            pass  # todo: check if value is static access-able and replace in that case
+
+    def visit_subscription_expression(self, expression: SubscriptionExpression):
+        super().visit_subscription_expression(expression)
+
+        if isinstance(expression.base, ConstantAccessExpression) and isinstance(expression.base.value, ClassDefinitionNode):
+            pass  # todo: check for generic at compile time
+
