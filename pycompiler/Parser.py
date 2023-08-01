@@ -1325,6 +1325,7 @@ class Parser:
         parents = []
         if self.lexer.try_parse_opening_round_bracket():
             while not self.lexer.try_parse_closing_round_bracket():
+                self.lexer.try_parse_whitespaces()
                 expression = self.try_parse_expression()
 
                 parents.append(expression)
@@ -1336,6 +1337,11 @@ class Parser:
                     break
 
                 self.lexer.get_chars(1)
+
+        self.lexer.try_parse_whitespaces()
+
+        if self.lexer.get_chars(1) != ":":
+            raise SyntaxError
 
         self.indent_level += 1
         previous_in_func = self.is_in_function
