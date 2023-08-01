@@ -133,9 +133,7 @@ class CCodeEmitter:
             while lines and lines[-1].strip() == "":
                 lines.pop(-1)
 
-            inner = "\n    ".join(lines)
-
-            if inner:
+            if inner := "\n    ".join(lines):
                 return f"""{self.return_type} {self.name}({' , '.join(self.parameter_decl)}){{
     {inner}
 }}"""
@@ -148,6 +146,7 @@ class CCodeEmitter:
     def __init__(self):
         self._fresh_name_counter = 0
         self.functions: typing.List[CCodeEmitter.CFunction] = []
+        self.includes: typing.List[str] = []
 
     def get_fresh_name(self, base_name: str) -> str:
         name = f"_{base_name}__{self._fresh_name_counter}"
@@ -156,6 +155,9 @@ class CCodeEmitter:
 
     def add_function(self, function: CCodeEmitter.CFunction):
         self.functions.append(function)
+
+    def add_include(self, target: str):
+        self.includes.append(target)
 
 
 class AbstractASTNode(abc.ABC):
@@ -390,16 +392,19 @@ class CallExpression(AbstractASTNodeExpression):
 
     def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder, is_target=False):
         if not isinstance(self.base, ConstantAccessExpression):
-            raise NotImplementedError  # this is more complex
+            raise NotImplementedError(self.base)  # this is more complex
 
-        func_name = typing.cast(ConstantAccessExpression, self.base).value
+        obj = typing.cast(ConstantAccessExpression, self.base).value
 
-        if isinstance(func_name, FunctionDefinitionNode):
-            func_name = func_name.name.text
-        elif isinstance(func_name, Lexer.Token):
-            func_name = func_name.text
+        if isinstance(obj, FunctionDefinitionNode):
+            func_name = obj.name.text
+        elif isinstance(obj, Lexer.Token):
+            func_name = obj.text
+        elif isinstance(obj, ClassDefinitionNode):
+            self.emit_c_code_constructor(base, context)
+            return
         else:
-            raise NotImplementedError(func_name)
+            raise NotImplementedError(obj)
 
         context.add_code(f"{func_name} (")
 
@@ -408,6 +413,9 @@ class CallExpression(AbstractASTNodeExpression):
             context.add_code(" , ")
 
         context.add_code(")")
+
+    def emit_c_code_constructor(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder):
+        raise NotImplementedError
 
 
 class ReturnStatement(AbstractASTNode):
@@ -634,6 +642,12 @@ class Parser:
                 main.add_code("\n")
 
         code = "#include \"pyinclude.h\"\n\n// code compiled from python to c via PyCodeCompiler\n\n"
+
+        for include in builder.includes:
+            code += f"#include {include}\n"
+
+        if builder.includes:
+            code += "\n\n"
 
         for func in builder.functions:
             code += func.get_declaration()
