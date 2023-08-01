@@ -133,9 +133,12 @@ class CCodeEmitter:
             while lines and lines[-1].strip() == "":
                 lines.pop(-1)
 
-            if inner := "\n    ".join(lines):
+            for i, line in enumerate(lines):
+                lines[i] = "" if line.strip() == "" else f"    {lines[i]}"
+
+            if inner := "\n".join(lines):
                 return f"""{self.return_type} {self.name}({' , '.join(self.parameter_decl)}) {{
-    {inner}
+{inner}
 }}"""
             return f"""{self.return_type} {self.name}({' , '.join(self.parameter_decl)}) {{
 }}"""
@@ -160,7 +163,8 @@ class CCodeEmitter:
         self.functions.append(function)
 
     def add_include(self, target: str):
-        self.includes.append(target)
+        if target not in self.includes:
+            self.includes.append(target)
 
     def add_global_variable(self, var_type: str, var_name: str):
         self.global_variables.append((var_type, var_name))
@@ -513,6 +517,18 @@ class FunctionDefinitionNode(AbstractASTNode):
             else:
                 func.add_code("\n")
 
+        # todo: when bound object method, forward 'self' as first argument!
+        base.add_include("<assert.h>")
+
+        safe_name = f"{func_name}_safeWrap"
+        safe_func = base.CFunction(safe_name, ["PyObjectContainer* self", "uint8_t argc", "PyObjectContainer** args"], "PyObjectContainer*")
+        base.add_function(safe_func)
+
+        # todo: there are other arg types!
+        safe_func.add_code(f"assert(argc == {len(self.parameters)});\n")
+
+        arg_unbox = [f"args[{i}]" for i, param in enumerate(self.parameters)]
+        safe_func.add_code(f"return {func_name}({' , '.join(arg_unbox)});\n")
 
 
 class ClassDefinitionNode(AbstractASTNode):
@@ -553,8 +569,8 @@ class ClassDefinitionNode(AbstractASTNode):
 PY_ClassContainer_AllocateParentArray({variable_name}, {len(self.parents)});
 """)  # todo: include all the other stuff here!
 
+        base.add_to_initializer(f"\n// Create Parent Objects for class {self.name.text}\n")
         if self.parents:
-            base.add_to_initializer(f"\n// Create Parent Objects for class {self.name.text}")
 
             for i, parent in enumerate(self.parents):
                 if isinstance(parent, ClassDefinitionNode):
@@ -562,7 +578,23 @@ PY_ClassContainer_AllocateParentArray({variable_name}, {len(self.parents)});
                 else:
                     raise NotImplementedError
 
-            base.add_to_initializer("\n")
+            base.add_to_initializer("\n// Attributes\n")
+
+        for line in self.body:
+            if isinstance(line, FunctionDefinitionNode):
+                base.add_to_initializer(f"PY_setClassAttributeByNameOrCreate({variable_name}, \"{line.name.text}\", PY_createBoxForFunction({line.name.text}_safeWrap));\n")
+
+        init_class = CCodeEmitter.CFunction(f"PY_CLASS_INIT_{variable_name}", [], "void")
+        base.add_function(init_class)
+
+        for line in self.body:
+            line.emit_c_code(base, init_class)
+            if isinstance(line, AbstractASTNodeExpression):
+                init_class.add_code(";\n")
+            else:
+                init_class.add_code("\n")
+
+        base.add_to_initializer(f"PY_CLASS_INIT_{variable_name}();")
 
 
 class SyntaxTreeVisitor:

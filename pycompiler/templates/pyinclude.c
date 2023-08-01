@@ -44,6 +44,7 @@ PyClassContainer* PY_createClassContainer(char* name)
 
     container->parents = NULL;
     container->class_name = name;
+    container->attr_count = 0;
     container->attr_name_array = NULL;
     container->static_attribute_names = NULL;
     container->static_attribute_values = NULL;
@@ -62,6 +63,154 @@ void PY_ClassContainer_AllocateParentArray(PyClassContainer* cls, uint8_t count)
         perror("malloc");
         exit(EXIT_FAILURE);
     }
+}
+
+PyObjectContainer* PY_createClassInstance(PyClassContainer* cls)
+{
+    PyObjectContainer* obj = createEmptyContainer(PY_TYPE_PY_IMPL);
+    obj->py_type = cls;
+    obj->attr_array = calloc(cls->attr_count, sizeof(PyObjectContainer*));
+
+    if (obj->attr_array == NULL)
+    {
+        perror("malloc");
+        exit(EXIT_FAILURE);
+    }
+
+    return obj;
+}
+
+PyObjectContainer* PY_createBoxForFunction(PY_FUNC_UNBOXED* func)
+{
+    PyObjectContainer* obj = createEmptyContainer(PY_TYPE_FUNC_POINTER);
+    obj->raw_value = func;
+    return obj;
+}
+
+PyObjectContainer* PY_getObjectAttributeByName(PyObjectContainer* obj, char* name)
+{
+    // todo: can we implement it for other types also?
+    assert(obj->type == PY_TYPE_PY_IMPL);
+
+    PyClassContainer* cls = obj->py_type;
+    assert(cls != NULL);
+
+    for (int i = 0; i < cls->attr_count; i++)
+    {
+        if (strcmp(cls->attr_name_array[i], name) == 0)
+        {
+            return obj->attr_array[i];
+        }
+    }
+
+    return NULL;
+}
+
+PyObjectContainer* PY_getObjectAttributeByNameOrStatic(PyObjectContainer* obj, char* name)
+{
+    // todo: can we implement it for other types also?
+    assert(obj->type == PY_TYPE_PY_IMPL);
+
+    PyClassContainer* cls = obj->py_type;
+    assert(cls != NULL);
+
+    for (int i = 0; i < cls->attr_count; i++)
+    {
+        if (strcmp(cls->attr_name_array[i], name) == 0)
+        {
+            return obj->attr_array[i];
+        }
+    }
+
+    if (cls->static_attribute_names == NULL) return NULL;
+
+    int i = 0;
+    while (cls->static_attribute_names[i] != NULL)
+    {
+        if (strcmp(cls->static_attribute_names[i], name) == 0)
+        {
+            return cls->static_attribute_values[i];
+        }
+        i++;
+    }
+
+    return NULL;
+}
+
+void PY_setObjectAttributeByName(PyObjectContainer* obj, char* name, PyObjectContainer* value)
+{
+    // todo: can we implement it for other types also?
+    assert(obj->type == PY_TYPE_PY_IMPL);
+
+    PyClassContainer* cls = obj->py_type;
+    assert(cls != NULL);
+
+    for (int i = 0; i < cls->attr_count; i++)
+    {
+        if (strcmp(cls->attr_name_array[i], name) == 0)
+        {
+            obj->attr_array[i] = value;
+            return;
+        }
+    }
+
+    assert(false);
+}
+
+void PY_setClassAttributeByName(PyClassContainer* cls, char* name, PyObjectContainer* value)
+{
+    int i = 0;
+    while (cls->static_attribute_names[i] != NULL)
+    {
+        if (strcmp(cls->static_attribute_names[i], name) == 0)
+        {
+            cls->static_attribute_values[i] = value;
+            return;
+        }
+        i++;
+    }
+
+    assert(false);
+}
+
+void PY_setClassAttributeByNameOrCreate(PyClassContainer* cls, char* name, PyObjectContainer* value)
+{
+    int i = 0;
+    while (cls->static_attribute_names[i] != NULL)
+    {
+        if (strcmp(cls->static_attribute_names[i], name) == 0)
+        {
+            cls->static_attribute_values[i] = value;
+            return;
+        }
+        i++;
+    }
+
+    cls->static_attribute_names = realloc(cls->static_attribute_names, (i + 2) * sizeof(char*));
+    if (cls->static_attribute_names == NULL)
+    {
+        perror("malloc");
+        exit(EXIT_FAILURE);
+    }
+
+    cls->static_attribute_values = realloc(cls->static_attribute_names, (i + 2) * sizeof(PyObjectContainer*));
+    if (cls->static_attribute_values == NULL)
+    {
+        perror("malloc");
+        exit(EXIT_FAILURE);
+    }
+
+    cls->static_attribute_names[i] = name;
+    cls->static_attribute_values[i] = value;
+}
+
+PyObjectContainer* PY_invokeBoxedMethod(PyObjectContainer* obj, PyObjectContainer* self, uint8_t param_count, PyObjectContainer** args)
+{
+    assert(obj->type == PY_TYPE_FUNC_POINTER);
+
+    PY_FUNC_UNBOXED* function = (PY_FUNC_UNBOXED*)obj->raw_value;
+
+    return function(self, param_count, args);
 }
 
 PyObjectContainer* PY_createInteger(int64_t value)
