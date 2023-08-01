@@ -584,29 +584,29 @@ class ClassDefinitionNode(AbstractASTNode):
 
         base.add_global_variable("PyClassContainer*", variable_name)
 
-        base.add_to_initializer_top(f"""
+        init_class = CCodeEmitter.CFunction(f"PY_CLASS_INIT_{variable_name}", [], "void")
+        base.add_function(init_class)
+
+        init_class.add_code(f"""
 // Create Class {variable_name} ({self.name.text} in source code)
 {variable_name} = PY_createClassContainer("{self.name.text}");
 PY_ClassContainer_AllocateParentArray({variable_name}, {len(self.parents)});
 """)  # todo: include all the other stuff here!
 
-        base.add_to_initializer(f"\n// Create Parent Objects for class {self.name.text}\n")
+        init_class.add_code(f"\n// Create Parent Objects for class {self.name.text}\n")
         if self.parents:
 
             for i, parent in enumerate(self.parents):
                 if isinstance(parent, ClassDefinitionNode):
-                    base.add_to_initializer(f"{variable_name} -> parents[{i}] = PY_CLASS_{parent.name.text};\n")
+                    init_class.add_code(f"{variable_name} -> parents[{i}] = PY_CLASS_{parent.name.text};\n")
                 else:
                     raise NotImplementedError
 
-            base.add_to_initializer("\n// Attributes\n")
+            init_class.add_code("\n// Attributes\n")
 
         for line in self.body:
             if isinstance(line, FunctionDefinitionNode):
-                base.add_to_initializer(f"PY_setClassAttributeByNameOrCreate({variable_name}, \"{line.name.text}\", PY_createBoxForFunction({line.name.text}_safeWrap));\n")
-
-        init_class = CCodeEmitter.CFunction(f"PY_CLASS_INIT_{variable_name}", [], "void")
-        base.add_function(init_class)
+                init_class.add_code(f"PY_setClassAttributeByNameOrCreate({variable_name}, \"{line.name.text}\", PY_createBoxForFunction({line.name.text}_safeWrap));\n")
 
         for line in self.body:
             line.emit_c_code(base, init_class)
