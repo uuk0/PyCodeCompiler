@@ -849,6 +849,71 @@ class WhileStatement(AbstractASTNode):
         context.add_code("\n}\n")
 
 
+class BinaryOperatorExpression(AbstractASTNodeExpression):
+    class BinaryOperation(enum.Enum):
+        PLUS = enum.auto()
+        MINUS = enum.auto()
+        TIMES = enum.auto()
+        FLOOR_DIV = enum.auto()
+        TRUE_DIV = enum.auto()
+        MODULO = enum.auto()
+        POW = enum.auto()
+        MATRIX_MULTIPLY = enum.auto()
+        BIN_OR = enum.auto()
+        BIN_AND = enum.auto()
+        BIN_XOR = enum.auto()
+        LOGIC_AND = enum.auto()
+        LOGIC_OR = enum.auto()
+
+    def __init__(self, lhs: AbstractASTNode, operator: BinaryOperation, rhs: AbstractASTNode):
+        super().__init__()
+        self.lhs = lhs
+        self.operator = operator
+        self.rhs = rhs
+
+    def __eq__(self, other):
+        return type(other) == BinaryOperatorExpression and self.lhs == other.lhs and self.operator == other.operator and self.rhs == other.rhs
+
+    def __repr__(self):
+        return f"OPERATION({self.lhs}|{self.operator.name}|{self.rhs})"
+
+    def try_replace_child(self, original: AbstractASTNode | None, replacement: AbstractASTNode, position: ParentAttributeSection) -> bool:
+        if position == ParentAttributeSection.LHS:
+            self.lhs = replacement
+        elif position == ParentAttributeSection.RHS:
+            self.rhs = replacement
+        else:
+            return False
+        return True
+
+
+class WalrusOperatorExpression(AbstractASTNodeExpression):
+    def __init__(self, target: AbstractASTNode, value: AbstractASTNode):
+        super().__init__()
+        self.target = target
+        self.value = value
+
+    def __eq__(self, other):
+        return type(other) == WalrusOperatorExpression and self.target == other.target and self.value == other.value
+
+    def __repr__(self):
+        return f"WALRUS_OPERATOR({self.target}|{self.value})"
+
+    def try_replace_child(self, original: AbstractASTNode | None, replacement: AbstractASTNode, position: ParentAttributeSection) -> bool:
+        if position == ParentAttributeSection.LHS:
+            self.target = replacement
+        elif position == ParentAttributeSection.RHS:
+            self.value = replacement
+        else:
+            return False
+        return True
+
+    def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder, is_target=False):
+        self.target.emit_c_code(base, context, is_target=True)
+        context.add_code(" = ")
+        self.value.emit_c_code(base, context)
+
+
 class SyntaxTreeVisitor:
     def visit_any(self, obj: AbstractASTNode):
         obj_type = type(obj)
@@ -941,6 +1006,12 @@ class SyntaxTreeVisitor:
 
     def visit_while_statement(self, while_statement: WhileStatement):
         return self.visit_any(while_statement.condition), self.visit_any_list(while_statement.body)
+
+    def visit_binary_operator(self, operator: BinaryOperatorExpression):
+        pass
+
+    def visit_walrus_operator(self, operator: WalrusOperatorExpression):
+        return self.visit_any(operator.target), self.visit_any(operator.value)
 
 
 Scope.STANDARD_LIBRARY_VALUES["list"] = ConstantAccessExpression(

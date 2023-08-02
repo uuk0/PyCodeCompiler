@@ -7,7 +7,7 @@ from pycompiler.Parser import SyntaxTreeVisitor, Scope, ParentAttributeSection, 
     NameAccessExpression, WhileStatement, FunctionDefinitionNode
 
 if typing.TYPE_CHECKING:
-    from pycompiler.Parser import ClassDefinitionNode, AssignmentExpression, AbstractASTNode, AttributeExpression, SubscriptionExpression, ReturnStatement, CallExpression
+    from pycompiler.Parser import ClassDefinitionNode, AssignmentExpression, AbstractASTNode, AttributeExpression, SubscriptionExpression, ReturnStatement, CallExpression, BinaryOperatorExpression, WalrusOperatorExpression
 
 
 class ResolveParentAttribute(SyntaxTreeVisitor):
@@ -76,6 +76,18 @@ class ResolveParentAttribute(SyntaxTreeVisitor):
         for line in while_statement.body:
             line.parent = while_statement, ParentAttributeSection.BODY
 
+    def visit_binary_operator(self, operator: BinaryOperatorExpression):
+        super().visit_binary_operator(operator)
+
+        operator.lhs = operator, ParentAttributeSection.LHS
+        operator.rhs = operator, ParentAttributeSection.RHS
+
+    def visit_walrus_operator(self, operator: WalrusOperatorExpression):
+        super().visit_walrus_operator(operator)
+
+        operator.target.parent = operator, ParentAttributeSection.LHS
+        operator.value.parent = operator, ParentAttributeSection.RHS
+
 
 class ScopeGeneratorVisitor(SyntaxTreeVisitor):
     def __init__(self, scope: Scope):
@@ -138,6 +150,12 @@ class ScopeGeneratorVisitor(SyntaxTreeVisitor):
 
         self.scope.close()
         self.scope = outer_scope
+
+    def visit_walrus_operator(self, operator: WalrusOperatorExpression):
+        super().visit_walrus_operator(operator)
+
+        if isinstance(operator.target, NameAccessExpression):
+            self.scope.export_variable_name(operator.target.name.text)
 
 
 class NameNormalizer(SyntaxTreeVisitor):
