@@ -7,9 +7,12 @@ import typing
 import io
 
 from pycompiler import Lexer
+from pycompiler.Lexer import TokenType
 
 
 class Scope:
+    STANDARD_LIBRARY_VALUES: typing.Dict[str, ConstantAccessExpression] = {}
+
     def __init__(self):
         self._fresh_name_counter = 0
         self.parent: Scope | None = None
@@ -102,7 +105,13 @@ class Scope:
         if name in self.strong_variables:
             return self.strong_variables[name]
 
-        if name in self.variable_name_stack or self.parent is None:
+        if name in self.variable_name_stack:
+            raise NameError(f"could not resolve static value of variable '{name}'")
+
+        if self.parent is None:
+            if name in self.STANDARD_LIBRARY_VALUES:
+                return self.STANDARD_LIBRARY_VALUES[name]
+
             raise NameError(f"could not resolve static value of variable '{name}'")
 
         return self.parent.get_static_value_or_fail(name)
@@ -775,6 +784,24 @@ PY_ClassContainer_AllocateParentArray({variable_name}, {max(len(self.parents), 1
         base.add_to_initializer(f"PY_CLASS_INIT_{variable_name}();")
 
 
+class StandardLibraryClass(ClassDefinitionNode):
+    def __init__(self, name: str, exposed_name: str):
+        super().__init__(TokenType.IDENTIFIER(name), [], [], [])
+        self.normal_name = exposed_name
+
+    def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder, is_target=False):
+        raise RuntimeError
+
+    def try_replace_child(self, original: AbstractASTNode | None, replacement: AbstractASTNode, position: ParentAttributeSection) -> bool:
+        raise RuntimeError
+
+    def __eq__(self, other):
+        return self is other
+
+    def __repr__(self):
+        return f"STANDARD_LIBRARY({self.name.text})"
+
+
 class WhileStatement(AbstractASTNode):
     def __init__(self, condition: AbstractASTNode, body: typing.List[AbstractASTNode]):
         super().__init__()
@@ -914,6 +941,11 @@ class SyntaxTreeVisitor:
 
     def visit_while_statement(self, while_statement: WhileStatement):
         return self.visit_any(while_statement.condition), self.visit_any_list(while_statement.body)
+
+
+Scope.STANDARD_LIBRARY_VALUES["list"] = ConstantAccessExpression(
+    StandardLibraryClass("list", "PY_TYPE_LIST")
+)
 
 
 class Parser:
