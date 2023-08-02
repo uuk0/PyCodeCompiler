@@ -4,7 +4,7 @@ import typing
 import warnings
 
 from pycompiler.Parser import SyntaxTreeVisitor, Scope, ParentAttributeSection, ConstantAccessExpression, \
-    NameAccessExpression, WhileStatement, FunctionDefinitionNode
+    NameAccessExpression, WhileStatement, FunctionDefinitionNode, StandardLibraryClass
 
 if typing.TYPE_CHECKING:
     from pycompiler.Parser import ClassDefinitionNode, AssignmentExpression, AbstractASTNode, AttributeExpression, SubscriptionExpression, ReturnStatement, CallExpression, BinaryOperatorExpression, WalrusOperatorExpression
@@ -171,6 +171,10 @@ class NameNormalizer(SyntaxTreeVisitor):
 
     def visit_class_definition(self, node: ClassDefinitionNode):
         super().visit_class_definition(node)
+
+        if isinstance(node, StandardLibraryClass):
+            return
+
         node.normal_name = node.scope.get_normalised_name(node.name.text)
         node.scope.add_remapped_name(node.name.text, node.normal_name)
 
@@ -180,7 +184,7 @@ class LocalNameValidator(SyntaxTreeVisitor):
         super().visit_name_access(access)
 
         if not access.scope.has_name_access(access.name.text):
-            raise NameError(f"Cannot find {access.name.text} at {access} in scope {access.scope}")
+            raise NameError(f"Cannot find '{access.name.text}' at {access} in scope {access.scope}")
 
 
 class ResolveStaticNames(SyntaxTreeVisitor):

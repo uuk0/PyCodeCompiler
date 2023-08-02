@@ -111,3 +111,6 @@ class TestCCodeEmitter(TestCase):
     def test_callable_object(self):
         self.run_named_folder_test("callable_object")
 
+    def test_list(self):
+        self.run_named_folder_test("list_tests")
+

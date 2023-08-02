@@ -11,7 +11,7 @@ from pycompiler.Lexer import TokenType
 
 
 class Scope:
-    STANDARD_LIBRARY_VALUES: typing.Dict[str, ConstantAccessExpression] = {}
+    STANDARD_LIBRARY_VALUES: typing.Dict[str, object] = {}
 
     def __init__(self):
         self._fresh_name_counter = 0
@@ -51,7 +51,10 @@ class Scope:
         if name in self.generic_name_stack or name in self.variable_name_stack:
             return True
 
-        return self.parent and self.parent.has_name_access(name)
+        if not self.parent:
+            return name in Scope.STANDARD_LIBRARY_VALUES
+
+        return self.parent.has_name_access(name)
 
     def copy(self) -> Scope:
         scope = Scope()
@@ -143,19 +146,32 @@ class CCodeEmitter:
             self.parent: CCodeEmitter.CExpressionBuilder | None = None
             self.snippets = []
 
+        def get_statement_builder(self, indent=True) -> CCodeEmitter.CExpressionBuilder:
+            raise NotImplementedError
+
+        def exit_statement_and_store(self) -> str:
+            raise RuntimeError
+
         def add_code(self, code: str):
             self.snippets.append(code)
 
         def get_result(self) -> str:
             return "".join(self.snippets).rstrip()
 
-    class CFunction(CExpressionBuilder):
-        def __init__(self, name: str, parameter_decl: typing.List[str], return_type: str):
+        def clear(self):
+            self.snippets.clear()
+
+    class CFunctionBuilder(CExpressionBuilder):
+        def __init__(self, name: str, parameter_decl: typing.List[str], return_type: str, scope: Scope):
             super().__init__()
 
             self.name = name
             self.parameter_decl = parameter_decl
             self.return_type = return_type
+            self.scope = scope
+
+        def get_statement_builder(self, indent=True):
+            return CCodeEmitter.CStatementBuilder(self, indent=indent)
 
         def get_result(self) -> str:
             lines = super().get_result().split("\n")
@@ -179,10 +195,29 @@ class CCodeEmitter:
         def get_declaration(self) -> str:
             return f"{self.return_type} {self.name}({' , '.join(self.parameter_decl)});"
 
-    class CSubBlock(CExpressionBuilder):
-        def __init__(self, indent=True):
+    class CStatementBuilder(CExpressionBuilder):
+        def __init__(self, parent: CCodeEmitter.CExpressionBuilder = None, indent=True):
             super().__init__()
             self.indent = indent
+            self.parent = parent
+            self.scope = self.parent.scope if self.parent else None
+
+        def get_statement_builder(self, indent=True):
+            return CCodeEmitter.CStatementBuilder(self, indent=indent)
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc_val, exc_tb):
+            self.parent.add_code(self.get_result()+"\n")
+
+        def exit_statement_and_store(self):
+            temporary = self.parent.scope.get_fresh_name("temporary")
+            self.parent.add_code(f"PyObjectContainer* {temporary} = ")
+            self.parent.add_code(self.get_result()+"\n")
+            self.parent.add_code(";\n")
+            self.clear()
+            return temporary
 
         def get_result(self) -> str:
             lines = super().get_result().split("\n")
@@ -198,13 +233,14 @@ class CCodeEmitter:
 
             return "\n".join(lines)
 
-    def __init__(self):
+    def __init__(self, scope: Scope = None):
         self._fresh_name_counter = 0
         self.functions: typing.List[CCodeEmitter.CFunction] = []
         self.includes: typing.List[str] = []
         self.global_variables: typing.List[typing.Tuple[str, str]] = []
         self.add_top_init = []
         self.init_function: CCodeEmitter.CFunction | None = None
+        self.scope: Scope = scope
 
     def get_fresh_name(self, base_name: str) -> str:
         name = f"{base_name}_{self._fresh_name_counter}"
@@ -304,9 +340,7 @@ class AssignmentExpression(AbstractASTNode):
         assert len(self.lhs) > 0
 
         if len(self.lhs) == 1:
-            self.lhs[0].emit_c_code(base, context)
-            context.add_code(" = ")
-            self.rhs.emit_c_code(base, context)
+            self._emit_target(base, context, self.lhs[0], self.rhs)
             context.add_code(";")
             return
 
@@ -318,8 +352,29 @@ class AssignmentExpression(AbstractASTNode):
         context.add_code(";\n")
 
         for target in self.lhs:
-            target.emit_c_code(base, context, is_target=True)
-            context.add_code(f" = {temporary};")
+            self._emit_target(base, context, target, temporary)
+            context.add_code(";")
+
+    def _emit_target(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder, tar: AbstractASTNode, source: str | AbstractASTNode):
+        if isinstance(tar, SubscriptionExpression):
+            context.add_code("PY_SetSubscriptionValue(")
+            tar.base.emit_c_code(base, context)
+            context.add_code(", ")
+            tar.expression.emit_c_code(base, context)
+            context.add_code(", ")
+            if isinstance(source, str):
+                context.add_code(source)
+            else:
+                source.emit_c_code(base, context)
+            context.add_code(")")
+
+        else:
+            tar.emit_c_code(base, context)
+            context.add_code(" = ")
+            if isinstance(source, str):
+                context.add_code(source)
+            else:
+                source.emit_c_code(base, context)
 
 
 class NameAccessExpression(AbstractASTNodeExpression):
@@ -334,10 +389,7 @@ class NameAccessExpression(AbstractASTNodeExpression):
         return f"VARIABLE({self.name})"
 
     def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder, is_target=False):
-        if is_target:
-            context.add_code(f"PyObjectContainer* {self.scope.get_remapped_name(self.name.text)}")
-        else:
-            context.add_code(self.scope.get_remapped_name(self.name.text))
+        context.add_code(self.scope.get_remapped_name(self.name.text))
 
 
 class ConstantAccessExpression(AbstractASTNodeExpression):
@@ -355,12 +407,16 @@ class ConstantAccessExpression(AbstractASTNodeExpression):
     def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder, is_target=False):
         if isinstance(self.value, int):
             context.add_code(f"PY_createInteger({self.value})")
+
         elif self.value is None:
             context.add_code("PY_NONE")
+
         elif self.value is False:
             context.add_code("PY_FALSE")
+
         elif self.value is True:
             context.add_code("PY_TRUE")
+
         else:
             raise NotImplementedError(self.value)
 
@@ -470,6 +526,10 @@ class CallExpression(AbstractASTNodeExpression):
                 return True
             return False
 
+        def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder, is_target=False):
+            assert self.mode == CallExpression.ParameterType.NORMAL
+            self.value.emit_c_code(base, context, is_target=is_target)
+
     def __init__(self, base: AbstractASTNode, generics: typing.List[AbstractASTNode], l_bracket: Lexer.Token, args: typing.List[CallExpression.CallExpressionArgument], r_bracket: Lexer.Token):
         super().__init__()
         self.base = base
@@ -532,7 +592,7 @@ class CallExpression(AbstractASTNodeExpression):
                 context.parent.add_code(";\n")
 
         context.parent.add_code(f"""
-PyObjectContainer* {temporary} = PY_createClassInstance(PY_CLASS_{cls.normal_name});
+PyObjectContainer* {temporary} = PY_createClassInstance({'PY_CLASS_' if not isinstance(cls, StandardLibraryClass) else ''}{cls.normal_name});
 PyObjectContainer* {constructor} = PY_getObjectAttributeByNameOrStatic({temporary}, "__init__");
 
 assert({constructor} != NULL);
@@ -543,20 +603,27 @@ DECREF({constructor});
         context.add_code(temporary)
 
     def emit_c_code_any_call(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder):
-        context.add_code("PY_invokeBoxedMethod(")
-        self.base.emit_c_code(base, context)
-
         if self.args:
-            args = base.get_fresh_name("args")
+            temporary = base.get_fresh_name("temporary")
 
-            context.parent.add_code(f"PyObjectContainer* {args}[{len(self.args)}];")
-            for i, arg in enumerate(self.args):
-                context.parent.add_code(f"{args}[{i}] = ")
-                arg.emit_c_code(base, context.parent)
-                context.parent.add_code(";\n")
+            with context.parent.get_statement_builder(indent=context.indent) as intro:
+                intro.add_code(f"PyObjectContainer* {temporary} = ")
+                self.base.emit_c_code(base, intro)
+                intro.add_code(";\n")
 
-            context.add_code(f", NULL, {len(self.args)}, {args})")
+                args = base.get_fresh_name("args")
+
+                intro.add_code(f"PyObjectContainer* {args}[{len(self.args)}];\n")
+                for i, arg in enumerate(self.args):
+                    intro.add_code(f"{args}[{i}] = ")
+                    arg.emit_c_code(base, intro)
+                    print(i, arg)
+                    intro.add_code(";\n")
+
+            context.add_code(f"PY_invokeBoxedMethod({temporary}, NULL, {len(self.args)}, {args})")
         else:
+            context.add_code("PY_invokeBoxedMethod(")
+            self.base.emit_c_code(base, context)
             context.add_code(", NULL, 0, NULL)")
 
 
@@ -634,7 +701,7 @@ class FunctionDefinitionNode(AbstractASTNode):
     def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder, is_target=False):
         func_name = self.normal_name
 
-        func = base.CFunction(func_name, [f"PyObjectContainer* {param.normal_name}" for param in self.parameters], "PyObjectContainer*")
+        func = base.CFunctionBuilder(func_name, [f"PyObjectContainer* {param.normal_name}" for param in self.parameters], "PyObjectContainer*", base.scope)
         base.add_function(func)
 
         if len(self.body) > 0:
@@ -647,8 +714,7 @@ class FunctionDefinitionNode(AbstractASTNode):
                     func.add_code(f"PyObjectContainer* {norm_name};\n")
 
         for line in self.body:
-            inner_section = CCodeEmitter.CSubBlock(indent=False)
-            inner_section.parent = func
+            inner_section = func.get_statement_builder(indent=False)
 
             line.emit_c_code(base, inner_section)
 
@@ -663,7 +729,7 @@ class FunctionDefinitionNode(AbstractASTNode):
         base.add_include("<assert.h>")
 
         safe_name = f"{func_name}_safeWrap"
-        safe_func = base.CFunction(safe_name, ["PyObjectContainer* self", "uint8_t argc", "PyObjectContainer** args"], "PyObjectContainer*")
+        safe_func = base.CFunctionBuilder(safe_name, ["PyObjectContainer* self", "uint8_t argc", "PyObjectContainer** args"], "PyObjectContainer*", base.scope)
         base.add_function(safe_func)
 
         # todo: there are other arg types!
@@ -731,7 +797,7 @@ class ClassDefinitionNode(AbstractASTNode):
 
         base.add_global_variable("PyClassContainer*", variable_name)
 
-        init_class = CCodeEmitter.CFunction(f"PY_CLASS_INIT_{variable_name}", [], "void")
+        init_class = CCodeEmitter.CFunctionBuilder(f"PY_CLASS_INIT_{variable_name}", [], "void", base.scope)
         base.add_function(init_class)
 
         if len(self.body) > 0:
@@ -769,8 +835,7 @@ PY_ClassContainer_AllocateParentArray({variable_name}, {max(len(self.parents), 1
                 init_class.add_code(f"PY_setClassAttributeByNameOrCreate({variable_name}, \"{line.name.text}\", PY_createBoxForFunction({line.normal_name}_safeWrap));\n")
 
         for line in self.body:
-            inner_block = CCodeEmitter.CSubBlock(indent=False)
-            inner_block.parent = init_class
+            inner_block = init_class.get_statement_builder(indent=False)
 
             line.emit_c_code(base, inner_block)
 
@@ -828,11 +893,10 @@ class WhileStatement(AbstractASTNode):
         self.condition.emit_c_code(base, context)
         context.add_code(")) {\n")
 
-        block = CCodeEmitter.CSubBlock()
+        block = context.get_statement_builder()
 
-        # TODO: indent!
         for line in self.body:
-            inner_block = CCodeEmitter.CSubBlock(indent=False)
+            inner_block = block.get_statement_builder(indent=False)
             inner_block.parent = block
 
             line.emit_c_code(base, inner_block)
@@ -1031,9 +1095,7 @@ class SyntaxTreeVisitor:
         return self.visit_any(operator.target), self.visit_any(operator.value)
 
 
-Scope.STANDARD_LIBRARY_VALUES["list"] = ConstantAccessExpression(
-    StandardLibraryClass("list", "PY_TYPE_LIST")
-)
+Scope.STANDARD_LIBRARY_VALUES["list"] = StandardLibraryClass("list", "PY_TYPE_LIST")
 
 
 class Parser:
@@ -1104,8 +1166,8 @@ class Parser:
         LocalNameValidator().visit_any_list(expr)
         ResolveStaticNames().visit_any_list(expr)
 
-        builder = CCodeEmitter()
-        main = builder.CFunction("_initialise", [], "int")
+        builder = CCodeEmitter(scope)
+        main = builder.CFunctionBuilder("_initialise", [], "int", scope)
         builder.add_function(main)
         builder.init_function = main
 
@@ -1123,8 +1185,7 @@ class Parser:
                     main.add_code(f"PyObjectContainer* {expr[0].scope.get_remapped_name(var)};\n")
 
         for line in expr:
-            inner_block = CCodeEmitter.CSubBlock(indent=False)
-            inner_block.parent = main
+            inner_block = main.get_statement_builder(indent=False)
 
             line.emit_c_code(builder, inner_block)
 
