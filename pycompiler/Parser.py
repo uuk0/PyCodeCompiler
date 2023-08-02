@@ -949,6 +949,17 @@ class Parser:
         builder.add_function(main)
         builder.init_function = main
 
+        if expr:
+            skip_names = [
+                line.name.text
+                for line in expr
+                if isinstance(line, (FunctionDefinitionNode, ClassDefinitionNode))
+            ]
+
+            for var in expr[0].scope.variable_name_stack:
+                if var not in skip_names:
+                    main.add_code(f"PyObjectContainer* {var};\n")
+
         for line in expr:
             inner_block = CCodeEmitter.CSubBlock(indent=False)
             inner_block.parent = main

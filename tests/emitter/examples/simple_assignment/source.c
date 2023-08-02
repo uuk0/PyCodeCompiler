@@ -8,6 +8,7 @@ int _initialise();
 // implementations
 
 int _initialise() {
+    PyObjectContainer* test;
     test = PY_createInteger(10);
 }
 

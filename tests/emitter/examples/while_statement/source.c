@@ -8,6 +8,8 @@ int _initialise();
 // implementations
 
 int _initialise() {
+    PyObjectContainer* test;
+
     test = PY_createInteger(10);
 
     while (PY_getTruthValueOf(test)) {

@@ -18,6 +18,9 @@ PyClassContainer* PY_CLASS_test;
 // implementations
 
 int _initialise() {
+    PyObjectContainer* obj;
+
+
     PY_CLASS_INIT_PY_CLASS_test();
 
     PyObjectContainer* _obj_instance__0 = PY_createClassInstance(PY_CLASS_test);

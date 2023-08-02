@@ -83,6 +83,8 @@ Make the compiled test suite from python not fail in the major test cases
 - function declarations (python 3.12 syntax with generics via `[]` after the function name)
   - TODO: yield
 - class declarations (python 3.12 syntax with generics via `[]` after the function name)
+  - instantiation (only for static-know classes)
+  - TODO: class references, call mechanism should be able to construct class dynamically
 - while loops
   - TODO: continue, break
 - TODO: pass, if-elif-else, for, comparisons, arithmetic
