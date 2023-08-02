@@ -110,3 +110,6 @@ class TestCCodeEmitter(TestCase):
     def test_class_instance_init(self):
         self.run_named_folder_test("class_instance_init")
 
+    def test_callable_object(self):
+        self.run_named_folder_test("callable_object")
+

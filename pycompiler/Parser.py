@@ -198,7 +198,7 @@ class CCodeEmitter:
         self.init_function: CCodeEmitter.CFunction | None = None
 
     def get_fresh_name(self, base_name: str) -> str:
-        name = f"_{base_name}__{self._fresh_name_counter}"
+        name = f"{base_name}_{self._fresh_name_counter}"
         self._fresh_name_counter += 1
         return name
 
@@ -346,6 +346,12 @@ class ConstantAccessExpression(AbstractASTNodeExpression):
     def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder, is_target=False):
         if isinstance(self.value, int):
             context.add_code(f"PY_createInteger({self.value})")
+        elif self.value is None:
+            context.add_code("PY_NONE")
+        elif self.value is False:
+            context.add_code("PY_FALSE")
+        elif self.value is True:
+            context.add_code("PY_TRUE")
         else:
             raise NotImplementedError(self.value)
 
@@ -659,8 +665,9 @@ class FunctionDefinitionNode(AbstractASTNode):
         unbox = ' , '.join(arg_unbox)
         unbox_2 = " , ".join(arg_unbox_2)
 
-        safe_func.add_code(
-            f"""
+        if len(self.parameters) > 0:
+            safe_func.add_code(
+                f"""
 if (self == NULL)
 {{
     assert(argc == {len(self.parameters)});
@@ -673,7 +680,13 @@ else
 }}
 
 """
-        )
+            )
+        else:
+            safe_func.add_code(f"""
+assert(self == NULL);
+assert(argc == {len(self.parameters)});
+return {func_name}({unbox});
+""")
 
 
 class ClassDefinitionNode(AbstractASTNode):
@@ -1260,13 +1273,25 @@ class Parser:
         keyword = self.lexer.get_chars(len("return "))
 
         if keyword != "return ":
+            if keyword and keyword.startswith("return"):
+                if keyword[-1] == "\n":
+                    return ReturnStatement(ConstantAccessExpression(None))
+
+                white = self.lexer.try_parse_whitespaces()
+
+                if keyword[-1] == "\n":
+                    return ReturnStatement(ConstantAccessExpression(None))
+
+                self.lexer.give_back(white)
+
             self.lexer.give_back(keyword)
+
             return
 
         return_value = self.try_parse_expression()
 
         if return_value is None:
-            raise SyntaxError("expected <expression> after 'return'")
+            return_value = ConstantAccessExpression(None)
 
         return ReturnStatement(return_value)
 

@@ -23,13 +23,13 @@ int _initialise() {
 
     PY_CLASS_INIT_PY_CLASS_test_2();
 
-    PyObjectContainer* _obj_instance__0 = PY_createClassInstance(PY_CLASS_test_2);
-    PyObjectContainer* _constructor__1 = PY_getObjectAttributeByNameOrStatic(_obj_instance__0, "__init__");
+    PyObjectContainer* obj_instance_0 = PY_createClassInstance(PY_CLASS_test_2);
+    PyObjectContainer* constructor_1 = PY_getObjectAttributeByNameOrStatic(obj_instance_0, "__init__");
 
-    assert(_constructor__1 != NULL);
-    PY_invokeBoxedMethod(_constructor__1, NULL, 0, NULL);
-    DECREF(_constructor__1);
-    obj = _obj_instance__0;
+    assert(constructor_1 != NULL);
+    PY_invokeBoxedMethod(constructor_1, NULL, 0, NULL);
+    DECREF(constructor_1);
+    obj = obj_instance_0;
 }
 
 void PY_CLASS_INIT_PY_CLASS_test_2() {
