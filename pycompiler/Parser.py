@@ -146,6 +146,21 @@ class CCodeEmitter:
         def get_declaration(self) -> str:
             return f"{self.return_type} {self.name}({' , '.join(self.parameter_decl)});"
 
+    class CSubBlock(CExpressionBuilder):
+        def get_result(self) -> str:
+            lines = super().get_result().split("\n")
+
+            while lines and lines[0].strip() == "":
+                lines.pop(0)
+
+            while lines and lines[-1].strip() == "":
+                lines.pop(-1)
+
+            for i, line in enumerate(lines):
+                lines[i] = "" if line.strip() == "" else f"    {lines[i]}"
+
+            return "\n".join(lines)
+
     def __init__(self):
         self._fresh_name_counter = 0
         self.functions: typing.List[CCodeEmitter.CFunction] = []
@@ -664,15 +679,18 @@ class WhileStatement(AbstractASTNode):
         self.condition.emit_c_code(base, context)
         context.add_code(")) {\n")
 
+        block = CCodeEmitter.CSubBlock()
+
         # TODO: indent!
         for line in self.body:
-            context.add_code("    ")
-            line.emit_c_code(base, context)
+            line.emit_c_code(base, block)
 
             if isinstance(line, AbstractASTNodeExpression):
-                context.add_code(";\n")
+                block.add_code(";\n")
             else:
-                context.add_code("\n")
+                block.add_code("\n")
+
+        context.add_code(block.get_result())
 
         context.add_code("\n}\n")
 

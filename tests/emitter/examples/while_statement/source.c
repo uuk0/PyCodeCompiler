@@ -14,11 +14,8 @@ int _initialise() {
 
 
     while (PY_getTruthValueOf(test)) {
-
-
         PyObjectContainer* _tas__1 = test;
-    PyObjectContainer* test = _tas__1;
-
+        PyObjectContainer* test = _tas__1;
     }
 }
 
