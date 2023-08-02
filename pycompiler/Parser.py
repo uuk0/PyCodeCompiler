@@ -1245,6 +1245,8 @@ class Parser:
         else:
             base = NameAccessExpression(identifier)
 
+        can_be_target = True
+
         while True:
             self.lexer.try_parse_whitespaces()
 
@@ -1274,6 +1276,13 @@ class Parser:
 
             elif opening_bracket := self.lexer.try_parse_opening_round_bracket():
                 base = self.parse_function_call(base, opening_bracket)
+                can_be_target = False
+
+            elif self.lexer.inspect_chars(2) == ":=" and can_be_target:
+                self.lexer.get_chars(2)
+                self.lexer.try_parse_whitespaces()
+                expression = self.try_parse_expression()
+                base = WalrusOperatorExpression(base, expression)
 
             else:
                 break

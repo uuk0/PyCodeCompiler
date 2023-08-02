@@ -75,10 +75,6 @@ class TestCCodeEmitter(TestCase):
         exit_code = subprocess.call([f"{folder}/test.exe"])
         self.assertEqual(exit_code, 0)
 
-        os.remove(f"{folder}/test.exe")
-        os.remove(f"{folder}/pyinclude.h")
-        os.remove(f"{folder}/pystandardlib.h")
-
     def compile_only(self, folder, compiler):
         shutil.copy(f"{root}/pycompiler/templates/pyinclude.h", f"{folder}/pyinclude.h")
         shutil.copy(f"{root}/pycompiler/templates/pystandardlib.h", f"{folder}/pystandardlib.h")
@@ -93,9 +89,6 @@ class TestCCodeEmitter(TestCase):
         print(" ".join(command))
         exit_code = subprocess.call(command)
         self.assertEqual(exit_code, 0)
-
-        os.remove(f"{folder}/pyinclude.h")
-        os.remove(f"{folder}/pystandardlib.h")
 
     def test_simple_assignment(self):
         self.run_named_folder_test("simple_assignment")
