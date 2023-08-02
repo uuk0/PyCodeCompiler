@@ -187,7 +187,7 @@ class Lexer:
     def try_parse_identifier(self) -> Token | None:
         c = self.get_chars(1)
 
-        if not c or c not in string.ascii_letters:
+        if not c or c not in f"{string.ascii_letters}_":
             self.give_back(c)
             return
 

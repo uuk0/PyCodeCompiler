@@ -30,7 +30,19 @@ class TestCCodeEmitter(TestCase):
 
         py = pathlib.Path(f"{folder}/source.py").read_text()
         parser = Parser.Parser(py)
-        c_compare = parser.emit_c_code()
+        ast_nodes = parser.parse()
+
+        if os.path.exists(f"{folder}/ast.txt"):
+            data = pathlib.Path(f"{folder}/ast.txt").read_text()
+            self.assertEqual(
+                "".join(e.strip() for e in data.split("\n")).replace(" ", "").replace(",NEWLINE", "").replace("NEWLINE,", ""),
+                repr(ast_nodes).replace(" ", "").replace(",NEWLINE", "").replace("NEWLINE,", ""),
+            )
+
+        c_compare = parser.emit_c_code(expr=ast_nodes)
+
+        with open(f"{folder}/result.c", mode="w") as f:
+            f.write(c_compare)
 
         if os.path.exists(f"{folder}/source.c"):
             c = pathlib.Path(f"{folder}/source.c").read_text()
@@ -41,9 +53,6 @@ class TestCCodeEmitter(TestCase):
 
     def compile_and_run(self, folder, c_compare, compiler):
         shutil.copy(f"{root}/pycompiler/templates/pyinclude.h", f"{folder}/pyinclude.h")
-
-        with open(f"{folder}/result.c", mode="w") as f:
-            f.write(c_compare)
 
         command = [
             compiler.replace("\\", "/"),
@@ -80,4 +89,7 @@ class TestCCodeEmitter(TestCase):
 
     def test_while_statement(self):
         self.run_named_folder_test("while_statement")
+
+    def test_class_instance_init(self):
+        self.run_named_folder_test("class_instance_init")
 

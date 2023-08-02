@@ -99,7 +99,7 @@ class ScopeGeneratorVisitor(SyntaxTreeVisitor):
         self.scope.close(export_local_name=node.name.text)
         self.scope = outer_scope
 
-        self.scope.export_variable_name(node.name.text)
+        self.scope.export_variable_name(node.name.text, strong_value=node)
 
     def visit_function_definition(self, node: FunctionDefinitionNode):
         outer_scope = self.scope
@@ -113,7 +113,7 @@ class ScopeGeneratorVisitor(SyntaxTreeVisitor):
         self.scope.close()
         self.scope = outer_scope
 
-        self.scope.export_variable_name(node.name.text)
+        self.scope.export_variable_name(node.name.text, strong_value=node)
 
     def visit_function_definition_parameter(self, node: FunctionDefinitionNode.FunctionDefinitionParameter):
         super().visit_function_definition_parameter(node)

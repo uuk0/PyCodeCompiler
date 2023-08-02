@@ -21,6 +21,8 @@ class Scope:
         self.generic_name_stack: typing.Set[str] = set()
         self.variable_name_stack: typing.Set[str] = set()
 
+        self.strong_variables: typing.Dict[str, object] = {}
+
     def has_name_access(self, name: str) -> bool:
         if name in self.generic_name_stack or name in self.variable_name_stack:
             return True
@@ -75,7 +77,7 @@ class Scope:
         if strong_value != self._NO_VALUE:
             self.strong_variables[name] = strong_value
 
-    def get_static_value_or_fail(self, name: str):
+    def get_static_value_or_fail(self, name: str) -> object:
         if name in self.strong_variables:
             return self.strong_variables[name]
 
@@ -483,23 +485,26 @@ class CallExpression(AbstractASTNodeExpression):
     def emit_c_code_constructor(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder):
         temporary = base.get_fresh_name("obj_instance")
         constructor = base.get_fresh_name("constructor")
-        cls: ClassDefinitionNode = typing.cast(ClassDefinitionNode, self.base)
+        cls: ClassDefinitionNode = typing.cast(ClassDefinitionNode, typing.cast(ConstantAccessExpression, self.base).value)
 
-        args = base.get_fresh_name("args")
+        args = ""
+        if self.args:
+            args = base.get_fresh_name("args")
 
-        context.parent.add_code(f"PyObjectContainer* {args}[{len(self.args)}];")
-        for i, arg in enumerate(self.args):
-            context.parent.add_code(f"{args}[{i}] = ")
-            arg.emit_c_code(base, context.parent)
-            context.parent.add_code(";\n")
+            context.parent.add_code(f"PyObjectContainer* {args}[{len(self.args)}];")
+            for i, arg in enumerate(self.args):
+                context.parent.add_code(f"{args}[{i}] = ")
+                arg.emit_c_code(base, context.parent)
+                context.parent.add_code(";\n")
 
         context.parent.add_code(f"""
 PyObjectContainer* {temporary} = PY_createClassInstance(PY_CLASS_{cls.name.text});
 PyObjectContainer* {constructor} = PY_getObjectAttributeByNameOrStatic({temporary}, "__init__");
 
 assert({constructor} != NULL);
-PY_invokeBoxedMethod({constructor}, NULL, {len(self.args)}, {args});
-DECREF({constructor});""")
+PY_invokeBoxedMethod({constructor}, NULL, {len(self.args)}, {args if self.args else 'NULL'});
+DECREF({constructor});
+""")
 
         context.add_code(temporary)
 
@@ -879,41 +884,65 @@ class Parser:
         self.indent_level = 0
         self.indent_markers: str | None = None
         self.is_in_function = False
+        self.skip_end_check = False
 
     def parse(self, stop_on_indention_exit=False) -> typing.List[AbstractASTNode]:
         ast_stream: typing.List[AbstractASTNode] = []
+
+        require_indent = True
 
         while self.lexer.has_text():
             while newline := self.lexer.try_parse_newline():
                 ast_stream.append(PyNewlineNode(newline))
 
+            if not self.lexer.has_text():
+                break
+
             try:
-                node = self.parse_line()
+                node = self.parse_line(require_indent=require_indent)
             except IndentationError:
                 if stop_on_indention_exit:
+                    self.skip_end_check = True
                     return ast_stream
                 raise
+
+            if not self.skip_end_check:
+                self.lexer.try_parse_whitespaces()
+
+                if self.lexer.inspect_chars(1) == ";":
+                    self.lexer.get_chars(1)
+                    self.lexer.try_parse_whitespaces()
+                    require_indent = False
+                else:
+                    require_indent = True
+
+                    if self.lexer.inspect_chars(1) not in ("\n", None):
+                        for node in ast_stream:
+                            print(node)
+                        raise SyntaxError(f"expected <newline> or ';' after expression, got {repr(self.lexer.get_chars(1))}")
+
+            self.skip_end_check = False
 
             if node is not None:
                 ast_stream.append(node)
             else:
-                print(self.lexer.file[self.lexer.file_cursor:])
+                print(repr(self.lexer.file[self.lexer.file_cursor:]), len(self.lexer.file[self.lexer.file_cursor:]))
                 raise SyntaxError("no valid instruction found")
 
         return ast_stream
 
     def emit_c_code(self, expr: typing.List[AbstractASTNode] = None) -> str:
-        from pycompiler.TypeResolver import ResolveParentAttribute, ScopeGeneratorVisitor
+        from pycompiler.TypeResolver import ResolveParentAttribute, ScopeGeneratorVisitor, LocalNameValidator, ResolveStaticNames
 
         scope = Scope()
 
         if expr is None:
             expr = self.parse()
 
-        resolver = ResolveParentAttribute()
-        resolver.visit_any_list(expr)
-        resolver = ScopeGeneratorVisitor(scope)
-        resolver.visit_any_list(expr)
+        ResolveParentAttribute().visit_any_list(expr)
+        ScopeGeneratorVisitor(scope).visit_any_list(expr)
+        LocalNameValidator().visit_any_list(expr)
+        ResolveStaticNames().visit_any_list(expr)
 
         builder = CCodeEmitter()
         main = builder.CFunction("_initialise", [], "int")
@@ -962,11 +991,11 @@ class Parser:
 
         return code
 
-    def parse_line(self) -> AbstractASTNode | None:
-        if comment := self.try_parse_comment():
+    def parse_line(self, require_indent=True, include_comment=True) -> AbstractASTNode | None:
+        if include_comment and (comment := self.try_parse_comment()):
             return comment
 
-        if self.indent_level:
+        if self.indent_level and require_indent:
             empty = self.lexer.try_parse_whitespaces()
 
             if self.lexer.inspect_chars(1) == "\n":
@@ -1293,38 +1322,45 @@ class Parser:
             return PyCommentNode(comment_start, self.lexer.parse_until_newline())
 
     def try_parse_assignment(self) -> AssignmentExpression | None:
+        self.lexer.save_state()
         assigned_variables = [self.try_parse_assignment_target()]
 
         if assigned_variables[0] is None:
+            self.lexer.rollback_state()
             return
 
-        whitespace = self.lexer.try_parse_whitespaces()
+        self.lexer.try_parse_whitespaces()
 
         eq_sign = self.lexer.try_parse_equal_sign()
 
         if eq_sign is None:
-            self.lexer.give_back([whitespace, eq_sign])
+            self.lexer.rollback_state()
             return
 
+        self.lexer.discard_save_state()
+
         while True:
+            self.lexer.save_state()
             self.lexer.try_parse_whitespaces()
             expression = self.try_parse_assignment_target()
             self.lexer.try_parse_whitespaces()
 
             if expression is None:
+                self.lexer.discard_save_state()
                 break
 
             inner_eq_sign = self.lexer.try_parse_equal_sign()
             self.lexer.try_parse_whitespaces()
 
             if inner_eq_sign is None:
+                self.lexer.rollback_state()
                 break
 
             assigned_variables.append(expression)
+            self.lexer.discard_save_state()
             # todo: store equal sign somewhere!
 
-        if expression is None:
-            expression = self.try_parse_expression()
+        expression = self.try_parse_expression()
 
         if expression is None:
             raise SyntaxError
@@ -1347,6 +1383,9 @@ class Parser:
 
         function_name = self.lexer.try_parse_identifier()
 
+        if function_name is None:
+            raise SyntaxError("expected <function name>")
+
         self.lexer.try_parse_whitespaces()
 
         generic_names: typing.List[Lexer.Token] = []
@@ -1367,6 +1406,7 @@ class Parser:
         self.lexer.try_parse_whitespaces(include_newline=True)
 
         if self.lexer.get_chars(1) != "(":
+            print(function_name)
             raise SyntaxError("expected '(' after <function name> or <generic parameters>")
 
         parameters = []
@@ -1405,7 +1445,7 @@ class Parser:
 
         if self.lexer.inspect_chars(1) != "\n":
             body = [
-                self.parse_line()
+                self.parse_line(include_comment=False)
             ]
         else:
             self.indent_level += 1
@@ -1630,7 +1670,7 @@ class Parser:
 
         if self.lexer.inspect_chars(1) != "\n":
             body = [
-                self.parse_line()
+                self.parse_line(include_comment=False)
             ]
         else:
             self.indent_level += 1
