@@ -881,6 +881,9 @@ class Parser:
         if cls := self.try_parse_class_node():
             return cls
 
+        if while_statement := self.try_parse_while_statement():
+            return while_statement
+
         if self.is_in_function and (return_statement := self.try_parse_return_statement()):
             return return_statement
 
@@ -1486,5 +1489,43 @@ class Parser:
             class_name,
             generics,
             parents,
+            body,
+        )
+
+    def try_parse_while_statement(self) -> WhileStatement | None:
+        # while <condition>: ...
+        while_token = self.lexer.get_chars(len("while "))
+
+        if while_token != "while ":
+            self.lexer.give_back(while_token)
+            return
+
+        self.lexer.try_parse_whitespaces()
+
+        condition = self.try_parse_expression()
+
+        if condition is None:
+            raise SyntaxError("expected <expression> after 'while'")
+
+        if self.lexer.get_chars(1) != ":":
+            raise SyntaxError("expected ':' after <condition>")
+
+        self.lexer.try_parse_whitespaces()
+
+        if self.lexer.inspect_chars(1) != "\n":
+            body = [
+                self.parse_line()
+            ]
+        else:
+            self.indent_level += 1
+            body = self.parse(stop_on_indention_exit=True)
+
+            if len(body) == 0:
+                raise SyntaxError("expected <body>")
+
+            self.indent_level -= 1
+
+        return WhileStatement(
+            condition,
             body,
         )
