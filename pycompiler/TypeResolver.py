@@ -4,10 +4,10 @@ import typing
 import warnings
 
 from pycompiler.Parser import SyntaxTreeVisitor, Scope, ParentAttributeSection, ConstantAccessExpression, \
-    NameAccessExpression, WhileStatement, FunctionDefinitionNode, StandardLibraryClass
+    NameAccessExpression, WhileStatement, FunctionDefinitionNode, StandardLibraryClass, SubscriptionExpression
 
 if typing.TYPE_CHECKING:
-    from pycompiler.Parser import ClassDefinitionNode, AssignmentExpression, AbstractASTNode, AttributeExpression, SubscriptionExpression, ReturnStatement, CallExpression, BinaryOperatorExpression, WalrusOperatorExpression
+    from pycompiler.Parser import ClassDefinitionNode, AssignmentExpression, AbstractASTNode, AttributeExpression, ReturnStatement, CallExpression, BinaryOperatorExpression, WalrusOperatorExpression
 
 
 class ResolveParentAttribute(SyntaxTreeVisitor):
@@ -177,6 +177,14 @@ class NameNormalizer(SyntaxTreeVisitor):
 
         node.normal_name = node.scope.get_normalised_name(node.name.text)
         node.scope.add_remapped_name(node.name.text, node.normal_name)
+
+
+class GenericFuncCallInliner(SyntaxTreeVisitor):
+    def visit_call_expression(self, node: CallExpression):
+        super().visit_call_expression(node)
+
+        if isinstance(node.base, SubscriptionExpression) and isinstance(node.base.base, ConstantAccessExpression) and isinstance(node.base.base.value, FunctionDefinitionNode):
+            node.base = node.base.base  # todo: add generic information to CallExpression!
 
 
 class LocalNameValidator(SyntaxTreeVisitor):
