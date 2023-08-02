@@ -481,20 +481,42 @@ class CallExpression(AbstractASTNodeExpression):
         context.add_code(")")
 
     def emit_c_code_constructor(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder):
-        raise NotImplementedError
+        temporary = base.get_fresh_name("obj_instance")
+        constructor = base.get_fresh_name("constructor")
+        cls: ClassDefinitionNode = typing.cast(ClassDefinitionNode, self.base)
+
+        args = base.get_fresh_name("args")
+
+        context.parent.add_code(f"PyObjectContainer* {args}[{len(self.args)}];")
+        for i, arg in enumerate(self.args):
+            context.parent.add_code(f"{args}[{i}] = ")
+            arg.emit_c_code(base, context.parent)
+            context.parent.add_code(";\n")
+
+        context.parent.add_code(f"""
+PyObjectContainer* {temporary} = PY_createClassInstance(PY_CLASS_{cls.name.text});
+PyObjectContainer* {constructor} = PY_getObjectAttributeByNameOrStatic({temporary}, "__init__");
+
+assert({constructor} != NULL);
+PY_invokeBoxedMethod({constructor}, NULL, {len(self.args)}, {args});
+DECREF({constructor});""")
+
+        context.add_code(temporary)
 
     def emit_c_code_any_call(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder):
         context.add_code("PY_invokeBoxedMethod(")
         self.base.emit_c_code(base, context)
 
         if self.args:
-            context.add_code(f", NULL, {len(self.args)}, {{")
+            args = base.get_fresh_name("args")
 
-            for arg in self.args:
-                arg.emit_c_code(base, context)
-                context.add_code(" , ")
+            context.parent.add_code(f"PyObjectContainer* {args}[{len(self.args)}];")
+            for i, arg in enumerate(self.args):
+                context.parent.add_code(f"{args}[{i}] = ")
+                arg.emit_c_code(base, context.parent)
+                context.parent.add_code(";\n")
 
-            context.add_code("})")
+            context.add_code(f", NULL, {len(self.args)}, {args})")
         else:
             context.add_code(", NULL, 0, NULL)")
 
