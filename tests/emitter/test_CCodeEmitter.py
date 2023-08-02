@@ -49,9 +49,11 @@ class TestCCodeEmitter(TestCase):
             self.assertEqual(c, c_compare)
 
         if os.path.exists(f"{folder}/test.c"):
-            self.compile_and_run(folder, c_compare, compiler)
+            self.compile_and_run(folder, compiler)
+        else:
+            self.compile_only(folder, compiler)
 
-    def compile_and_run(self, folder, c_compare, compiler):
+    def compile_and_run(self, folder, compiler):
         shutil.copy(f"{root}/pycompiler/templates/pyinclude.h", f"{folder}/pyinclude.h")
 
         command = [
@@ -71,9 +73,24 @@ class TestCCodeEmitter(TestCase):
         exit_code = subprocess.call([f"{folder}/test.exe"])
         self.assertEqual(exit_code, 0)
 
-        # os.remove(f"{folder}/test.exe")
-        # os.remove(f"{folder}/pyinclude.h")
-        # os.remove(f"{folder}/result.c")
+        os.remove(f"{folder}/test.exe")
+        os.remove(f"{folder}/pyinclude.h")
+
+    def compile_only(self, folder, compiler):
+        shutil.copy(f"{root}/pycompiler/templates/pyinclude.h", f"{folder}/pyinclude.h")
+
+        command = [
+            compiler.replace("\\", "/"),
+            "-g",
+            "-c",
+            f"{folder}/result.c".replace("\\", "/"),
+        ]
+
+        print(" ".join(command))
+        exit_code = subprocess.call(command)
+        self.assertEqual(exit_code, 0)
+
+        os.remove(f"{folder}/pyinclude.h")
 
     def test_simple_assignment(self):
         self.run_named_folder_test("simple_assignment")
