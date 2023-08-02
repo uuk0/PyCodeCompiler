@@ -122,8 +122,11 @@ static PyObjectContainer* PY_getObjectAttributeByNameOrStatic_StaticTransformer(
     // todo: handle more edge cases
     if (attr->type == PY_TYPE_FUNC_POINTER)
     {
-        attr->flags |= PY_TYPE_FUNC_HAS_SELF;
-        attr->source = obj;
+        PyObjectContainer* new_attr = createEmptyContainer(PY_TYPE_FUNC_POINTER);
+        new_attr->raw_value = attr->raw_value;
+        new_attr->flags = attr->flags | PY_TYPE_FUNC_HAS_SELF;
+        new_attr->source = obj;
+        return new_attr;
     }
 
     return attr;
