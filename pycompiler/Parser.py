@@ -767,7 +767,7 @@ class SyntaxTreeVisitor:
         return self.visit_any(return_statement.return_value),
 
     def visit_while_statement(self, while_statement: WhileStatement):
-        pass
+        return self.visit_any(while_statement.condition), self.visit_any_list(while_statement.body)
 
 
 class Parser:

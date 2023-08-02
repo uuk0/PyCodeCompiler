@@ -127,6 +127,17 @@ class ScopeGeneratorVisitor(SyntaxTreeVisitor):
             if isinstance(target, NameAccessExpression):
                 self.scope.export_variable_name(target.name.text)
 
+    def visit_while_statement(self, while_statement: WhileStatement):
+        self.visit_any(while_statement.condition)
+
+        outer_scope = self.scope
+        self.scope = self.scope.copy()
+
+        self.visit_any_list(while_statement.body)
+
+        self.scope.close()
+        self.scope = outer_scope
+
 
 class LocalNameValidator(SyntaxTreeVisitor):
     def visit_name_access(self, access: NameAccessExpression):
