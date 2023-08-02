@@ -71,6 +71,36 @@ void PY_ClassContainer_AllocateParentArray(PyClassContainer* cls, uint8_t count)
     }
 }
 
+bool PY_isSubclassOf(PyClassContainer* cls, PyClassContainer* parent)
+{
+    if (cls->parents == NULL)
+    {
+        return false;
+    }
+
+    int i = 0;
+    while (cls->parents[i] != NULL)
+    {
+        if (cls->parents[i] == parent)
+        {
+            return true;
+        }
+
+        if (PY_isSubclassOf(cls->parents[i], parent))
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool PY_isInstanceOf(PyObjectContainer* obj, PyClassContainer* cls)
+{
+    assert(obj->type == PY_TYPE_PY_IMPL);
+
+    return PY_isSubclassOf(obj->py_type, cls);
+}
+
 PyObjectContainer* PY_createClassInstance(PyClassContainer* cls)
 {
     PyObjectContainer* obj = createEmptyContainer(PY_TYPE_PY_IMPL);
@@ -319,6 +349,26 @@ int64_t PY_unpackInteger(PyObjectContainer* obj)
     assert(obj->type == PY_TYPE_INT);
 
     return *((int64_t*)obj->raw_value);
+}
+
+PyObjectContainer* PY_createBoolean(bool value)
+{
+    if (value)
+    {
+        return PY_TRUE;
+    }
+    return PY_FALSE;
+}
+
+
+bool PY_unpackBoolean(PyObjectContainer* obj)
+{
+    assert(obj->type == PY_TYPE_BOOL);
+    if (obj == PY_TRUE)
+    {
+        return true;
+    }
+    return false;
 }
 
 static bool PY_getTruthValueOfPyObj(PyObjectContainer* obj)

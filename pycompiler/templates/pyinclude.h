@@ -23,12 +23,14 @@ enum PyObjectType
     PY_TYPE_INT,            // int64_t
     PY_TYPE_FLOAT,          // double precision
     PY_TYPE_PY_IMPL,        // a class implemented in python
+    PY_TYPE_PY_TYPE,        // a type reference to a PyClassContainer
     PY_TYPE_FUNC_POINTER,   // a c function pointer (boxed)
 };
 typedef enum PyObjectType PyObjectType;
 
 
 #define PY_CLASS_HAS_CUSTOM_GETATTR 1
+#define PY_CLASS_IS_STD_IMPLEMENTED 2
 
 struct PyClassContainer
 {
@@ -92,6 +94,8 @@ PyObjectContainer* createEmptyContainer(PyObjectType type);
 
 PyClassContainer* PY_createClassContainer(char* name);
 void PY_ClassContainer_AllocateParentArray(PyClassContainer* cls, uint8_t count);
+bool PY_isSubclassOf(PyClassContainer* cls, PyClassContainer* parent);
+bool PY_isInstanceOf(PyObjectContainer* obj, PyClassContainer* cls);
 
 PyObjectContainer* PY_createClassInstance(PyClassContainer* cls);
 PyObjectContainer* PY_createBoxForFunction(PY_FUNC_UNBOXED* func);
@@ -108,6 +112,8 @@ PyObjectContainer* PY_GetSubscriptionValue(PyObjectContainer* obj, PyObjectConta
 
 PyObjectContainer* PY_createInteger(int64_t value);
 int64_t PY_unpackInteger(PyObjectContainer* obj);
+PyObjectContainer* PY_createBoolean(bool value);
+bool PY_unpackBoolean(PyObjectContainer* obj);
 
 bool PY_getTruthValueOf(PyObjectContainer* obj);
 

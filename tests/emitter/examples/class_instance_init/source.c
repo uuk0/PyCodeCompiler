@@ -1,4 +1,5 @@
 #include "pyinclude.h"
+#include "pystandardlib.h"
 
 // code compiled from python to c via PyCodeCompiler
 
@@ -18,6 +19,7 @@ PyClassContainer* PY_CLASS_test_2;
 // implementations
 
 int _initialise() {
+    PY_STD_INIT();
     PyObjectContainer* obj;
 
 

@@ -989,6 +989,8 @@ class Parser:
         builder.add_function(main)
         builder.init_function = main
 
+        main.add_code("PY_STD_INIT();\n")
+
         if expr:
             skip_names = [
                 line.name.text
@@ -1013,7 +1015,7 @@ class Parser:
 
             main.add_code(inner_block.get_result() + "\n")
 
-        code = "#include \"pyinclude.h\"\n\n// code compiled from python to c via PyCodeCompiler\n\n"
+        code = "#include \"pyinclude.h\"\n#include \"pystandardlib.h\"\n\n// code compiled from python to c via PyCodeCompiler\n\n"
 
         for include in builder.includes:
             code += f"#include {include}\n"

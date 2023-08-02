@@ -55,6 +55,7 @@ class TestCCodeEmitter(TestCase):
 
     def compile_and_run(self, folder, compiler):
         shutil.copy(f"{root}/pycompiler/templates/pyinclude.h", f"{folder}/pyinclude.h")
+        shutil.copy(f"{root}/pycompiler/templates/pystandardlib.h", f"{folder}/pystandardlib.h")
 
         command = [
             compiler.replace("\\", "/"),
@@ -62,6 +63,7 @@ class TestCCodeEmitter(TestCase):
             f"{folder}/test.c".replace("\\", "/"),
             f"{folder}/result.c".replace("\\", "/"),
             f"{root}/pycompiler/templates/pyinclude.c",
+            f"{root}/pycompiler/templates/pystandardlib.c",
             "-o",
             f"{folder}/test.exe",
         ]
@@ -75,9 +77,11 @@ class TestCCodeEmitter(TestCase):
 
         os.remove(f"{folder}/test.exe")
         os.remove(f"{folder}/pyinclude.h")
+        os.remove(f"{folder}/pystandardlib.h")
 
     def compile_only(self, folder, compiler):
         shutil.copy(f"{root}/pycompiler/templates/pyinclude.h", f"{folder}/pyinclude.h")
+        shutil.copy(f"{root}/pycompiler/templates/pystandardlib.h", f"{folder}/pystandardlib.h")
 
         command = [
             compiler.replace("\\", "/"),
@@ -91,6 +95,7 @@ class TestCCodeEmitter(TestCase):
         self.assertEqual(exit_code, 0)
 
         os.remove(f"{folder}/pyinclude.h")
+        os.remove(f"{folder}/pystandardlib.h")
 
     def test_simple_assignment(self):
         self.run_named_folder_test("simple_assignment")

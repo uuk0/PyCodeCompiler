@@ -1,4 +1,5 @@
 #include "pyinclude.h"
+#include "pystandardlib.h"
 
 // code compiled from python to c via PyCodeCompiler
 
@@ -13,6 +14,7 @@ PyObjectContainer* test_0_safeWrap(PyObjectContainer* self , uint8_t argc , PyOb
 // implementations
 
 int _initialise() {
+    PY_STD_INIT();
 }
 
 PyObjectContainer* test_0() {
