@@ -248,6 +248,30 @@ PyObjectContainer* PY_invokeBoxedMethod(PyObjectContainer* obj, PyObjectContaine
     return function(self, param_count, args);
 }
 
+PyObjectContainer* PY_GetSubscriptionValue(PyObjectContainer* obj, PyObjectContainer* index)
+{
+    assert(obj->type == PY_TYPE_PY_IMPL);
+
+    PyObjectContainer* method = PY_getObjectAttributeByNameOrStatic(obj, "__getitem__");
+    assert(method != NULL);
+
+    return PY_invokeBoxedMethod(method, NULL, 1, &index);
+}
+
+void PY_SetSubscriptionValue(PyObjectContainer* obj, PyObjectContainer* index, PyObjectContainer* value)
+{
+    assert(obj->type == PY_TYPE_PY_IMPL);
+
+    PyObjectContainer* method = PY_getObjectAttributeByNameOrStatic(obj, "__setitem__");
+    assert(method != NULL);
+
+    PyObjectContainer* mem[2];
+    mem[0] = index;
+    mem[1] = value;
+
+    PY_invokeBoxedMethod(method, NULL, 2, mem);
+}
+
 PyObjectContainer* PY_createInteger(int64_t value)
 {
     uint64_t* value_holder = malloc(sizeof(uint64_t));

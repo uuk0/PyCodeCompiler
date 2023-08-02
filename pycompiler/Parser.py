@@ -377,10 +377,14 @@ class SubscriptionExpression(AbstractASTNodeExpression):
         return True
 
     def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder, is_target=False):
-        self.base.emit_c_code(base, context)
-        context.add_code(" [ ")
-        self.expression.emit_c_code(base, context)
-        context.add_code(" ] ")
+        if not is_target:
+            context.add_code("PY_GetSubscriptionValue(")
+            self.base.emit_c_code(base, context)
+            context.add_code(", ")
+            self.expression.emit_c_code(base, context)
+            context.add_code(")")
+        else:
+            raise NotImplementedError  # todo: redirect current value as third arg
 
 
 class CallExpression(AbstractASTNodeExpression):
