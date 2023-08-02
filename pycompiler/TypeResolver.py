@@ -4,10 +4,10 @@ import typing
 import warnings
 
 from pycompiler.Parser import SyntaxTreeVisitor, Scope, ParentAttributeSection, ConstantAccessExpression, \
-    NameAccessExpression, WhileStatement
+    NameAccessExpression, WhileStatement, FunctionDefinitionNode
 
 if typing.TYPE_CHECKING:
-    from pycompiler.Parser import ClassDefinitionNode, FunctionDefinitionNode, AssignmentExpression, AbstractASTNode, AttributeExpression, SubscriptionExpression, ReturnStatement, CallExpression
+    from pycompiler.Parser import ClassDefinitionNode, AssignmentExpression, AbstractASTNode, AttributeExpression, SubscriptionExpression, ReturnStatement, CallExpression
 
 
 class ResolveParentAttribute(SyntaxTreeVisitor):
@@ -87,7 +87,7 @@ class ScopeGeneratorVisitor(SyntaxTreeVisitor):
 
     def visit_class_definition(self, node: ClassDefinitionNode):
         outer_scope = self.scope
-        outer_scope.expose_type_name(node.name, node.text)
+        outer_scope.expose_type_name(node.name.text, node)
         self.scope = self.scope.copy()
         self.scope.class_name_stack.append(node.name.text)
 

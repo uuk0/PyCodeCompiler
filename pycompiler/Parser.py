@@ -554,6 +554,13 @@ class FunctionDefinitionNode(AbstractASTNode):
         func = base.CFunction(func_name, [f"PyObjectContainer* {param.name.text}" for param in self.parameters], "PyObjectContainer*")
         base.add_function(func)
 
+        if len(self.body) > 0:
+            args = [arg.name.text for arg in self.parameters]
+
+            for var in self.body[0].scope.variable_name_stack:
+                if var not in args:
+                    func.add_code(f"PyObjectContainer* {var};\n")
+
         for line in self.body:
             line.emit_c_code(base, func)
 
@@ -628,6 +635,16 @@ class ClassDefinitionNode(AbstractASTNode):
 
         init_class = CCodeEmitter.CFunction(f"PY_CLASS_INIT_{variable_name}", [], "void")
         base.add_function(init_class)
+
+        if len(self.body) > 0:
+            external = [
+                line.name.text
+                for line in self.body
+                if isinstance(line, (FunctionDefinitionNode, ClassDefinitionNode))
+            ]
+            for var in self.body[0].scope.variable_name_stack:
+                if var not in external:
+                    init_class.add_code(f"PyObjectContainer* {var};\n")
 
         init_class.add_code(f"""
 // Create Class {variable_name} ({self.name.text} in source code)
@@ -829,8 +846,17 @@ class Parser:
         return ast_stream
 
     def emit_c_code(self, expr: typing.List[AbstractASTNode] = None) -> str:
+        from pycompiler.TypeResolver import ResolveParentAttribute, ScopeGeneratorVisitor
+
+        scope = Scope()
+
         if expr is None:
             expr = self.parse()
+
+        resolver = ResolveParentAttribute()
+        resolver.visit_any_list(expr)
+        resolver = ScopeGeneratorVisitor(scope)
+        resolver.visit_any_list(expr)
 
         builder = CCodeEmitter()
         main = builder.CFunction("_initialise", [], "int")

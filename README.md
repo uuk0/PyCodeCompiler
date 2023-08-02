@@ -81,3 +81,8 @@ Make the compiled test suite from python not fail in the major test cases
 - the subscription operator (`[]`), attribute access (`.`)
 - function calls (`()`)
 - function declarations (python 3.12 syntax with generics via `[]` after the function name)
+  - TODO: yield
+- class declarations (python 3.12 syntax with generics via `[]` after the function name)
+- while loops
+  - TODO: continue, break
+- TODO: pass, if-elif-else, for, comparisons, arithmetic
