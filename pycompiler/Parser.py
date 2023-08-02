@@ -108,6 +108,7 @@ class ParentAttributeSection(enum.Enum):
 class CCodeEmitter:
     class CExpressionBuilder:
         def __init__(self):
+            self.parent: CCodeEmitter.CExpressionBuilder | None = None
             self.snippets = []
 
         def add_code(self, code: str):
@@ -147,6 +148,10 @@ class CCodeEmitter:
             return f"{self.return_type} {self.name}({' , '.join(self.parameter_decl)});"
 
     class CSubBlock(CExpressionBuilder):
+        def __init__(self, indent=True):
+            super().__init__()
+            self.indent = indent
+
         def get_result(self) -> str:
             lines = super().get_result().split("\n")
 
@@ -157,7 +162,7 @@ class CCodeEmitter:
                 lines.pop(-1)
 
             for i, line in enumerate(lines):
-                lines[i] = "" if line.strip() == "" else f"    {lines[i]}"
+                lines[i] = "" if line.strip() == "" else (f"    {lines[i]}" if self.indent else lines[i])
 
             return "\n".join(lines)
 
@@ -344,12 +349,17 @@ class AttributeExpression(AbstractASTNodeExpression):
 
     def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder, is_target=False):
         if is_target:
-            raise NotImplementedError
+            temporary = base.get_fresh_name("temp")
+            context.parent.add_code(f"PyObjectContainer* {temporary} = ")
+            context.add_code(f";\nPY_setObjectAttributeByName(")
+            self.base.emit_c_code(base, context)
+            context.add_code(f", {temporary}, \"{self.attribute.text}\")")
+
         else:
             context.add_code("PY_getObjectAttributeByNameOrStatic(")
 
-        self.base.emit_c_code(base, context)
-        context.add_code(f", \"{self.attribute.text}\")")
+            self.base.emit_c_code(base, context)
+            context.add_code(f", \"{self.attribute.text}\")")
 
 
 class SubscriptionExpression(AbstractASTNodeExpression):
@@ -384,7 +394,13 @@ class SubscriptionExpression(AbstractASTNodeExpression):
             self.expression.emit_c_code(base, context)
             context.add_code(")")
         else:
-            raise NotImplementedError  # todo: redirect current value as third arg
+            temporary = base.get_fresh_name("temp")
+            context.parent.add_code(f"PyObjectContainer* {temporary} = ")
+            context.add_code(f";\nPY_SetSubscriptionValue(")
+            self.base.emit_c_code(base, context)
+            context.add_code(f", {temporary}, ")
+            self.expression.emit_c_code(base, context)
+            context.add_code(")")
 
 
 class CallExpression(AbstractASTNodeExpression):
@@ -566,12 +582,17 @@ class FunctionDefinitionNode(AbstractASTNode):
                     func.add_code(f"PyObjectContainer* {var};\n")
 
         for line in self.body:
-            line.emit_c_code(base, func)
+            inner_section = CCodeEmitter.CSubBlock(indent=False)
+            inner_section.parent = func
+
+            line.emit_c_code(base, inner_section)
 
             if isinstance(line, AbstractASTNodeExpression):
-                func.add_code(";\n")
+                inner_section.add_code(";\n")
             else:
-                func.add_code("\n")
+                inner_section.add_code("\n")
+
+            func.add_code(inner_section.get_result()+"\n")
 
         # todo: when bound object method, forward 'self' as first argument!
         base.add_include("<assert.h>")
@@ -667,18 +688,23 @@ PY_ClassContainer_AllocateParentArray({variable_name}, {len(self.parents)});
 
             init_class.add_code("\n// Attributes\n")
 
-        print(self.body)
         for line in self.body:
             if isinstance(line, FunctionDefinitionNode):
                 print(line)
                 init_class.add_code(f"PY_setClassAttributeByNameOrCreate({variable_name}, \"{line.name.text}\", PY_createBoxForFunction({line.name.text}_safeWrap));\n")
 
         for line in self.body:
-            line.emit_c_code(base, init_class)
+            inner_block = CCodeEmitter.CSubBlock(indent=False)
+            inner_block.parent = init_class
+
+            line.emit_c_code(base, inner_block)
+
             if isinstance(line, AbstractASTNodeExpression):
-                init_class.add_code(";\n")
+                inner_block.add_code(";\n")
             else:
-                init_class.add_code("\n")
+                inner_block.add_code("\n")
+
+            init_class.add_code(inner_block.get_result()+"\n")
 
         base.add_to_initializer(f"PY_CLASS_INIT_{variable_name}();")
 
@@ -713,12 +739,17 @@ class WhileStatement(AbstractASTNode):
 
         # TODO: indent!
         for line in self.body:
-            line.emit_c_code(base, block)
+            inner_block = CCodeEmitter.CSubBlock(indent=False)
+            inner_block.parent = block
+
+            line.emit_c_code(base, inner_block)
 
             if isinstance(line, AbstractASTNodeExpression):
-                block.add_code(";\n")
+                inner_block.add_code(";\n")
             else:
-                block.add_code("\n")
+                inner_block.add_code("\n")
+
+            block.add_code(inner_block.get_result() + "\n")
 
         context.add_code(block.get_result())
 
@@ -868,12 +899,17 @@ class Parser:
         builder.init_function = main
 
         for line in expr:
-            line.emit_c_code(builder, main)
+            inner_block = CCodeEmitter.CSubBlock(indent=False)
+            inner_block.parent = main
+
+            line.emit_c_code(builder, inner_block)
 
             if isinstance(line, AbstractASTNodeExpression):
-                main.add_code(";\n")
+                inner_block.add_code(";\n")
             else:
-                main.add_code("\n")
+                inner_block.add_code("\n")
+
+            main.add_code(inner_block.get_result() + "\n")
 
         code = "#include \"pyinclude.h\"\n\n// code compiled from python to c via PyCodeCompiler\n\n"
 

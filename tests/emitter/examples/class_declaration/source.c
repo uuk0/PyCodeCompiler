@@ -25,7 +25,6 @@ void PY_CLASS_INIT_PY_CLASS_test() {
 
     // Create Parent Objects for class test
 
-
     attr = PY_createInteger(10);
 }
 

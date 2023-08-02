@@ -10,8 +10,6 @@ int _initialise();
 int _initialise() {
     test = PY_createInteger(10);
 
-
-
     while (PY_getTruthValueOf(test)) {
         test = test;
     }
