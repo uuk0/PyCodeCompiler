@@ -12,6 +12,8 @@
 
 
 struct PyObjectContainer;
+struct PyGeneratorContainer;
+struct PyFunctionContext;
 
 
 enum PyObjectType
@@ -45,19 +47,38 @@ struct PyObjectContainer
 {
     PyObjectType type;
     void* raw_value;
+    uint16_t flags;
     PyClassContainer* py_type;
     struct PyObjectContainer** attr_array;
+    struct PyObjectContainer* source;
 };
 typedef struct PyObjectContainer PyObjectContainer;
+
+
+typedef PyObjectContainer* PY_FUNC_UNBOXED(PyObjectContainer* self, uint8_t param_count, PyObjectContainer** args);
+typedef PyObjectContainer* PY_GEN_FUNC_UNBOXED(struct PyGeneratorContainer* generator, PyObjectContainer* self, uint8_t param_count, PyObjectContainer** args);
+
+
+struct PyFunctionContext
+{
+    uint8_t local_count;
+    char** local_names;
+    PyObjectContainer** locals;
+};
+
+
+struct PyGeneratorContainer
+{
+    PY_FUNC_UNBOXED* next_entry;
+    struct PyGeneratorContainer* remaining_yield_from;
+    struct PyFunctionContext* context;
+};
 
 
 
 extern PyObjectContainer* PY_NONE;
 extern PyObjectContainer* PY_FALSE;
 extern PyObjectContainer* PY_TRUE;
-
-
-typedef PyObjectContainer* PY_FUNC_UNBOXED(PyObjectContainer* self, uint8_t param_count, PyObjectContainer** args);
 
 
 PyObjectContainer* createEmptyContainer(PyObjectType type);

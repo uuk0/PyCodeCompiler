@@ -546,10 +546,26 @@ class FunctionDefinitionNode(AbstractASTNode):
         base.add_function(safe_func)
 
         # todo: there are other arg types!
-        safe_func.add_code(f"assert(argc == {len(self.parameters)});\n")
 
         arg_unbox = [f"args[{i}]" for i, param in enumerate(self.parameters)]
-        safe_func.add_code(f"return {func_name}({' , '.join(arg_unbox)});\n")
+        arg_unbox_2 = [f"args[{i}]" for i, param in enumerate(self.parameters[1:])]
+
+        unbox = ' , '.join(arg_unbox)
+        unbox_2 = " , ".join(arg_unbox_2)
+
+        safe_func.add_code(f"""
+if (self == NULL)
+{{
+    assert(argc == {len(self.parameters)});
+    return {func_name}({unbox});
+}}
+else
+{{
+    assert(argc == {len(self.parameters) - 1});
+    return {func_name}(self{' , ' + unbox_2 if unbox_2 else ''});
+}}
+
+""")
 
 
 class ClassDefinitionNode(AbstractASTNode):
@@ -604,8 +620,10 @@ PY_ClassContainer_AllocateParentArray({variable_name}, {len(self.parents)});
 
             init_class.add_code("\n// Attributes\n")
 
+        print(self.body)
         for line in self.body:
             if isinstance(line, FunctionDefinitionNode):
+                print(line)
                 init_class.add_code(f"PY_setClassAttributeByNameOrCreate({variable_name}, \"{line.name.text}\", PY_createBoxForFunction({line.name.text}_safeWrap));\n")
 
         for line in self.body:
@@ -715,14 +733,19 @@ class Parser:
         self.indent_markers: str | None = None
         self.is_in_function = False
 
-    def parse(self) -> typing.List[AbstractASTNode]:
+    def parse(self, stop_on_indention_exit=False) -> typing.List[AbstractASTNode]:
         ast_stream: typing.List[AbstractASTNode] = []
 
         while self.lexer.has_text():
             while newline := self.lexer.try_parse_newline():
                 ast_stream.append(PyNewlineNode(newline))
 
-            node = self.parse_line()
+            try:
+                node = self.parse_line()
+            except IndentationError:
+                if stop_on_indention_exit:
+                    return ast_stream
+                raise
 
             if node is not None:
                 ast_stream.append(node)
@@ -784,17 +807,27 @@ class Parser:
 
         if self.indent_level:
             empty = self.lexer.try_parse_whitespaces()
+
+            if self.lexer.inspect_chars(1) == "\n":
+                return
+
             if self.indent_markers:
-                if not empty or empty.text[:self.indent_level] != self.indent_markers * self.indent_level:
+                if not empty or empty.text != self.indent_markers * self.indent_level:
+                    print("not enough", repr(empty.text) if empty else None, repr(self.indent_markers), self.indent_level)
+                    self.lexer.give_back(empty)
                     raise IndentationError
 
-            elif self.indent_level:
+            else:
                 if not empty or not empty.text:
+                    print("no indent")
+                    self.lexer.give_back(empty)
                     raise IndentationError(empty)
 
-                self.indent_markers = empty.text[0]
+                self.indent_markers = empty.text[: len(empty.text) // self.indent_level]
 
-                if empty.text[:self.indent_level] != self.indent_markers * self.indent_level:
+                if empty.text != self.indent_markers * self.indent_level:
+                    print("not enough for level")
+                    self.lexer.give_back(empty)
                     raise IndentationError
 
         if function := self.try_parse_function_definition():
@@ -1158,10 +1191,11 @@ class Parser:
         # Generic Attribute
         if self.lexer.inspect_chars(1) == "[":
             self.lexer.get_chars(1)
-            self.lexer.try_parse_whitespaces()
+            self.lexer.try_parse_whitespaces(include_newline=True)
 
             if self.lexer.inspect_chars(1) != "]":
                 generic_names += self.try_parse_generic_parameters(duplicate_name_check)
+                self.lexer.try_parse_whitespaces(include_newline=True)
 
             if self.lexer.get_chars(1) != "]":
                 raise SyntaxError("Did you forgot to close the '['?")
@@ -1211,7 +1245,7 @@ class Parser:
             ]
         else:
             self.indent_level += 1
-            body = self.parse()
+            body = self.parse(stop_on_indention_exit=True)
 
             if len(body) == 0:
                 raise SyntaxError("expected <body>")
@@ -1399,7 +1433,7 @@ class Parser:
         self.indent_level += 1
         previous_in_func = self.is_in_function
         self.is_in_function = False
-        body = self.parse()
+        body = self.parse(stop_on_indention_exit=True)
         self.is_in_function = previous_in_func
         self.indent_level -= 1
 

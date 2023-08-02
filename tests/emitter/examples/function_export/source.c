@@ -20,7 +20,15 @@ PyObjectContainer* test() {
 }
 
 PyObjectContainer* test_safeWrap(PyObjectContainer* self , uint8_t argc , PyObjectContainer** args) {
-    assert(argc == 0);
-    return test();
+    if (self == NULL)
+    {
+        assert(argc == 0);
+        return test();
+    }
+    else
+    {
+        assert(argc == -1);
+        return test(self);
+    }
 }
 

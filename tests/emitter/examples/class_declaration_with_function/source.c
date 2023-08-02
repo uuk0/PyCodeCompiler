@@ -8,9 +8,9 @@
 int _initialise();
 void PY_CLASS_INIT_PY_CLASS_test();
 PyObjectContainer* target(PyObjectContainer* self);
+PyObjectContainer* target_safeWrap(PyObjectContainer* self , uint8_t argc , PyObjectContainer** args);
 PyObjectContainer* test_target(PyObjectContainer* self);
 PyObjectContainer* test_target_safeWrap(PyObjectContainer* self , uint8_t argc , PyObjectContainer** args);
-PyObjectContainer* target_safeWrap(PyObjectContainer* self , uint8_t argc , PyObjectContainer** args);
 
 // Global Variables
 PyClassContainer* PY_CLASS_test;
@@ -30,10 +30,24 @@ void PY_CLASS_INIT_PY_CLASS_test() {
 
     // Create Parent Objects for class test
     PY_setClassAttributeByNameOrCreate(PY_CLASS_test, "target", PY_createBoxForFunction(target_safeWrap));
+    PY_setClassAttributeByNameOrCreate(PY_CLASS_test, "test_target", PY_createBoxForFunction(test_target_safeWrap));
 }
 
 PyObjectContainer* target(PyObjectContainer* self) {
     return PY_createInteger(10);
+}
+
+PyObjectContainer* target_safeWrap(PyObjectContainer* self , uint8_t argc , PyObjectContainer** args) {
+    if (self == NULL)
+    {
+        assert(argc == 1);
+        return target(args[0]);
+    }
+    else
+    {
+        assert(argc == 0);
+        return target(self);
+    }
 }
 
 PyObjectContainer* test_target(PyObjectContainer* self) {
@@ -41,12 +55,15 @@ PyObjectContainer* test_target(PyObjectContainer* self) {
 }
 
 PyObjectContainer* test_target_safeWrap(PyObjectContainer* self , uint8_t argc , PyObjectContainer** args) {
-    assert(argc == 1);
-    return test_target(args[0]);
-}
-
-PyObjectContainer* target_safeWrap(PyObjectContainer* self , uint8_t argc , PyObjectContainer** args) {
-    assert(argc == 1);
-    return target(args[0]);
+    if (self == NULL)
+    {
+        assert(argc == 1);
+        return test_target(args[0]);
+    }
+    else
+    {
+        assert(argc == 0);
+        return test_target(self);
+    }
 }
 

@@ -40,10 +40,10 @@ class TestCCodeEmitter(TestCase):
             self.compile_and_run(folder, c_compare, compiler)
 
     def compile_and_run(self, folder, c_compare, compiler):
-        # shutil.copy(f"{root}/pycompiler/templates/pyinclude.h", f"{folder}/pyinclude.h")
-        #
-        # with open(f"{folder}/result.c", mode="w") as f:
-        #     f.write(c_compare)
+        shutil.copy(f"{root}/pycompiler/templates/pyinclude.h", f"{folder}/pyinclude.h")
+
+        with open(f"{folder}/result.c", mode="w") as f:
+            f.write(c_compare)
 
         command = [
             compiler.replace("\\", "/"),

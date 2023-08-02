@@ -1,7 +1,7 @@
 import typing
 from unittest import TestCase
 from pycompiler import Parser, Lexer, TypeResolver
-from pycompiler.Parser import AssignmentExpression, NameAccessExpression, ConstantAccessExpression, ClassDefinitionNode, PyNewlineNode
+from pycompiler.Parser import AssignmentExpression, NameAccessExpression, ConstantAccessExpression, ClassDefinitionNode, PyNewlineNode, FunctionDefinitionNode, ReturnStatement
 from pycompiler.Lexer import TokenType
 
 
@@ -157,6 +157,43 @@ class TestClassDeclaration(TestCase):
                         ),
                     ],
                 ),
+            ],
+            expr,
+        )
+
+    def test_double_func_declaration(self):
+        parser = Parser.Parser("class xy:\n    def a():\n        return 10\n    def b():\n        return 20")
+        expr = parser.parse()
+
+        self.assertEqual(
+            [
+                ClassDefinitionNode(
+                    TokenType.IDENTIFIER("xy"),
+                    [],
+                    [],
+                    [
+                        PyNewlineNode(TokenType.NEWLINE("\n")),
+                        FunctionDefinitionNode(
+                            TokenType.IDENTIFIER("a"),
+                            [],
+                            [],
+                            [
+                                PyNewlineNode(TokenType.NEWLINE("\n")),
+                                ReturnStatement(ConstantAccessExpression(10)),
+                                PyNewlineNode(TokenType.NEWLINE("\n")),
+                            ]
+                        ),
+                        FunctionDefinitionNode(
+                            TokenType.IDENTIFIER("b"),
+                            [],
+                            [],
+                            [
+                                PyNewlineNode(TokenType.NEWLINE("\n")),
+                                ReturnStatement(ConstantAccessExpression(20)),
+                            ]
+                        ),
+                    ]
+                )
             ],
             expr,
         )

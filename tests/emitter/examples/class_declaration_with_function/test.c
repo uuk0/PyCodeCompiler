@@ -23,7 +23,7 @@ int main()
     PyObjectContainer* func = PY_getObjectAttributeByNameOrStatic(obj, "test_target");
     assert(func != NULL);
 
-    PyObjectContainer* result = PY_invokeBoxedMethod(func, NULL, 1, &obj);
+    PyObjectContainer* result = PY_invokeBoxedMethod(func, NULL, 0, NULL);
     assert(result != NULL);
 
     assert(PY_unpackInteger(result) == 10);

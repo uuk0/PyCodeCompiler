@@ -27,8 +27,10 @@ PyObjectContainer* createEmptyContainer(PyObjectType type)
 
     container->type = type;
     container->raw_value = NULL;
+    container->flags = 0;
     container->py_type = NULL;
     container->attr_array = NULL;
+    container->source = NULL;
     return container;
 }
 
@@ -113,6 +115,20 @@ PyObjectContainer* PY_getObjectAttributeByName(PyObjectContainer* obj, char* nam
     return NULL;
 }
 
+#define PY_TYPE_FUNC_HAS_SELF 1
+
+static PyObjectContainer* PY_getObjectAttributeByNameOrStatic_StaticTransformer(PyObjectContainer* obj, PyObjectContainer* attr)
+{
+    // todo: handle more edge cases
+    if (attr->type == PY_TYPE_FUNC_POINTER)
+    {
+        attr->flags |= PY_TYPE_FUNC_HAS_SELF;
+        attr->source = obj;
+    }
+
+    return attr;
+}
+
 PyObjectContainer* PY_getObjectAttributeByNameOrStatic(PyObjectContainer* obj, char* name)
 {
     // todo: can we implement it for other types also?
@@ -136,7 +152,7 @@ PyObjectContainer* PY_getObjectAttributeByNameOrStatic(PyObjectContainer* obj, c
     {
         if (strcmp(cls->static_attribute_names[i], name) == 0)
         {
-            return cls->static_attribute_values[i];
+            return PY_getObjectAttributeByNameOrStatic_StaticTransformer(obj, cls->static_attribute_values[i]);
         }
         i++;
     }
@@ -219,6 +235,11 @@ PyObjectContainer* PY_invokeBoxedMethod(PyObjectContainer* obj, PyObjectContaine
     assert(obj->type == PY_TYPE_FUNC_POINTER);
 
     PY_FUNC_UNBOXED* function = (PY_FUNC_UNBOXED*)obj->raw_value;
+
+    if (self == NULL && (obj->flags & PY_TYPE_FUNC_HAS_SELF))
+    {
+        self = obj->source;
+    }
 
     return function(self, param_count, args);
 }
