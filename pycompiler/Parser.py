@@ -553,7 +553,8 @@ class FunctionDefinitionNode(AbstractASTNode):
         unbox = ' , '.join(arg_unbox)
         unbox_2 = " , ".join(arg_unbox_2)
 
-        safe_func.add_code(f"""
+        safe_func.add_code(
+            f"""
 if (self == NULL)
 {{
     assert(argc == {len(self.parameters)});
@@ -562,10 +563,11 @@ if (self == NULL)
 else
 {{
     assert(argc == {len(self.parameters) - 1});
-    return {func_name}(self{' , ' + unbox_2 if unbox_2 else ''});
+    return {func_name}(self{f' , {unbox_2}' if unbox_2 else ''});
 }}
 
-""")
+"""
+        )
 
 
 class ClassDefinitionNode(AbstractASTNode):
@@ -636,6 +638,44 @@ PY_ClassContainer_AllocateParentArray({variable_name}, {len(self.parents)});
         base.add_to_initializer(f"PY_CLASS_INIT_{variable_name}();")
 
 
+class WhileStatement(AbstractASTNode):
+    def __init__(self, condition: AbstractASTNode, body: typing.List[AbstractASTNode]):
+        super().__init__()
+        self.condition = condition
+        self.body = body
+
+    def __eq__(self, other):
+        return type(other) == WhileStatement and self.condition == other.condition and self.body == other.body
+
+    def __repr__(self):
+        return f"WHILE({self.condition}|{self.body})"
+
+    def try_replace_child(self, original: AbstractASTNode | None, replacement: AbstractASTNode, position: ParentAttributeSection) -> bool:
+        if position == ParentAttributeSection.LHS:
+            self.condition = replacement
+            return True
+        elif position == ParentAttributeSection.BODY and original is not None:
+            self.body[self.body.index(original)] = replacement
+            return True
+        return False
+
+    def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder, is_target=False):
+        context.add_code("\nwhile (")
+        self.condition.emit_c_code(base, context)
+        context.add_code(") {\n")
+
+        for line in self.body:
+            context.add_code("    ")
+            line.emit_c_code(base, context)
+
+            if isinstance(line, AbstractASTNodeExpression):
+                context.add_code(";\n")
+            else:
+                context.add_code("\n")
+
+        context.add_code("\n}\n")
+
+
 class SyntaxTreeVisitor:
     def visit_any(self, obj: AbstractASTNode):
         obj_type = type(obj)
@@ -666,6 +706,8 @@ class SyntaxTreeVisitor:
             return self.visit_class_definition(obj)
         elif obj_type == ConstantAccessExpression:
             return self.visit_constant(obj)
+        elif obj_type == WhileStatement:
+            return self.visit_while_statement(obj)
         else:
             raise RuntimeError(obj)
 
@@ -723,6 +765,9 @@ class SyntaxTreeVisitor:
 
     def visit_return_statement(self, return_statement: ReturnStatement):
         return self.visit_any(return_statement.return_value),
+
+    def visit_while_statement(self, while_statement: WhileStatement):
+        pass
 
 
 class Parser:

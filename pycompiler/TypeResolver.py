@@ -3,8 +3,8 @@ from __future__ import annotations
 import typing
 import warnings
 
-from pycompiler.Parser import SyntaxTreeVisitor, Scope, ParentAttributeSection, ConstantAccessExpression, NameAccessExpression
-
+from pycompiler.Parser import SyntaxTreeVisitor, Scope, ParentAttributeSection, ConstantAccessExpression, \
+    NameAccessExpression, WhileStatement
 
 if typing.TYPE_CHECKING:
     from pycompiler.Parser import ClassDefinitionNode, FunctionDefinitionNode, AssignmentExpression, AbstractASTNode, AttributeExpression, SubscriptionExpression, ReturnStatement, CallExpression
@@ -67,6 +67,14 @@ class ResolveParentAttribute(SyntaxTreeVisitor):
 
         for line in node.body:
             line.parent = node, ParentAttributeSection.BODY
+
+    def visit_while_statement(self, while_statement: WhileStatement):
+        super().visit_while_statement(while_statement)
+
+        while_statement.condition.parent = while_statement, ParentAttributeSection.LHS
+
+        for line in while_statement.body:
+            line.parent = while_statement, ParentAttributeSection.BODY
 
 
 class ScopeGeneratorVisitor(SyntaxTreeVisitor):
