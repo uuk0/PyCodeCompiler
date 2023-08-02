@@ -264,6 +264,15 @@ class AssignmentExpression(AbstractASTNode):
         return True
 
     def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder, is_target=False):
+        assert len(self.lhs) > 0
+
+        if len(self.lhs) == 1:
+            self.lhs[0].emit_c_code(base, context)
+            context.add_code(" = ")
+            self.rhs.emit_c_code(base, context)
+            context.add_code(";")
+            return
+
         # todo: do type stuff
         temporary = base.get_fresh_name("tas")
 

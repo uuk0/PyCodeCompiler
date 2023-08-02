@@ -24,7 +24,6 @@ void PY_CLASS_INIT_PY_CLASS_test() {
     // Create Parent Objects for class test
 
 
-    PyObjectContainer* _tas__0 = PY_createInteger(10);
-    PyObjectContainer* attr = _tas__0;
+    attr = PY_createInteger(10);
 }
 
