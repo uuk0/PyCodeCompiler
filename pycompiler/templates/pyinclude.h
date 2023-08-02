@@ -47,6 +47,7 @@ struct PyObjectContainer
 {
     PyObjectType type;
     void* raw_value;
+    uint16_t refcount;
     uint16_t flags;
     PyClassContainer* py_type;
     struct PyObjectContainer** attr_array;
@@ -101,5 +102,9 @@ PyObjectContainer* PY_createInteger(int64_t value);
 int64_t PY_unpackInteger(PyObjectContainer* obj);
 
 void initialize();
+
+#define INCREF(obj) obj->refcount++;
+#define DECREF(obj) obj->refcount--; if (obj->refcount == 0) free(obj);
+
 #endif
 

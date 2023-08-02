@@ -31,6 +31,7 @@ PyObjectContainer* createEmptyContainer(PyObjectType type)
     container->py_type = NULL;
     container->attr_array = NULL;
     container->source = NULL;
+    container->refcount = 1;
     return container;
 }
 
