@@ -4,13 +4,13 @@
 
 
 int _initialise();
-extern PyClassContainer* PY_CLASS_test;
+extern PyClassContainer* PY_CLASS_test_0;
 
 
 int main()
 {
     _initialise();
-    assert(PY_CLASS_test != NULL);
-    assert(strcmp(PY_CLASS_test->class_name, "test") == 0);
+    assert(PY_CLASS_test_0 != NULL);
+    assert(strcmp(PY_CLASS_test_0->class_name, "test") == 0);
 }
 

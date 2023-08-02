@@ -11,6 +11,7 @@ from pycompiler import Lexer
 
 class Scope:
     def __init__(self):
+        self._fresh_name_counter = 0
         self.parent: Scope | None = None
 
         self.module_file: str | None = None
@@ -20,8 +21,28 @@ class Scope:
 
         self.generic_name_stack: typing.Set[str] = set()
         self.variable_name_stack: typing.Set[str] = set()
+        self.variable_name_remap: typing.Dict[str, str] = {}
 
         self.strong_variables: typing.Dict[str, object] = {}
+
+    def get_fresh_name(self, base_name: str) -> str:
+        if self.parent is not None:
+            self.get_fresh_name = self.parent.get_fresh_name
+            return self.parent.get_fresh_name(base_name)
+
+        name = f"{base_name}_{self._fresh_name_counter}"
+        self._fresh_name_counter += 1
+        return name
+
+    def get_normalised_name(self, name: str) -> str:
+        name = name.replace("_", "")
+        return self.get_fresh_name(name)
+
+    def get_remapped_name(self, name: str) -> str:
+        return self.variable_name_remap.get(name, name)
+
+    def add_remapped_name(self, name: str, remapped: str):
+        self.variable_name_remap[name] = remapped
 
     def has_name_access(self, name: str) -> bool:
         if name in self.generic_name_stack or name in self.variable_name_stack:
@@ -305,9 +326,9 @@ class NameAccessExpression(AbstractASTNodeExpression):
 
     def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder, is_target=False):
         if is_target:
-            context.add_code(f"PyObjectContainer* {self.name.text}")
+            context.add_code(f"PyObjectContainer* {self.scope.get_remapped_name(self.name.text)}")
         else:
-            context.add_code(self.name.text)
+            context.add_code(self.scope.get_remapped_name(self.name.text))
 
 
 class ConstantAccessExpression(AbstractASTNodeExpression):
@@ -465,9 +486,7 @@ class CallExpression(AbstractASTNodeExpression):
         obj = typing.cast(ConstantAccessExpression, self.base).value
 
         if isinstance(obj, FunctionDefinitionNode):
-            func_name = obj.name.text
-        elif isinstance(obj, Lexer.Token):
-            func_name = obj.text
+            func_name = obj.normal_name
         elif isinstance(obj, ClassDefinitionNode):
             self.emit_c_code_constructor(base, context)
             return
@@ -498,7 +517,7 @@ class CallExpression(AbstractASTNodeExpression):
                 context.parent.add_code(";\n")
 
         context.parent.add_code(f"""
-PyObjectContainer* {temporary} = PY_createClassInstance(PY_CLASS_{cls.name.text});
+PyObjectContainer* {temporary} = PY_createClassInstance(PY_CLASS_{cls.normal_name});
 PyObjectContainer* {constructor} = PY_getObjectAttributeByNameOrStatic({temporary}, "__init__");
 
 assert({constructor} != NULL);
@@ -563,6 +582,7 @@ class FunctionDefinitionNode(AbstractASTNode):
             assert (default is not None) == (mode == FunctionDefinitionNode.ParameterType.KEYWORD)
 
             self.name = name
+            self.normal_name = name.text
             self.mode = mode
             self.hint = hint
             self.default = default
@@ -585,6 +605,7 @@ class FunctionDefinitionNode(AbstractASTNode):
         self.generics = generics
         self.parameters = parameters
         self.body = body
+        self.normal_name = name.text
 
     def __eq__(self, other):
         return type(other) == FunctionDefinitionNode and self.name == other.name and self.generics == other.generics and self.parameters == other.parameters and self.body == other.body
@@ -596,9 +617,9 @@ class FunctionDefinitionNode(AbstractASTNode):
         return False  # nothing to replace, needs to be replaced in the arg itself
 
     def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder, is_target=False):
-        func_name = self.name.text  # todo: do better here!
+        func_name = self.normal_name
 
-        func = base.CFunction(func_name, [f"PyObjectContainer* {param.name.text}" for param in self.parameters], "PyObjectContainer*")
+        func = base.CFunction(func_name, [f"PyObjectContainer* {param.normal_name}" for param in self.parameters], "PyObjectContainer*")
         base.add_function(func)
 
         if len(self.body) > 0:
@@ -606,7 +627,9 @@ class FunctionDefinitionNode(AbstractASTNode):
 
             for var in self.body[0].scope.variable_name_stack:
                 if var not in args:
-                    func.add_code(f"PyObjectContainer* {var};\n")
+                    norm_name = self.body[0].scope.get_normalised_name(var)
+                    self.body[0].scope.add_remapped_name(var, norm_name)
+                    func.add_code(f"PyObjectContainer* {norm_name};\n")
 
         for line in self.body:
             inner_section = CCodeEmitter.CSubBlock(indent=False)
@@ -660,6 +683,7 @@ class ClassDefinitionNode(AbstractASTNode):
         self.generics = generics
         self.parents = parents
         self.body = body
+        self.normal_name = name.text
 
     def __eq__(self, other):
         return type(other) == ClassDefinitionNode and self.name == other.name and self.generics == other.generics and self.parents == other.parents and self.body == other.body
@@ -681,7 +705,7 @@ class ClassDefinitionNode(AbstractASTNode):
         return False
 
     def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder, is_target=False):
-        variable_name = f"PY_CLASS_{self.name.text}"
+        variable_name = f"PY_CLASS_{self.normal_name}"
 
         base.add_global_variable("PyClassContainer*", variable_name)
 
@@ -696,20 +720,20 @@ class ClassDefinitionNode(AbstractASTNode):
             ]
             for var in self.body[0].scope.variable_name_stack:
                 if var not in external:
-                    init_class.add_code(f"PyObjectContainer* {var};\n")
+                    init_class.add_code(f"PyObjectContainer* {self.body[0].scope.get_remapped_name(var)};\n")
 
         init_class.add_code(f"""
-// Create Class {variable_name} ({self.name.text} in source code)
+// Create Class {variable_name} ('{self.name.text}' in source code)
 {variable_name} = PY_createClassContainer("{self.name.text}");
 PY_ClassContainer_AllocateParentArray({variable_name}, {len(self.parents)});
 """)  # todo: include all the other stuff here!
 
-        init_class.add_code(f"\n// Create Parent Objects for class {self.name.text}\n")
         if self.parents:
+            init_class.add_code(f"\n// Create Parent Objects for class '{self.name.text}'\n")
 
             for i, parent in enumerate(self.parents):
                 if isinstance(parent, ClassDefinitionNode):
-                    init_class.add_code(f"{variable_name} -> parents[{i}] = PY_CLASS_{parent.name.text};\n")
+                    init_class.add_code(f"{variable_name} -> parents[{i}] = PY_CLASS_{parent.normal_name};\n")
                 else:
                     raise NotImplementedError
 
@@ -718,7 +742,7 @@ PY_ClassContainer_AllocateParentArray({variable_name}, {len(self.parents)});
         for line in self.body:
             if isinstance(line, FunctionDefinitionNode):
                 print(line)
-                init_class.add_code(f"PY_setClassAttributeByNameOrCreate({variable_name}, \"{line.name.text}\", PY_createBoxForFunction({line.name.text}_safeWrap));\n")
+                init_class.add_code(f"PY_setClassAttributeByNameOrCreate({variable_name}, \"{line.name.text}\", PY_createBoxForFunction({line.normal_name}_safeWrap));\n")
 
         for line in self.body:
             inner_block = CCodeEmitter.CSubBlock(indent=False)
@@ -932,7 +956,7 @@ class Parser:
         return ast_stream
 
     def emit_c_code(self, expr: typing.List[AbstractASTNode] = None) -> str:
-        from pycompiler.TypeResolver import ResolveParentAttribute, ScopeGeneratorVisitor, LocalNameValidator, ResolveStaticNames
+        from pycompiler.TypeResolver import ResolveParentAttribute, ScopeGeneratorVisitor, LocalNameValidator, ResolveStaticNames, NameNormalizer
 
         scope = Scope()
 
@@ -941,6 +965,7 @@ class Parser:
 
         ResolveParentAttribute().visit_any_list(expr)
         ScopeGeneratorVisitor(scope).visit_any_list(expr)
+        NameNormalizer().visit_any_list(expr)
         LocalNameValidator().visit_any_list(expr)
         ResolveStaticNames().visit_any_list(expr)
 
@@ -958,7 +983,7 @@ class Parser:
 
             for var in expr[0].scope.variable_name_stack:
                 if var not in skip_names:
-                    main.add_code(f"PyObjectContainer* {var};\n")
+                    main.add_code(f"PyObjectContainer* {expr[0].scope.get_remapped_name(var)};\n")
 
         for line in expr:
             inner_block = CCodeEmitter.CSubBlock(indent=False)

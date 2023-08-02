@@ -6,12 +6,12 @@
 
 
 int _initialise();
-void PY_CLASS_INIT_PY_CLASS_test();
-PyObjectContainer* __init__(PyObjectContainer* self);
-PyObjectContainer* __init___safeWrap(PyObjectContainer* self , uint8_t argc , PyObjectContainer** args);
+void PY_CLASS_INIT_PY_CLASS_test_2();
+PyObjectContainer* init_1(PyObjectContainer* self_0);
+PyObjectContainer* init_1_safeWrap(PyObjectContainer* self , uint8_t argc , PyObjectContainer** args);
 
 // Global Variables
-PyClassContainer* PY_CLASS_test;
+PyClassContainer* PY_CLASS_test_2;
 
 
 
@@ -21,9 +21,9 @@ int _initialise() {
     PyObjectContainer* obj;
 
 
-    PY_CLASS_INIT_PY_CLASS_test();
+    PY_CLASS_INIT_PY_CLASS_test_2();
 
-    PyObjectContainer* _obj_instance__0 = PY_createClassInstance(PY_CLASS_test);
+    PyObjectContainer* _obj_instance__0 = PY_createClassInstance(PY_CLASS_test_2);
     PyObjectContainer* _constructor__1 = PY_getObjectAttributeByNameOrStatic(_obj_instance__0, "__init__");
 
     assert(_constructor__1 != NULL);
@@ -32,31 +32,29 @@ int _initialise() {
     obj = _obj_instance__0;
 }
 
-void PY_CLASS_INIT_PY_CLASS_test() {
-    // Create Class PY_CLASS_test (test in source code)
-    PY_CLASS_test = PY_createClassContainer("test");
-    PY_ClassContainer_AllocateParentArray(PY_CLASS_test, 0);
-
-    // Create Parent Objects for class test
-    PY_setClassAttributeByNameOrCreate(PY_CLASS_test, "__init__", PY_createBoxForFunction(__init___safeWrap));
+void PY_CLASS_INIT_PY_CLASS_test_2() {
+    // Create Class PY_CLASS_test_2 ('test' in source code)
+    PY_CLASS_test_2 = PY_createClassContainer("test");
+    PY_ClassContainer_AllocateParentArray(PY_CLASS_test_2, 0);
+    PY_setClassAttributeByNameOrCreate(PY_CLASS_test_2, "__init__", PY_createBoxForFunction(init_1_safeWrap));
 }
 
-PyObjectContainer* __init__(PyObjectContainer* self) {
-    PyObjectContainer* value;
+PyObjectContainer* init_1(PyObjectContainer* self_0) {
+    PyObjectContainer* value_3;
 
-    value = PY_createInteger(0);
+    value_3 = PY_createInteger(0);
 }
 
-PyObjectContainer* __init___safeWrap(PyObjectContainer* self , uint8_t argc , PyObjectContainer** args) {
+PyObjectContainer* init_1_safeWrap(PyObjectContainer* self , uint8_t argc , PyObjectContainer** args) {
     if (self == NULL)
     {
         assert(argc == 1);
-        return __init__(args[0]);
+        return init_1(args[0]);
     }
     else
     {
         assert(argc == 0);
-        return __init__(self);
+        return init_1(self);
     }
 }
 

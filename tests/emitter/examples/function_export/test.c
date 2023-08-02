@@ -2,10 +2,10 @@
 #include "pyinclude.h"
 
 
-PyObjectContainer* test();
+PyObjectContainer* test_0();
 
 
 int main()
 {
-    assert(PY_unpackInteger(test()) == 10);
+    assert(PY_unpackInteger(test_0()) == 10);
 }

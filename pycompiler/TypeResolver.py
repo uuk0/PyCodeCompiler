@@ -27,15 +27,6 @@ class ResolveParentAttribute(SyntaxTreeVisitor):
         expression.base.parent = expression, ParentAttributeSection.LHS
         expression.expression.parent = expression, ParentAttributeSection.RHS
 
-    def visit_function_definition(self, node: FunctionDefinitionNode):
-        super().visit_function_definition(node)
-
-        for param in node.parameters:
-            param.parent = node, None
-
-        for body_node in node.body:
-            body_node.parent = node, None
-
     def visit_call_expression(self, node: CallExpression):
         super().visit_call_expression(node)
 
@@ -47,6 +38,15 @@ class ResolveParentAttribute(SyntaxTreeVisitor):
         super().visit_call_argument(arg)
 
         arg.value.parent = arg, ParentAttributeSection.PARAMETER
+
+    def visit_function_definition(self, node: FunctionDefinitionNode):
+        super().visit_function_definition(node)
+
+        for param in node.parameters:
+            param.parent = node, None
+
+        for body_node in node.body:
+            body_node.parent = node, None
 
     def visit_function_definition_parameter(self, node: FunctionDefinitionNode.FunctionDefinitionParameter):
         super().visit_function_definition_parameter(node)
@@ -117,6 +117,7 @@ class ScopeGeneratorVisitor(SyntaxTreeVisitor):
 
     def visit_function_definition_parameter(self, node: FunctionDefinitionNode.FunctionDefinitionParameter):
         super().visit_function_definition_parameter(node)
+        node.scope = self.scope
 
         self.scope.export_variable_name(node.name.text)
 
@@ -137,6 +138,23 @@ class ScopeGeneratorVisitor(SyntaxTreeVisitor):
 
         self.scope.close()
         self.scope = outer_scope
+
+
+class NameNormalizer(SyntaxTreeVisitor):
+    def visit_function_definition(self, node: FunctionDefinitionNode):
+        super().visit_function_definition(node)
+        node.normal_name = node.scope.get_normalised_name(node.name.text)
+        node.scope.add_remapped_name(node.name.text, node.normal_name)
+
+    def visit_function_definition_parameter(self, node: FunctionDefinitionNode.FunctionDefinitionParameter):
+        super().visit_function_definition_parameter(node)
+        node.normal_name = node.scope.get_normalised_name(node.name.text)
+        node.scope.add_remapped_name(node.name.text, node.normal_name)
+
+    def visit_class_definition(self, node: ClassDefinitionNode):
+        super().visit_class_definition(node)
+        node.normal_name = node.scope.get_normalised_name(node.name.text)
+        node.scope.add_remapped_name(node.name.text, node.normal_name)
 
 
 class LocalNameValidator(SyntaxTreeVisitor):
