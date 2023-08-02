@@ -21,7 +21,12 @@ void PY_CLASS_INIT_PY_CLASS_test_0() {
 
     // Create Class PY_CLASS_test_0 ('test' in source code)
     PY_CLASS_test_0 = PY_createClassContainer("test");
-    PY_ClassContainer_AllocateParentArray(PY_CLASS_test_0, 0);
+    PY_ClassContainer_AllocateParentArray(PY_CLASS_test_0, 1);
+
+    // Create Parent Objects for class 'test'
+    PY_CLASS_test_0 -> parents[0] = PY_TYPE_OBJECT;
+
+    // Attributes
 
     attr = PY_createInteger(10);
 }

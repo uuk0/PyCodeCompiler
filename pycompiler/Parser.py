@@ -738,19 +738,21 @@ class ClassDefinitionNode(AbstractASTNode):
         init_class.add_code(f"""
 // Create Class {variable_name} ('{self.name.text}' in source code)
 {variable_name} = PY_createClassContainer("{self.name.text}");
-PY_ClassContainer_AllocateParentArray({variable_name}, {len(self.parents)});
+PY_ClassContainer_AllocateParentArray({variable_name}, {max(len(self.parents), 1)});
 """)  # todo: include all the other stuff here!
 
+        init_class.add_code(f"\n// Create Parent Objects for class '{self.name.text}'\n")
         if self.parents:
-            init_class.add_code(f"\n// Create Parent Objects for class '{self.name.text}'\n")
-
             for i, parent in enumerate(self.parents):
                 if isinstance(parent, ClassDefinitionNode):
                     init_class.add_code(f"{variable_name} -> parents[{i}] = PY_CLASS_{parent.normal_name};\n")
                 else:
                     raise NotImplementedError
 
-            init_class.add_code("\n// Attributes\n")
+        else:
+            init_class.add_code(f"{variable_name} -> parents[0] = PY_TYPE_OBJECT;\n")
+
+        init_class.add_code("\n// Attributes\n")
 
         for line in self.body:
             if isinstance(line, FunctionDefinitionNode):

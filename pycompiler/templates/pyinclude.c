@@ -15,6 +15,8 @@ PyObjectContainer* PY_NONE;
 PyObjectContainer* PY_FALSE;
 PyObjectContainer* PY_TRUE;
 
+PyClassContainer* PY_TYPE_OBJECT;
+
 PyObjectContainer* createEmptyContainer(PyObjectType type)
 {
     PyObjectContainer* container = malloc(sizeof(PyObjectContainer));
@@ -51,6 +53,7 @@ PyClassContainer* PY_createClassContainer(char* name)
     container->attr_name_array = NULL;
     container->static_attribute_names = NULL;
     container->static_attribute_values = NULL;
+    container->flags = 0;
 
     return container;
 }
@@ -360,6 +363,8 @@ void initialize()
     PY_FALSE->raw_value = (void*)0;
     PY_TRUE = createEmptyContainer(PY_TYPE_BOOL);
     PY_TRUE->raw_value = (void*)1;
+
+    PY_TYPE_OBJECT = PY_createClassContainer("object");
 
     initialized = true;
 }

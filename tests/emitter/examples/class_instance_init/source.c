@@ -35,7 +35,12 @@ int _initialise() {
 void PY_CLASS_INIT_PY_CLASS_test_2() {
     // Create Class PY_CLASS_test_2 ('test' in source code)
     PY_CLASS_test_2 = PY_createClassContainer("test");
-    PY_ClassContainer_AllocateParentArray(PY_CLASS_test_2, 0);
+    PY_ClassContainer_AllocateParentArray(PY_CLASS_test_2, 1);
+
+    // Create Parent Objects for class 'test'
+    PY_CLASS_test_2 -> parents[0] = PY_TYPE_OBJECT;
+
+    // Attributes
     PY_setClassAttributeByNameOrCreate(PY_CLASS_test_2, "__init__", PY_createBoxForFunction(init_1_safeWrap));
 }
 

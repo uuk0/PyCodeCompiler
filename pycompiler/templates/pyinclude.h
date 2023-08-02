@@ -28,6 +28,8 @@ enum PyObjectType
 typedef enum PyObjectType PyObjectType;
 
 
+#define PY_CLASS_HAS_CUSTOM_GETATTR 1
+
 struct PyClassContainer
 {
     struct PyClassContainer** parents;
@@ -39,6 +41,8 @@ struct PyClassContainer
 
     char** static_attribute_names;
     struct PyObjectContainer** static_attribute_values;
+
+    uint16_t flags;
 };
 typedef struct PyClassContainer PyClassContainer;
 
@@ -80,6 +84,8 @@ struct PyGeneratorContainer
 extern PyObjectContainer* PY_NONE;
 extern PyObjectContainer* PY_FALSE;
 extern PyObjectContainer* PY_TRUE;
+
+extern PyClassContainer* PY_TYPE_OBJECT;
 
 
 PyObjectContainer* createEmptyContainer(PyObjectType type);
