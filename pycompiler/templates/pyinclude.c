@@ -236,6 +236,22 @@ void PY_setClassAttributeByNameOrCreate(PyClassContainer* cls, char* name, PyObj
 PyObjectContainer* PY_invokeBoxedMethod(PyObjectContainer* obj, PyObjectContainer* self, uint8_t param_count, PyObjectContainer** args)
 {
     assert(obj != NULL);
+
+    bool decref_after = false;
+
+    if (obj->type == PY_TYPE_PY_IMPL) {
+        obj = PY_getObjectAttributeByNameOrStatic(obj, "__call__");
+
+        while (obj->type == PY_TYPE_PY_IMPL) {
+            PyObjectContainer* new_obj = PY_getObjectAttributeByNameOrStatic(obj, "__call__");
+            DECREF(obj);
+            obj = new_obj;
+            assert(obj != NULL);
+        }
+
+        decref_after = true;
+    }
+
     assert(obj->type == PY_TYPE_FUNC_POINTER);
 
     PY_FUNC_UNBOXED* function = (PY_FUNC_UNBOXED*)obj->raw_value;
@@ -245,7 +261,14 @@ PyObjectContainer* PY_invokeBoxedMethod(PyObjectContainer* obj, PyObjectContaine
         self = obj->source;
     }
 
-    return function(self, param_count, args);
+    PyObjectContainer* result = function(self, param_count, args);
+
+    if (decref_after)
+    {
+        DECREF(obj);
+    }
+
+    return result;
 }
 
 PyObjectContainer* PY_GetSubscriptionValue(PyObjectContainer* obj, PyObjectContainer* index)
