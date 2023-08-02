@@ -78,3 +78,6 @@ class TestCCodeEmitter(TestCase):
     def test_class_declaration_with_function(self):
         self.run_named_folder_test("class_declaration_with_function")
 
+    def test_while_statement(self):
+        self.run_named_folder_test("while_statement")
+

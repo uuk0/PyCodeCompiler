@@ -271,6 +271,39 @@ int64_t PY_unpackInteger(PyObjectContainer* obj)
     return *((int64_t*)obj->raw_value);
 }
 
+static bool PY_getTruthValueOfPyObj(PyObjectContainer* obj)
+{
+    PyObjectContainer* bool_method = PY_getObjectAttributeByNameOrStatic(obj, "__bool__");
+
+    if (bool_method != NULL)
+    {
+        PyObjectContainer* result = PY_invokeBoxedMethod(bool_method, NULL, 0, NULL);
+        return PY_getTruthValueOf(result);
+    }
+
+    return true;
+}
+
+bool PY_getTruthValueOf(PyObjectContainer* obj)
+{
+    switch (obj->type)
+    {
+        case PY_TYPE_BOOL:
+            return (bool)obj->raw_value;
+        case PY_TYPE_NONE:
+            return false;
+        case PY_TYPE_INT:
+            return PY_unpackInteger(obj) != 0;
+        case PY_TYPE_FLOAT:
+            // TODO
+            return false;
+        case PY_TYPE_FUNC_POINTER:
+            return true;
+        case PY_TYPE_PY_IMPL:
+            return PY_getTruthValueOfPyObj(obj);
+    }
+}
+
 void initialize()
 {
     if (initialized) return;

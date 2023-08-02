@@ -101,6 +101,8 @@ PyObjectContainer* PY_invokeBoxedMethod(PyObjectContainer* obj, PyObjectContaine
 PyObjectContainer* PY_createInteger(int64_t value);
 int64_t PY_unpackInteger(PyObjectContainer* obj);
 
+bool PY_getTruthValueOf(PyObjectContainer* obj);
+
 void initialize();
 
 #define INCREF(obj) obj->refcount++;

@@ -660,10 +660,11 @@ class WhileStatement(AbstractASTNode):
         return False
 
     def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder, is_target=False):
-        context.add_code("\nwhile (")
+        context.add_code("\nwhile (PY_getTruthValueOf(")
         self.condition.emit_c_code(base, context)
-        context.add_code(") {\n")
+        context.add_code(")) {\n")
 
+        # TODO: indent!
         for line in self.body:
             context.add_code("    ")
             line.emit_c_code(base, context)
