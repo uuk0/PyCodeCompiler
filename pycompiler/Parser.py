@@ -900,6 +900,9 @@ class BinaryOperatorExpression(AbstractASTNodeExpression):
             return False
         return True
 
+    def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder, is_target=False):
+        raise NotImplementedError
+
 
 class WalrusOperatorExpression(AbstractASTNodeExpression):
     def __init__(self, target: AbstractASTNode, value: AbstractASTNode):
@@ -1300,7 +1303,7 @@ class Parser:
                     raise SyntaxError
                 base = WalrusOperatorExpression(base, expression)
 
-            elif self.lexer.inspect_chars(1) in "+*%/&|^@":
+            elif self.lexer.inspect_chars(1) and self.lexer.inspect_chars(1) in "+*%/&|^@":
                 if self.lexer.inspect_chars(2) in ("**", "//"):
                     operator = self.lexer.get_chars(2)
                 else:
