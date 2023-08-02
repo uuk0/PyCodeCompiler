@@ -853,7 +853,7 @@ class BinaryOperatorExpression(AbstractASTNodeExpression):
     class BinaryOperation(enum.Enum):
         PLUS = enum.auto()
         MINUS = enum.auto()
-        TIMES = enum.auto()
+        MULTIPLY = enum.auto()
         FLOOR_DIV = enum.auto()
         TRUE_DIV = enum.auto()
         MODULO = enum.auto()
@@ -864,6 +864,20 @@ class BinaryOperatorExpression(AbstractASTNodeExpression):
         BIN_XOR = enum.auto()
         LOGIC_AND = enum.auto()
         LOGIC_OR = enum.auto()
+
+    String2Type = {
+        "+": BinaryOperation.PLUS,
+        "-": BinaryOperation.MINUS,
+        "*": BinaryOperation.MULTIPLY,
+        "//": BinaryOperation.FLOOR_DIV,
+        "/": BinaryOperation.TRUE_DIV,
+        "%": BinaryOperation.MODULO,
+        "**": BinaryOperation.POW,
+        "@": BinaryOperation.MATRIX_MULTIPLY,
+        "|": BinaryOperation.BIN_OR,
+        "&": BinaryOperation.BIN_AND,
+        "^": BinaryOperation.BIN_XOR,
+    }
 
     def __init__(self, lhs: AbstractASTNode, operator: BinaryOperation, rhs: AbstractASTNode):
         super().__init__()
@@ -1282,7 +1296,37 @@ class Parser:
                 self.lexer.get_chars(2)
                 self.lexer.try_parse_whitespaces()
                 expression = self.try_parse_expression()
+                if expression is None:
+                    raise SyntaxError
                 base = WalrusOperatorExpression(base, expression)
+
+            elif self.lexer.inspect_chars(1) in "+*%/&|^@":
+                if self.lexer.inspect_chars(2) in ("**", "//"):
+                    operator = self.lexer.get_chars(2)
+                else:
+                    operator = self.lexer.get_chars(1)
+
+                expression = self.try_parse_expression()
+                if expression is None:
+                    raise SyntaxError
+
+                base = BinaryOperatorExpression(base, BinaryOperatorExpression.String2Type[operator], expression)
+
+            elif self.lexer.inspect_chars(4) == "and ":
+                self.lexer.get_chars(4)
+                expression = self.try_parse_expression()
+                if expression is None:
+                    raise SyntaxError
+
+                base = BinaryOperatorExpression(base, BinaryOperatorExpression.BinaryOperation.LOGIC_AND, expression)
+
+            elif self.lexer.inspect_chars(3) == "or ":
+                self.lexer.get_chars(3)
+                expression = self.try_parse_expression()
+                if expression is None:
+                    raise SyntaxError
+
+                base = BinaryOperatorExpression(base, BinaryOperatorExpression.BinaryOperation.LOGIC_OR, expression)
 
             else:
                 break
