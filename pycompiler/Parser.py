@@ -124,11 +124,15 @@ class FilledScope:
     def __init__(self, scope: Scope):
         self.scope = scope
         # todo: also allow generic's as targets
-        self.generic_name_fillings: typing.List[typing.Dict[str, ClassDefinitionNode]] = [{} for _ in range(len(scope.generic_name_stack))]
+        self.generic_name_fillings: typing.List[
+            typing.Dict[str, ClassDefinitionNode]
+        ] = [{} for _ in range(len(scope.generic_name_stack))]
 
     def copy_for_child(self, scope: Scope) -> FilledScope:
         filled_scope = FilledScope(scope)
-        filled_scope.generic_name_fillings[:len(self.generic_name_fillings)] = self.generic_name_fillings
+        filled_scope.generic_name_fillings[
+            : len(self.generic_name_fillings)
+        ] = self.generic_name_fillings
         return filled_scope
 
 
@@ -162,7 +166,13 @@ class CCodeEmitter:
             self.snippets.clear()
 
     class CFunctionBuilder(CExpressionBuilder):
-        def __init__(self, name: str, parameter_decl: typing.List[str], return_type: str, scope: Scope):
+        def __init__(
+            self,
+            name: str,
+            parameter_decl: typing.List[str],
+            return_type: str,
+            scope: Scope,
+        ):
             super().__init__()
 
             self.name = name
@@ -209,12 +219,12 @@ class CCodeEmitter:
             return self
 
         def __exit__(self, exc_type, exc_val, exc_tb):
-            self.parent.add_code(self.get_result()+"\n")
+            self.parent.add_code(self.get_result() + "\n")
 
         def exit_statement_and_store(self):
             temporary = self.parent.scope.get_fresh_name("temporary")
             self.parent.add_code(f"PyObjectContainer* {temporary} = ")
-            self.parent.add_code(self.get_result()+"\n")
+            self.parent.add_code(self.get_result() + "\n")
             self.parent.add_code(";\n")
             self.clear()
             return temporary
@@ -229,7 +239,11 @@ class CCodeEmitter:
                 lines.pop(-1)
 
             for i, line in enumerate(lines):
-                lines[i] = "" if line.strip() == "" else (f"    {lines[i]}" if self.indent else lines[i])
+                lines[i] = (
+                    ""
+                    if line.strip() == ""
+                    else (f"    {lines[i]}" if self.indent else lines[i])
+                )
 
             return "\n".join(lines)
 
@@ -269,10 +283,20 @@ class AbstractASTNode(abc.ABC):
         self.scope = None
         self.parent: typing.Tuple[AbstractASTNode, ParentAttributeSection] | None = None
 
-    def try_replace_child(self, original: AbstractASTNode | None, replacement: AbstractASTNode, position: ParentAttributeSection) -> bool:
+    def try_replace_child(
+        self,
+        original: AbstractASTNode | None,
+        replacement: AbstractASTNode,
+        position: ParentAttributeSection,
+    ) -> bool:
         return False
 
-    def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder, is_target=False):
+    def emit_c_code(
+        self,
+        base: CCodeEmitter,
+        context: CCodeEmitter.CExpressionBuilder,
+        is_target=False,
+    ):
         pass
 
 
@@ -291,7 +315,12 @@ class PyNewlineNode(AbstractASTNode):
     def __repr__(self):
         return "NEWLINE"
 
-    def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder, is_target=False):
+    def emit_c_code(
+        self,
+        base: CCodeEmitter,
+        context: CCodeEmitter.CExpressionBuilder,
+        is_target=False,
+    ):
         context.add_code("\n")
 
 
@@ -302,29 +331,53 @@ class PyCommentNode(AbstractASTNode):
         self.inner_string = inner_string
 
     def __eq__(self, other):
-        return type(other) == PyCommentNode and self.base_token == other.base_token and self.inner_string == other.inner_string
+        return (
+            type(other) == PyCommentNode
+            and self.base_token == other.base_token
+            and self.inner_string == other.inner_string
+        )
 
     def __repr__(self):
         return f"COMMENT({self.base_token}|{self.inner_string})"
 
-    def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder, is_target=False):
+    def emit_c_code(
+        self,
+        base: CCodeEmitter,
+        context: CCodeEmitter.CExpressionBuilder,
+        is_target=False,
+    ):
         context.add_code(f"// SOURCE: {self.inner_string.text}\n")
 
 
 class AssignmentExpression(AbstractASTNode):
-    def __init__(self, lhs: typing.List[AbstractASTNode], eq_sign: Lexer.Token, rhs: AbstractASTNode):
+    def __init__(
+        self,
+        lhs: typing.List[AbstractASTNode],
+        eq_sign: Lexer.Token,
+        rhs: AbstractASTNode,
+    ):
         super().__init__()
         self.lhs = lhs
         self.eq_sign = eq_sign
         self.rhs = rhs
 
     def __eq__(self, other):
-        return type(other) == AssignmentExpression and self.lhs == other.lhs and self.eq_sign == other.eq_sign and self.rhs == other.rhs
+        return (
+            type(other) == AssignmentExpression
+            and self.lhs == other.lhs
+            and self.eq_sign == other.eq_sign
+            and self.rhs == other.rhs
+        )
 
     def __repr__(self):
         return f"ASSIGNMENT({self.lhs}|{self.eq_sign}|{self.rhs})"
 
-    def try_replace_child(self, original: AbstractASTNode | None, replacement: AbstractASTNode, position: ParentAttributeSection) -> bool:
+    def try_replace_child(
+        self,
+        original: AbstractASTNode | None,
+        replacement: AbstractASTNode,
+        position: ParentAttributeSection,
+    ) -> bool:
         if position == ParentAttributeSection.LHS:
             if original is None:
                 return False
@@ -336,7 +389,12 @@ class AssignmentExpression(AbstractASTNode):
             return False
         return True
 
-    def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder, is_target=False):
+    def emit_c_code(
+        self,
+        base: CCodeEmitter,
+        context: CCodeEmitter.CExpressionBuilder,
+        is_target=False,
+    ):
         assert len(self.lhs) > 0
 
         if len(self.lhs) == 1:
@@ -355,7 +413,13 @@ class AssignmentExpression(AbstractASTNode):
             self._emit_target(base, context, target, temporary)
             context.add_code(";")
 
-    def _emit_target(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder, tar: AbstractASTNode, source: str | AbstractASTNode):
+    def _emit_target(
+        self,
+        base: CCodeEmitter,
+        context: CCodeEmitter.CExpressionBuilder,
+        tar: AbstractASTNode,
+        source: str | AbstractASTNode,
+    ):
         if isinstance(tar, SubscriptionExpression):
             context.add_code("PY_SetSubscriptionValue(")
             tar.base.emit_c_code(base, context)
@@ -388,7 +452,12 @@ class NameAccessExpression(AbstractASTNodeExpression):
     def __repr__(self):
         return f"VARIABLE({self.name})"
 
-    def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder, is_target=False):
+    def emit_c_code(
+        self,
+        base: CCodeEmitter,
+        context: CCodeEmitter.CExpressionBuilder,
+        is_target=False,
+    ):
         context.add_code(self.scope.get_remapped_name(self.name.text))
 
 
@@ -404,7 +473,12 @@ class ConstantAccessExpression(AbstractASTNodeExpression):
     def __repr__(self):
         return f"CONSTANT({repr(self.value)})"
 
-    def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder, is_target=False):
+    def emit_c_code(
+        self,
+        base: CCodeEmitter,
+        context: CCodeEmitter.CExpressionBuilder,
+        is_target=False,
+    ):
         if isinstance(self.value, int):
             context.add_code(f"PY_createInteger({self.value})")
 
@@ -432,12 +506,60 @@ class PriorityBrackets(AbstractASTNode):
     def __repr__(self):
         return f"BRACKET({self.inner_node})"
 
-    def try_replace_child(self, original: AbstractASTNode | None, replacement: AbstractASTNode, position: ParentAttributeSection) -> bool:
+    def try_replace_child(
+        self,
+        original: AbstractASTNode | None,
+        replacement: AbstractASTNode,
+        position: ParentAttributeSection,
+    ) -> bool:
         self.inner_node = replacement
         return True
 
-    def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder, is_target=False):
+    def emit_c_code(
+        self,
+        base: CCodeEmitter,
+        context: CCodeEmitter.CExpressionBuilder,
+        is_target=False,
+    ):
         self.inner_node.emit_c_code(base, context, is_target=is_target)
+
+
+class TupleConstructor(AbstractASTNode):
+    def __init__(self, items: typing.List[AbstractASTNode]):
+        super().__init__()
+        self.items = items
+
+    def __eq__(self, other):
+        return type(other) == TupleConstructor and self.items == other.items
+
+    def __repr__(self):
+        return f"TUPLE({repr(self.items)[1:-1]})"
+
+    def try_replace_child(
+        self,
+        original: AbstractASTNode | None,
+        replacement: AbstractASTNode,
+        position: ParentAttributeSection,
+    ) -> bool:
+        self.items.replace(original, replacement)
+        return True
+
+    def emit_c_code(
+        self,
+        base: CCodeEmitter,
+        context: CCodeEmitter.CExpressionBuilder,
+        is_target=False,
+    ):
+        if self.items:
+            context.add_code(f"PY_STD_tuple_CREATE({len(self.items)}, ")
+
+            for item in self.items[:-1]:
+                item.emit_c_code(base, context)
+                context.add_code(", ")
+
+            context.add_code(")")
+        else:
+            context.add_code("PY_STD_tuple_CREATE(0)")
 
 
 class AttributeExpression(AbstractASTNodeExpression):
@@ -448,35 +570,56 @@ class AttributeExpression(AbstractASTNodeExpression):
         self.attribute = attribute
 
     def __eq__(self, other):
-        return type(other) == AttributeExpression and self.base == other.base and self.dot == other.dot and self.attribute == other.attribute
+        return (
+            type(other) == AttributeExpression
+            and self.base == other.base
+            and self.dot == other.dot
+            and self.attribute == other.attribute
+        )
 
     def __repr__(self):
         return f"ATTRIBUTE({self.base}|{self.dot}|{self.attribute})"
 
-    def try_replace_child(self, original: AbstractASTNode | None, replacement: AbstractASTNode, position: ParentAttributeSection) -> bool:
+    def try_replace_child(
+        self,
+        original: AbstractASTNode | None,
+        replacement: AbstractASTNode,
+        position: ParentAttributeSection,
+    ) -> bool:
         if position != ParentAttributeSection.LHS:
             return False
 
         self.base = replacement
         return True
 
-    def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder, is_target=False):
+    def emit_c_code(
+        self,
+        base: CCodeEmitter,
+        context: CCodeEmitter.CExpressionBuilder,
+        is_target=False,
+    ):
         if is_target:
             temporary = base.get_fresh_name("temp")
             context.parent.add_code(f"PyObjectContainer* {temporary} = ")
             context.add_code(f";\nPY_setObjectAttributeByName(")
             self.base.emit_c_code(base, context)
-            context.add_code(f", {temporary}, \"{self.attribute.text}\")")
+            context.add_code(f', {temporary}, "{self.attribute.text}")')
 
         else:
             context.add_code("PY_getObjectAttributeByNameOrStatic(")
 
             self.base.emit_c_code(base, context)
-            context.add_code(f", \"{self.attribute.text}\")")
+            context.add_code(f', "{self.attribute.text}")')
 
 
 class SubscriptionExpression(AbstractASTNodeExpression):
-    def __init__(self, base: AbstractASTNode, lhs_bracket: Lexer.Token, expression: AbstractASTNode, rhs_bracket: Lexer.Token):
+    def __init__(
+        self,
+        base: AbstractASTNode,
+        lhs_bracket: Lexer.Token,
+        expression: AbstractASTNode,
+        rhs_bracket: Lexer.Token,
+    ):
         super().__init__()
         self.base = base
         self.lhs_bracket = lhs_bracket
@@ -484,12 +627,23 @@ class SubscriptionExpression(AbstractASTNodeExpression):
         self.rhs_bracket = rhs_bracket
 
     def __eq__(self, other):
-        return type(other) == SubscriptionExpression and self.base == other.base and self.lhs_bracket == other.lhs_bracket and self.expression == other.expression and self.rhs_bracket == other.rhs_bracket
+        return (
+            type(other) == SubscriptionExpression
+            and self.base == other.base
+            and self.lhs_bracket == other.lhs_bracket
+            and self.expression == other.expression
+            and self.rhs_bracket == other.rhs_bracket
+        )
 
     def __repr__(self):
         return f"SUBSCRIPTION({self.base}|{self.lhs_bracket}|{self.expression}|{self.rhs_bracket})"
 
-    def try_replace_child(self, original: AbstractASTNode | None, replacement: AbstractASTNode, position: ParentAttributeSection) -> bool:
+    def try_replace_child(
+        self,
+        original: AbstractASTNode | None,
+        replacement: AbstractASTNode,
+        position: ParentAttributeSection,
+    ) -> bool:
         if position == ParentAttributeSection.LHS:
             self.base = replacement
         elif position == ParentAttributeSection.RHS:
@@ -499,7 +653,12 @@ class SubscriptionExpression(AbstractASTNodeExpression):
 
         return True
 
-    def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder, is_target=False):
+    def emit_c_code(
+        self,
+        base: CCodeEmitter,
+        context: CCodeEmitter.CExpressionBuilder,
+        is_target=False,
+    ):
         if not is_target:
             context.add_code("PY_GetSubscriptionValue(")
             self.base.emit_c_code(base, context)
@@ -524,7 +683,12 @@ class CallExpression(AbstractASTNodeExpression):
         STAR_STAR = enum.auto()
 
     class CallExpressionArgument(AbstractASTNode):
-        def __init__(self, value: AbstractASTNode, mode: CallExpression.ParameterType, key: Lexer.Token = None):
+        def __init__(
+            self,
+            value: AbstractASTNode,
+            mode: CallExpression.ParameterType,
+            key: Lexer.Token = None,
+        ):
             super().__init__()
 
             assert (mode == CallExpression.ParameterType.KEYWORD) == (key is not None)
@@ -534,22 +698,44 @@ class CallExpression(AbstractASTNodeExpression):
             self.key = key
 
         def __eq__(self, other):
-            return type(other) == CallExpression.CallExpressionArgument and self.value == other.value and self.mode == other.mode and self.key == other.key
+            return (
+                type(other) == CallExpression.CallExpressionArgument
+                and self.value == other.value
+                and self.mode == other.mode
+                and self.key == other.key
+            )
 
         def __repr__(self):
             return f"ARG({self.value}|{self.mode}|{self.key})"
 
-        def try_replace_child(self, original: AbstractASTNode | None, replacement: AbstractASTNode, position: ParentAttributeSection) -> bool:
+        def try_replace_child(
+            self,
+            original: AbstractASTNode | None,
+            replacement: AbstractASTNode,
+            position: ParentAttributeSection,
+        ) -> bool:
             if position == ParentAttributeSection.PARAMETER:
                 self.value = replacement
                 return True
             return False
 
-        def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder, is_target=False):
+        def emit_c_code(
+            self,
+            base: CCodeEmitter,
+            context: CCodeEmitter.CExpressionBuilder,
+            is_target=False,
+        ):
             assert self.mode == CallExpression.ParameterType.NORMAL
             self.value.emit_c_code(base, context, is_target=is_target)
 
-    def __init__(self, base: AbstractASTNode, generics: typing.List[AbstractASTNode], l_bracket: Lexer.Token, args: typing.List[CallExpression.CallExpressionArgument], r_bracket: Lexer.Token):
+    def __init__(
+        self,
+        base: AbstractASTNode,
+        generics: typing.List[AbstractASTNode],
+        l_bracket: Lexer.Token,
+        args: typing.List[CallExpression.CallExpressionArgument],
+        r_bracket: Lexer.Token,
+    ):
         super().__init__()
         self.base = base
         self.generics = generics
@@ -558,12 +744,24 @@ class CallExpression(AbstractASTNodeExpression):
         self.r_bracket = r_bracket
 
     def __eq__(self, other):
-        return type(other) == CallExpression and self.base == other.base and self.generics == other.generics and self.l_bracket == other.l_bracket and self.args == other.args and self.r_bracket == other.r_bracket
+        return (
+            type(other) == CallExpression
+            and self.base == other.base
+            and self.generics == other.generics
+            and self.l_bracket == other.l_bracket
+            and self.args == other.args
+            and self.r_bracket == other.r_bracket
+        )
 
     def __repr__(self):
         return f"CALL({self.base}|{self.generics}|{self.l_bracket}|{self.args}|{self.r_bracket})"
 
-    def try_replace_child(self, original: AbstractASTNode | None, replacement: AbstractASTNode, position: ParentAttributeSection) -> bool:
+    def try_replace_child(
+        self,
+        original: AbstractASTNode | None,
+        replacement: AbstractASTNode,
+        position: ParentAttributeSection,
+    ) -> bool:
         if position == ParentAttributeSection.LHS:
             self.base = replacement
         elif position == ParentAttributeSection.PARAMETER:
@@ -572,7 +770,12 @@ class CallExpression(AbstractASTNodeExpression):
             return False
         return True
 
-    def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder, is_target=False):
+    def emit_c_code(
+        self,
+        base: CCodeEmitter,
+        context: CCodeEmitter.CExpressionBuilder,
+        is_target=False,
+    ):
         if not isinstance(self.base, ConstantAccessExpression):
             self.emit_c_code_any_call(base, context)
             return
@@ -595,10 +798,14 @@ class CallExpression(AbstractASTNodeExpression):
 
         context.add_code(")")
 
-    def emit_c_code_constructor(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder):
+    def emit_c_code_constructor(
+        self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder
+    ):
         temporary = base.get_fresh_name("obj_instance")
         constructor = base.get_fresh_name("constructor")
-        cls: ClassDefinitionNode = typing.cast(ClassDefinitionNode, typing.cast(ConstantAccessExpression, self.base).value)
+        cls: ClassDefinitionNode = typing.cast(
+            ClassDefinitionNode, typing.cast(ConstantAccessExpression, self.base).value
+        )
 
         args = ""
         if self.args:
@@ -610,18 +817,22 @@ class CallExpression(AbstractASTNodeExpression):
                 arg.emit_c_code(base, context.parent)
                 context.parent.add_code(";\n")
 
-        context.parent.add_code(f"""
+        context.parent.add_code(
+            f"""
 PyObjectContainer* {temporary} = PY_createClassInstance({'PY_CLASS_' if not isinstance(cls, StandardLibraryClass) else ''}{cls.normal_name});
 PyObjectContainer* {constructor} = PY_getObjectAttributeByNameOrStatic({temporary}, "__init__");
 
 assert({constructor} != NULL);
 PY_invokeBoxedMethod({constructor}, NULL, {len(self.args)}, {args if self.args else 'NULL'}, NULL);
 DECREF({constructor});
-""")
+"""
+        )
 
         context.add_code(temporary)
 
-    def emit_c_code_any_call(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder):
+    def emit_c_code_any_call(
+        self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder
+    ):
         if self.args:
             temporary = base.get_fresh_name("temporary")
 
@@ -639,7 +850,9 @@ DECREF({constructor});
                     print(i, arg)
                     intro.add_code(";\n")
 
-            context.add_code(f"PY_invokeBoxedMethod({temporary}, NULL, {len(self.args)}, {args}, NULL)")
+            context.add_code(
+                f"PY_invokeBoxedMethod({temporary}, NULL, {len(self.args)}, {args}, NULL)"
+            )
         else:
             context.add_code("PY_invokeBoxedMethod(")
             self.base.emit_c_code(base, context)
@@ -652,18 +865,30 @@ class ReturnStatement(AbstractASTNode):
         self.return_value = return_value
 
     def __eq__(self, other):
-        return type(other) == ReturnStatement and self.return_value == other.return_value
+        return (
+            type(other) == ReturnStatement and self.return_value == other.return_value
+        )
 
     def __repr__(self):
         return f"RETURN({self.return_value})"
 
-    def try_replace_child(self, original: AbstractASTNode | None, replacement: AbstractASTNode, position: ParentAttributeSection) -> bool:
+    def try_replace_child(
+        self,
+        original: AbstractASTNode | None,
+        replacement: AbstractASTNode,
+        position: ParentAttributeSection,
+    ) -> bool:
         if position == ParentAttributeSection.RHS:
             self.return_value = replacement
             return True
         return False
 
-    def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder, is_target=False):
+    def emit_c_code(
+        self,
+        base: CCodeEmitter,
+        context: CCodeEmitter.CExpressionBuilder,
+        is_target=False,
+    ):
         context.add_code("return ")
         self.return_value.emit_c_code(base, context)
         context.add_code(";")
@@ -677,10 +902,18 @@ class FunctionDefinitionNode(AbstractASTNode):
         STAR_STAR = enum.auto()
 
     class FunctionDefinitionParameter(AbstractASTNode):
-        def __init__(self, name: Lexer.Token, mode: FunctionDefinitionNode.ParameterType, hint=None, default: AbstractASTNode = None):
+        def __init__(
+            self,
+            name: Lexer.Token,
+            mode: FunctionDefinitionNode.ParameterType,
+            hint=None,
+            default: AbstractASTNode = None,
+        ):
             super().__init__()
 
-            assert (default is not None) == (mode == FunctionDefinitionNode.ParameterType.KEYWORD)
+            assert (default is not None) == (
+                mode == FunctionDefinitionNode.ParameterType.KEYWORD
+            )
 
             self.name = name
             self.normal_name = name.text
@@ -689,18 +922,38 @@ class FunctionDefinitionNode(AbstractASTNode):
             self.default = default
 
         def __eq__(self, other):
-            return type(other) == FunctionDefinitionNode.FunctionDefinitionParameter and self.name == other.name and self.mode == other.mode and self.hint == other.hint and self.default == other.default
+            return (
+                type(other) == FunctionDefinitionNode.FunctionDefinitionParameter
+                and self.name == other.name
+                and self.mode == other.mode
+                and self.hint == other.hint
+                and self.default == other.default
+            )
 
         def __repr__(self):
             return f"PARAMETER({self.name}|{self.mode}|{self.hint}|{self.default})"
 
-        def try_replace_child(self, original: AbstractASTNode | None, replacement: AbstractASTNode, position: ParentAttributeSection) -> bool:
-            if self.mode == FunctionDefinitionNode.ParameterType.KEYWORD and position == ParentAttributeSection.PARAMETER:
+        def try_replace_child(
+            self,
+            original: AbstractASTNode | None,
+            replacement: AbstractASTNode,
+            position: ParentAttributeSection,
+        ) -> bool:
+            if (
+                self.mode == FunctionDefinitionNode.ParameterType.KEYWORD
+                and position == ParentAttributeSection.PARAMETER
+            ):
                 self.default = replacement
                 return True
             return False
 
-    def __init__(self, name: Lexer.Token, generics: typing.List[Lexer.Token], parameters: typing.List[FunctionDefinitionNode.FunctionDefinitionParameter], body: typing.List[AbstractASTNode]):
+    def __init__(
+        self,
+        name: Lexer.Token,
+        generics: typing.List[Lexer.Token],
+        parameters: typing.List[FunctionDefinitionNode.FunctionDefinitionParameter],
+        body: typing.List[AbstractASTNode],
+    ):
         super().__init__()
         self.name = name
         self.generics = generics
@@ -709,18 +962,39 @@ class FunctionDefinitionNode(AbstractASTNode):
         self.normal_name = name.text
 
     def __eq__(self, other):
-        return type(other) == FunctionDefinitionNode and self.name == other.name and self.generics == other.generics and self.parameters == other.parameters and self.body == other.body
+        return (
+            type(other) == FunctionDefinitionNode
+            and self.name == other.name
+            and self.generics == other.generics
+            and self.parameters == other.parameters
+            and self.body == other.body
+        )
 
     def __repr__(self):
         return f"FUNCTION({self.name}|{self.generics}|{self.parameters}|{self.body})"
 
-    def try_replace_child(self, original: AbstractASTNode | None, replacement: AbstractASTNode, position: ParentAttributeSection) -> bool:
+    def try_replace_child(
+        self,
+        original: AbstractASTNode | None,
+        replacement: AbstractASTNode,
+        position: ParentAttributeSection,
+    ) -> bool:
         return False  # nothing to replace, needs to be replaced in the arg itself
 
-    def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder, is_target=False):
+    def emit_c_code(
+        self,
+        base: CCodeEmitter,
+        context: CCodeEmitter.CExpressionBuilder,
+        is_target=False,
+    ):
         func_name = self.normal_name
 
-        func = base.CFunctionBuilder(func_name, [f"PyObjectContainer* {param.normal_name}" for param in self.parameters], "PyObjectContainer*", base.scope)
+        func = base.CFunctionBuilder(
+            func_name,
+            [f"PyObjectContainer* {param.normal_name}" for param in self.parameters],
+            "PyObjectContainer*",
+            base.scope,
+        )
         base.add_function(func)
 
         if len(self.body) > 0:
@@ -742,13 +1016,23 @@ class FunctionDefinitionNode(AbstractASTNode):
             else:
                 inner_section.add_code("\n")
 
-            func.add_code(inner_section.get_result()+"\n")
+            func.add_code(inner_section.get_result() + "\n")
 
         # todo: when bound object method, forward 'self' as first argument!
         base.add_include("<assert.h>")
 
         safe_name = f"{func_name}_safeWrap"
-        safe_func = base.CFunctionBuilder(safe_name, ["PyObjectContainer* self", "uint8_t argc", "PyObjectContainer** args", "CallStructureInfo* info"], "PyObjectContainer*", base.scope)
+        safe_func = base.CFunctionBuilder(
+            safe_name,
+            [
+                "PyObjectContainer* self",
+                "uint8_t argc",
+                "PyObjectContainer** args",
+                "CallStructureInfo* info",
+            ],
+            "PyObjectContainer*",
+            base.scope,
+        )
         base.add_function(safe_func)
 
         # todo: there are other arg types!
@@ -756,7 +1040,7 @@ class FunctionDefinitionNode(AbstractASTNode):
         arg_unbox = [f"args[{i}]" for i, param in enumerate(self.parameters)]
         arg_unbox_2 = [f"args[{i}]" for i, param in enumerate(self.parameters[1:])]
 
-        unbox = ' , '.join(arg_unbox)
+        unbox = " , ".join(arg_unbox)
         unbox_2 = " , ".join(arg_unbox_2)
 
         if len(self.parameters) > 0:
@@ -776,15 +1060,23 @@ else
 """
             )
         else:
-            safe_func.add_code(f"""
+            safe_func.add_code(
+                f"""
 assert(self == NULL);
 assert(argc == {len(self.parameters)});
 return {func_name}({unbox});
-""")
+"""
+            )
 
 
 class ClassDefinitionNode(AbstractASTNode):
-    def __init__(self, name: Lexer.Token, generics: typing.List[Lexer.Token], parents: typing.List[AbstractASTNode], body: typing.List[AbstractASTNode]):
+    def __init__(
+        self,
+        name: Lexer.Token,
+        generics: typing.List[Lexer.Token],
+        parents: typing.List[AbstractASTNode],
+        body: typing.List[AbstractASTNode],
+    ):
         super().__init__()
         self.name = name
         self.generics = generics
@@ -793,12 +1085,23 @@ class ClassDefinitionNode(AbstractASTNode):
         self.normal_name = name.text
 
     def __eq__(self, other):
-        return type(other) == ClassDefinitionNode and self.name == other.name and self.generics == other.generics and self.parents == other.parents and self.body == other.body
+        return (
+            type(other) == ClassDefinitionNode
+            and self.name == other.name
+            and self.generics == other.generics
+            and self.parents == other.parents
+            and self.body == other.body
+        )
 
     def __repr__(self):
         return f"CLASS({self.name}|{self.generics}|{self.parents}|{self.body})"
 
-    def try_replace_child(self, original: AbstractASTNode | None, replacement: AbstractASTNode, position: ParentAttributeSection) -> bool:
+    def try_replace_child(
+        self,
+        original: AbstractASTNode | None,
+        replacement: AbstractASTNode,
+        position: ParentAttributeSection,
+    ) -> bool:
         if original is None:
             return False
 
@@ -811,12 +1114,19 @@ class ClassDefinitionNode(AbstractASTNode):
 
         return False
 
-    def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder, is_target=False):
+    def emit_c_code(
+        self,
+        base: CCodeEmitter,
+        context: CCodeEmitter.CExpressionBuilder,
+        is_target=False,
+    ):
         variable_name = f"PY_CLASS_{self.normal_name}"
 
         base.add_global_variable("PyClassContainer*", variable_name)
 
-        init_class = CCodeEmitter.CFunctionBuilder(f"PY_CLASS_INIT_{variable_name}", [], "void", base.scope)
+        init_class = CCodeEmitter.CFunctionBuilder(
+            f"PY_CLASS_INIT_{variable_name}", [], "void", base.scope
+        )
         base.add_function(init_class)
 
         if len(self.body) > 0:
@@ -827,19 +1137,27 @@ class ClassDefinitionNode(AbstractASTNode):
             ]
             for var in self.body[0].scope.variable_name_stack:
                 if var not in external:
-                    init_class.add_code(f"PyObjectContainer* {self.body[0].scope.get_remapped_name(var)};\n")
+                    init_class.add_code(
+                        f"PyObjectContainer* {self.body[0].scope.get_remapped_name(var)};\n"
+                    )
 
-        init_class.add_code(f"""
+        init_class.add_code(
+            f"""
 // Create Class {variable_name} ('{self.name.text}' in source code)
 {variable_name} = PY_createClassContainer("{self.name.text}");
 PY_ClassContainer_AllocateParentArray({variable_name}, {max(len(self.parents), 1)});
-""")  # todo: include all the other stuff here!
+"""
+        )  # todo: include all the other stuff here!
 
-        init_class.add_code(f"\n// Create Parent Objects for class '{self.name.text}'\n")
+        init_class.add_code(
+            f"\n// Create Parent Objects for class '{self.name.text}'\n"
+        )
         if self.parents:
             for i, parent in enumerate(self.parents):
                 if isinstance(parent, ClassDefinitionNode):
-                    init_class.add_code(f"{variable_name} -> parents[{i}] = PY_CLASS_{parent.normal_name};\n")
+                    init_class.add_code(
+                        f"{variable_name} -> parents[{i}] = PY_CLASS_{parent.normal_name};\n"
+                    )
                 else:
                     raise NotImplementedError
 
@@ -851,7 +1169,9 @@ PY_ClassContainer_AllocateParentArray({variable_name}, {max(len(self.parents), 1
         for line in self.body:
             if isinstance(line, FunctionDefinitionNode):
                 print(line)
-                init_class.add_code(f"PY_setClassAttributeByNameOrCreate({variable_name}, \"{line.name.text}\", PY_createBoxForFunction({line.normal_name}_safeWrap));\n")
+                init_class.add_code(
+                    f'PY_setClassAttributeByNameOrCreate({variable_name}, "{line.name.text}", PY_createBoxForFunction({line.normal_name}_safeWrap));\n'
+                )
 
         for line in self.body:
             inner_block = init_class.get_statement_builder(indent=False)
@@ -863,7 +1183,7 @@ PY_ClassContainer_AllocateParentArray({variable_name}, {max(len(self.parents), 1
             else:
                 inner_block.add_code("\n")
 
-            init_class.add_code(inner_block.get_result()+"\n")
+            init_class.add_code(inner_block.get_result() + "\n")
 
         base.add_to_initializer(f"PY_CLASS_INIT_{variable_name}();")
 
@@ -873,10 +1193,20 @@ class StandardLibraryClass(ClassDefinitionNode):
         super().__init__(TokenType.IDENTIFIER(name), [], [], [])
         self.normal_name = exposed_name
 
-    def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder, is_target=False):
+    def emit_c_code(
+        self,
+        base: CCodeEmitter,
+        context: CCodeEmitter.CExpressionBuilder,
+        is_target=False,
+    ):
         raise RuntimeError
 
-    def try_replace_child(self, original: AbstractASTNode | None, replacement: AbstractASTNode, position: ParentAttributeSection) -> bool:
+    def try_replace_child(
+        self,
+        original: AbstractASTNode | None,
+        replacement: AbstractASTNode,
+        position: ParentAttributeSection,
+    ) -> bool:
         raise RuntimeError
 
     def __eq__(self, other):
@@ -893,12 +1223,21 @@ class WhileStatement(AbstractASTNode):
         self.body = body
 
     def __eq__(self, other):
-        return type(other) == WhileStatement and self.condition == other.condition and self.body == other.body
+        return (
+            type(other) == WhileStatement
+            and self.condition == other.condition
+            and self.body == other.body
+        )
 
     def __repr__(self):
         return f"WHILE({self.condition}|{self.body})"
 
-    def try_replace_child(self, original: AbstractASTNode | None, replacement: AbstractASTNode, position: ParentAttributeSection) -> bool:
+    def try_replace_child(
+        self,
+        original: AbstractASTNode | None,
+        replacement: AbstractASTNode,
+        position: ParentAttributeSection,
+    ) -> bool:
         if position == ParentAttributeSection.LHS:
             self.condition = replacement
             return True
@@ -907,7 +1246,12 @@ class WhileStatement(AbstractASTNode):
             return True
         return False
 
-    def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder, is_target=False):
+    def emit_c_code(
+        self,
+        base: CCodeEmitter,
+        context: CCodeEmitter.CExpressionBuilder,
+        is_target=False,
+    ):
         context.add_code("\nwhile (PY_getTruthValueOf(")
         self.condition.emit_c_code(base, context)
         context.add_code(")) {\n")
@@ -962,19 +1306,31 @@ class BinaryOperatorExpression(AbstractASTNodeExpression):
         "^": BinaryOperation.BIN_XOR,
     }
 
-    def __init__(self, lhs: AbstractASTNode, operator: BinaryOperation, rhs: AbstractASTNode):
+    def __init__(
+        self, lhs: AbstractASTNode, operator: BinaryOperation, rhs: AbstractASTNode
+    ):
         super().__init__()
         self.lhs = lhs
         self.operator = operator
         self.rhs = rhs
 
     def __eq__(self, other):
-        return type(other) == BinaryOperatorExpression and self.lhs == other.lhs and self.operator == other.operator and self.rhs == other.rhs
+        return (
+            type(other) == BinaryOperatorExpression
+            and self.lhs == other.lhs
+            and self.operator == other.operator
+            and self.rhs == other.rhs
+        )
 
     def __repr__(self):
         return f"OPERATION({self.lhs}|{self.operator.name}|{self.rhs})"
 
-    def try_replace_child(self, original: AbstractASTNode | None, replacement: AbstractASTNode, position: ParentAttributeSection) -> bool:
+    def try_replace_child(
+        self,
+        original: AbstractASTNode | None,
+        replacement: AbstractASTNode,
+        position: ParentAttributeSection,
+    ) -> bool:
         if position == ParentAttributeSection.LHS:
             self.lhs = replacement
         elif position == ParentAttributeSection.RHS:
@@ -983,7 +1339,12 @@ class BinaryOperatorExpression(AbstractASTNodeExpression):
             return False
         return True
 
-    def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder, is_target=False):
+    def emit_c_code(
+        self,
+        base: CCodeEmitter,
+        context: CCodeEmitter.CExpressionBuilder,
+        is_target=False,
+    ):
         raise NotImplementedError
 
 
@@ -994,12 +1355,21 @@ class WalrusOperatorExpression(AbstractASTNodeExpression):
         self.value = value
 
     def __eq__(self, other):
-        return type(other) == WalrusOperatorExpression and self.target == other.target and self.value == other.value
+        return (
+            type(other) == WalrusOperatorExpression
+            and self.target == other.target
+            and self.value == other.value
+        )
 
     def __repr__(self):
         return f"WALRUS_OPERATOR({self.target}|{self.value})"
 
-    def try_replace_child(self, original: AbstractASTNode | None, replacement: AbstractASTNode, position: ParentAttributeSection) -> bool:
+    def try_replace_child(
+        self,
+        original: AbstractASTNode | None,
+        replacement: AbstractASTNode,
+        position: ParentAttributeSection,
+    ) -> bool:
         if position == ParentAttributeSection.LHS:
             self.target = replacement
         elif position == ParentAttributeSection.RHS:
@@ -1008,7 +1378,12 @@ class WalrusOperatorExpression(AbstractASTNodeExpression):
             return False
         return True
 
-    def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder, is_target=False):
+    def emit_c_code(
+        self,
+        base: CCodeEmitter,
+        context: CCodeEmitter.CExpressionBuilder,
+        is_target=False,
+    ):
         self.target.emit_c_code(base, context, is_target=True)
         context.add_code(" = ")
         self.value.emit_c_code(base, context)
@@ -1048,14 +1423,13 @@ class SyntaxTreeVisitor:
             return self.visit_while_statement(obj)
         elif obj_type == PriorityBrackets:
             return self.visit_priority_bracket(obj)
+        elif obj_type == TupleConstructor:
+            return self.visit_tuple_constructor(obj)
         else:
             raise RuntimeError(obj)
 
     def visit_any_list(self, objs: typing.List[AbstractASTNode]):
-        return [
-            self.visit_any(obj)
-            for obj in objs
-        ]
+        return [self.visit_any(obj) for obj in objs]
 
     def visit_newline(self, newline: PyNewlineNode):
         pass
@@ -1064,38 +1438,41 @@ class SyntaxTreeVisitor:
         pass
 
     def visit_assignment(self, assignment: AssignmentExpression):
-        return [self.visit_any(target) for target in assignment.lhs], self.visit_any(assignment.rhs)
+        return [self.visit_any(target) for target in assignment.lhs], self.visit_any(
+            assignment.rhs
+        )
 
     def visit_name_access(self, access: NameAccessExpression):
         pass
 
     def visit_attribute_expression(self, expression: AttributeExpression):
-        return self.visit_any(expression.base),
+        return (self.visit_any(expression.base),)
 
     def visit_subscription_expression(self, expression: SubscriptionExpression):
         return self.visit_any(expression.base), self.visit_any(expression.expression)
 
     def visit_call_expression(self, node: CallExpression):
         return self.visit_any(node.base), [
-            self.visit_call_argument(arg)
-            for arg in node.args
+            self.visit_call_argument(arg) for arg in node.args
         ]
 
     def visit_call_argument(self, arg: CallExpression.CallExpressionArgument):
-        return self.visit_any(arg.value),
+        return (self.visit_any(arg.value),)
 
     def visit_function_definition(self, node: FunctionDefinitionNode):
         return [
             self.visit_function_definition_parameter(param) for param in node.parameters
         ], self.visit_any_list(node.body)
 
-    def visit_function_definition_parameter(self, node: FunctionDefinitionNode.FunctionDefinitionParameter):
+    def visit_function_definition_parameter(
+        self, node: FunctionDefinitionNode.FunctionDefinitionParameter
+    ):
         if node.mode == FunctionDefinitionNode.ParameterType.KEYWORD:
             assert node.default is not None
 
-            return self.visit_any(node.default),
+            return (self.visit_any(node.default),)
 
-        return None,
+        return (None,)
 
     def visit_class_definition(self, node: ClassDefinitionNode):
         return self.visit_any_list(node.parents), self.visit_any_list(node.body)
@@ -1104,10 +1481,12 @@ class SyntaxTreeVisitor:
         pass
 
     def visit_return_statement(self, return_statement: ReturnStatement):
-        return self.visit_any(return_statement.return_value),
+        return (self.visit_any(return_statement.return_value),)
 
     def visit_while_statement(self, while_statement: WhileStatement):
-        return self.visit_any(while_statement.condition), self.visit_any_list(while_statement.body)
+        return self.visit_any(while_statement.condition), self.visit_any_list(
+            while_statement.body
+        )
 
     def visit_binary_operator(self, operator: BinaryOperatorExpression):
         pass
@@ -1116,7 +1495,10 @@ class SyntaxTreeVisitor:
         return self.visit_any(operator.target), self.visit_any(operator.value)
 
     def visit_priority_bracket(self, node: PriorityBrackets):
-        return self.visit_any(node.inner_node),
+        return (self.visit_any(node.inner_node),)
+
+    def visit_tuple_constructor(self, node: TupleConstructor):
+        return (self.visit_any_list(node.items),)
 
 
 Scope.STANDARD_LIBRARY_VALUES["list"] = StandardLibraryClass("list", "PY_TYPE_LIST")
@@ -1165,20 +1547,31 @@ class Parser:
                     if self.lexer.inspect_chars(1) not in ("\n", None):
                         for node in ast_stream:
                             print(node)
-                        raise SyntaxError(f"expected <newline> or ';' after expression, got {repr(self.lexer.get_chars(1))}")
+                        raise SyntaxError(
+                            f"expected <newline> or ';' after expression, got {repr(self.lexer.get_chars(1))}"
+                        )
 
             self.skip_end_check = False
 
             if node is not None:
                 ast_stream.append(node)
             else:
-                print(repr(self.lexer.file[self.lexer.file_cursor:]), len(self.lexer.file[self.lexer.file_cursor:]))
+                print(
+                    repr(self.lexer.file[self.lexer.file_cursor :]),
+                    len(self.lexer.file[self.lexer.file_cursor :]),
+                )
                 raise SyntaxError("no valid instruction found")
 
         return ast_stream
 
     def emit_c_code(self, expr: typing.List[AbstractASTNode] = None) -> str:
-        from pycompiler.TypeResolver import ResolveParentAttribute, ScopeGeneratorVisitor, LocalNameValidator, ResolveStaticNames, NameNormalizer
+        from pycompiler.TypeResolver import (
+            ResolveParentAttribute,
+            ScopeGeneratorVisitor,
+            LocalNameValidator,
+            ResolveStaticNames,
+            NameNormalizer,
+        )
 
         scope = Scope()
 
@@ -1207,7 +1600,9 @@ class Parser:
 
             for var in expr[0].scope.variable_name_stack:
                 if var not in skip_names:
-                    main.add_code(f"PyObjectContainer* {expr[0].scope.get_remapped_name(var)};\n")
+                    main.add_code(
+                        f"PyObjectContainer* {expr[0].scope.get_remapped_name(var)};\n"
+                    )
 
         for line in expr:
             inner_block = main.get_statement_builder(indent=False)
@@ -1221,7 +1616,7 @@ class Parser:
 
             main.add_code(inner_block.get_result() + "\n")
 
-        code = "#include \"pyinclude.h\"\n#include \"standard_library/init.h\"\n\n// code compiled from python to c via PyCodeCompiler\n\n"
+        code = '#include "pyinclude.h"\n#include "standard_library/init.h"\n\n// code compiled from python to c via PyCodeCompiler\n\n'
 
         for include in builder.includes:
             code += f"#include {include}\n"
@@ -1250,7 +1645,9 @@ class Parser:
 
         return code
 
-    def parse_line(self, require_indent=True, include_comment=True) -> AbstractASTNode | None:
+    def parse_line(
+        self, require_indent=True, include_comment=True
+    ) -> AbstractASTNode | None:
         if include_comment and (comment := self.try_parse_comment()):
             return comment
 
@@ -1262,7 +1659,12 @@ class Parser:
 
             if self.indent_markers:
                 if not empty or empty.text != self.indent_markers * self.indent_level:
-                    print("not enough", repr(empty.text) if empty else None, repr(self.indent_markers), self.indent_level)
+                    print(
+                        "not enough",
+                        repr(empty.text) if empty else None,
+                        repr(self.indent_markers),
+                        self.indent_level,
+                    )
                     self.lexer.give_back(empty)
                     raise IndentationError
 
@@ -1288,7 +1690,9 @@ class Parser:
         if while_statement := self.try_parse_while_statement():
             return while_statement
 
-        if self.is_in_function and (return_statement := self.try_parse_return_statement()):
+        if self.is_in_function and (
+            return_statement := self.try_parse_return_statement()
+        ):
             return return_statement
 
         if assignment := self.try_parse_assignment():
@@ -1309,7 +1713,9 @@ class Parser:
             if opening_square_bracket := self.lexer.try_parse_opening_square_bracket():
                 expression = self.try_parse_expression()
 
-                if expression is None or not (closing_bracket := self.lexer.try_parse_closing_square_bracket()):
+                if expression is None or not (
+                    closing_bracket := self.lexer.try_parse_closing_square_bracket()
+                ):
                     raise SyntaxError
 
                 base = SubscriptionExpression(
@@ -1380,7 +1786,9 @@ class Parser:
             if opening_square_bracket := self.lexer.try_parse_opening_square_bracket():
                 expression = self.try_parse_expression()
 
-                if expression is None or not (closing_bracket := self.lexer.try_parse_closing_square_bracket()):
+                if expression is None or not (
+                    closing_bracket := self.lexer.try_parse_closing_square_bracket()
+                ):
                     raise SyntaxError
 
                 base = SubscriptionExpression(
@@ -1412,7 +1820,10 @@ class Parser:
                     raise SyntaxError
                 base = WalrusOperatorExpression(base, expression)
 
-            elif self.lexer.inspect_chars(1) and self.lexer.inspect_chars(1) in "+*%/&|^@":
+            elif (
+                self.lexer.inspect_chars(1)
+                and self.lexer.inspect_chars(1) in "+*%/&|^@"
+            ):
                 if self.lexer.inspect_chars(2) in ("**", "//"):
                     operator = self.lexer.get_chars(2)
                 else:
@@ -1422,7 +1833,9 @@ class Parser:
                 if expression is None:
                     raise SyntaxError
 
-                base = BinaryOperatorExpression(base, BinaryOperatorExpression.String2Type[operator], expression)
+                base = BinaryOperatorExpression(
+                    base, BinaryOperatorExpression.String2Type[operator], expression
+                )
 
             elif self.lexer.inspect_chars(4) == "and ":
                 self.lexer.get_chars(4)
@@ -1430,7 +1843,9 @@ class Parser:
                 if expression is None:
                     raise SyntaxError
 
-                base = BinaryOperatorExpression(base, BinaryOperatorExpression.BinaryOperation.LOGIC_AND, expression)
+                base = BinaryOperatorExpression(
+                    base, BinaryOperatorExpression.BinaryOperation.LOGIC_AND, expression
+                )
 
             elif self.lexer.inspect_chars(3) == "or ":
                 self.lexer.get_chars(3)
@@ -1438,7 +1853,9 @@ class Parser:
                 if expression is None:
                     raise SyntaxError
 
-                base = BinaryOperatorExpression(base, BinaryOperatorExpression.BinaryOperation.LOGIC_OR, expression)
+                base = BinaryOperatorExpression(
+                    base, BinaryOperatorExpression.BinaryOperation.LOGIC_OR, expression
+                )
 
             else:
                 break
@@ -1446,7 +1863,9 @@ class Parser:
         self.lexer.try_parse_whitespaces()
         return base
 
-    def parse_function_call(self, base: AbstractASTNode, opening_bracket: Lexer.Token) -> CallExpression:
+    def parse_function_call(
+        self, base: AbstractASTNode, opening_bracket: Lexer.Token
+    ) -> CallExpression:
         generics = []  # todo: load from base if it is an subscription access
         args = []
 
@@ -1505,7 +1924,6 @@ class Parser:
 
                         self.lexer.discard_save_state()
 
-
                 if arg is None:
                     self.lexer.rollback_state()
                     expr = self.try_parse_expression()
@@ -1523,7 +1941,9 @@ class Parser:
             self.lexer.try_parse_whitespaces()
 
             if self.lexer.inspect_chars(1) != ",":
-                if not (closing_bracket := self.lexer.try_parse_closing_round_bracket()):
+                if not (
+                    closing_bracket := self.lexer.try_parse_closing_round_bracket()
+                ):
                     raise SyntaxError
 
                 break
@@ -1567,7 +1987,6 @@ class Parser:
 
         return ReturnStatement(return_value)
 
-
     def parse_quoted_string(self, quote_type: str) -> ConstantAccessExpression:
         self.lexer.get_chars(1)
         text = ""
@@ -1599,7 +2018,9 @@ class Parser:
 
         return ConstantAccessExpression(text)
 
-    def parse_multiline_quoted_string(self, quote_type: str) -> ConstantAccessExpression:
+    def parse_multiline_quoted_string(
+        self, quote_type: str
+    ) -> ConstantAccessExpression:
         text = ""
         escapes = 0
         quotes = 0
@@ -1739,7 +2160,9 @@ class Parser:
 
         if self.lexer.get_chars(1) != "(":
             print(function_name)
-            raise SyntaxError("expected '(' after <function name> or <generic parameters>")
+            raise SyntaxError(
+                "expected '(' after <function name> or <generic parameters>"
+            )
 
         parameters = []
 
@@ -1776,9 +2199,7 @@ class Parser:
         self.is_in_function = True
 
         if self.lexer.inspect_chars(1) != "\n":
-            body = [
-                self.parse_line(include_comment=False)
-            ]
+            body = [self.parse_line(include_comment=False)]
         else:
             self.indent_level += 1
             body = self.parse(stop_on_indention_exit=True)
@@ -1797,12 +2218,12 @@ class Parser:
             body,
         )
 
-    def try_parse_generic_parameters(self, duplicate_name_check) -> typing.List[Lexer.Token]:
+    def try_parse_generic_parameters(
+        self, duplicate_name_check
+    ) -> typing.List[Lexer.Token]:
         generic_names = []
 
-        while (
-                name := self.lexer.try_parse_identifier()
-        ) and name is not None:
+        while (name := self.lexer.try_parse_identifier()) and name is not None:
             if name.text in duplicate_name_check:
                 raise NameError("duplicate generic name found in function declaration")
 
@@ -1820,7 +2241,9 @@ class Parser:
 
         return generic_names
 
-    def try_parse_function_parameter(self) -> FunctionDefinitionNode.FunctionDefinitionParameter | None:
+    def try_parse_function_parameter(
+        self,
+    ) -> FunctionDefinitionNode.FunctionDefinitionParameter | None:
         self.lexer.try_parse_whitespaces(include_newline=True)
 
         if self.lexer.inspect_chars(2) == "**":
@@ -2001,9 +2424,7 @@ class Parser:
         self.lexer.try_parse_whitespaces()
 
         if self.lexer.inspect_chars(1) != "\n":
-            body = [
-                self.parse_line(include_comment=False)
-            ]
+            body = [self.parse_line(include_comment=False)]
         else:
             self.indent_level += 1
             body = self.parse(stop_on_indention_exit=True)

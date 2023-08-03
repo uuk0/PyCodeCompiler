@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <memory.h>
+#include <stdarg.h>
 #include "tuple.h"
 
 PyClassContainer* PY_TYPE_TUPLE;
@@ -78,6 +79,25 @@ PyObjectContainer* PY_STD_tuple_CONSTRUCT(PyObjectContainer* self, uint8_t argc,
     memcpy(container->array, args, argc * sizeof(PyObjectContainer*));
 
     return self;
+}
+
+
+PyObjectContainer* PY_STD_tuple_CREATE(uint8_t argc, ...)
+{
+    PyObjectContainer* tuple = PY_createClassInstance(PY_TYPE_TUPLE);
+
+    va_list ap;
+    PyObjectContainer* args[argc];
+    va_start(ap, argc);
+    for(int i = 0; i < argc; i++){
+        PyObjectContainer* t = va_arg(ap, PyObjectContainer*);
+        args[i] = t;
+    }
+    va_end(ap);
+
+    PY_STD_tuple_CONSTRUCT(tuple, argc, args, NULL);
+
+    return tuple;
 }
 
 

@@ -3,11 +3,31 @@ from __future__ import annotations
 import typing
 import warnings
 
-from pycompiler.Parser import SyntaxTreeVisitor, Scope, ParentAttributeSection, ConstantAccessExpression, \
-    NameAccessExpression, WhileStatement, FunctionDefinitionNode, StandardLibraryClass, SubscriptionExpression
+from pycompiler.Parser import (
+    SyntaxTreeVisitor,
+    Scope,
+    ParentAttributeSection,
+    ConstantAccessExpression,
+    NameAccessExpression,
+    WhileStatement,
+    FunctionDefinitionNode,
+    StandardLibraryClass,
+    SubscriptionExpression,
+)
 
 if typing.TYPE_CHECKING:
-    from pycompiler.Parser import ClassDefinitionNode, AssignmentExpression, AbstractASTNode, AttributeExpression, ReturnStatement, CallExpression, BinaryOperatorExpression, WalrusOperatorExpression
+    from pycompiler.Parser import (
+        ClassDefinitionNode,
+        AssignmentExpression,
+        AbstractASTNode,
+        AttributeExpression,
+        ReturnStatement,
+        CallExpression,
+        BinaryOperatorExpression,
+        WalrusOperatorExpression,
+        PriorityBrackets,
+        TupleConstructor,
+    )
 
 
 class ResolveParentAttribute(SyntaxTreeVisitor):
@@ -48,7 +68,9 @@ class ResolveParentAttribute(SyntaxTreeVisitor):
         for body_node in node.body:
             body_node.parent = node, None
 
-    def visit_function_definition_parameter(self, node: FunctionDefinitionNode.FunctionDefinitionParameter):
+    def visit_function_definition_parameter(
+        self, node: FunctionDefinitionNode.FunctionDefinitionParameter
+    ):
         super().visit_function_definition_parameter(node)
         if node.mode == FunctionDefinitionNode.ParameterType.KEYWORD:
             assert node.default is not None
@@ -57,7 +79,10 @@ class ResolveParentAttribute(SyntaxTreeVisitor):
 
     def visit_return_statement(self, return_statement: ReturnStatement):
         super().visit_return_statement(return_statement)
-        return_statement.return_value.parent = return_statement, ParentAttributeSection.RHS
+        return_statement.return_value.parent = (
+            return_statement,
+            ParentAttributeSection.RHS,
+        )
 
     def visit_class_definition(self, node: ClassDefinitionNode):
         super().visit_class_definition(node)
@@ -87,6 +112,15 @@ class ResolveParentAttribute(SyntaxTreeVisitor):
 
         operator.target.parent = operator, ParentAttributeSection.LHS
         operator.value.parent = operator, ParentAttributeSection.RHS
+
+    def visit_priority_bracket(self, node: PriorityBrackets):
+        super().visit_priority_bracket(node)
+        node.inner_node.parent = node
+
+    def visit_tuple_constructor(self, node: TupleConstructor):
+        super().visit_tuple_constructor(node)
+        for n in node.items:
+            n.parent = node
 
 
 class ScopeGeneratorVisitor(SyntaxTreeVisitor):
@@ -127,7 +161,9 @@ class ScopeGeneratorVisitor(SyntaxTreeVisitor):
 
         self.scope.export_variable_name(node.name.text, strong_value=node)
 
-    def visit_function_definition_parameter(self, node: FunctionDefinitionNode.FunctionDefinitionParameter):
+    def visit_function_definition_parameter(
+        self, node: FunctionDefinitionNode.FunctionDefinitionParameter
+    ):
         super().visit_function_definition_parameter(node)
         node.scope = self.scope
 
@@ -164,7 +200,9 @@ class NameNormalizer(SyntaxTreeVisitor):
         node.normal_name = node.scope.get_normalised_name(node.name.text)
         node.scope.add_remapped_name(node.name.text, node.normal_name)
 
-    def visit_function_definition_parameter(self, node: FunctionDefinitionNode.FunctionDefinitionParameter):
+    def visit_function_definition_parameter(
+        self, node: FunctionDefinitionNode.FunctionDefinitionParameter
+    ):
         super().visit_function_definition_parameter(node)
         node.normal_name = node.scope.get_normalised_name(node.name.text)
         node.scope.add_remapped_name(node.name.text, node.normal_name)
@@ -183,8 +221,14 @@ class GenericFuncCallInliner(SyntaxTreeVisitor):
     def visit_call_expression(self, node: CallExpression):
         super().visit_call_expression(node)
 
-        if isinstance(node.base, SubscriptionExpression) and isinstance(node.base.base, ConstantAccessExpression) and isinstance(node.base.base.value, FunctionDefinitionNode):
-            node.base = node.base.base  # todo: add generic information to CallExpression!
+        if (
+            isinstance(node.base, SubscriptionExpression)
+            and isinstance(node.base.base, ConstantAccessExpression)
+            and isinstance(node.base.base.value, FunctionDefinitionNode)
+        ):
+            node.base = (
+                node.base.base
+            )  # todo: add generic information to CallExpression!
 
 
 class LocalNameValidator(SyntaxTreeVisitor):
@@ -192,7 +236,9 @@ class LocalNameValidator(SyntaxTreeVisitor):
         super().visit_name_access(access)
 
         if not access.scope.has_name_access(access.name.text):
-            raise NameError(f"Cannot find '{access.name.text}' at {access} in scope {access.scope}")
+            raise NameError(
+                f"Cannot find '{access.name.text}' at {access} in scope {access.scope}"
+            )
 
 
 class ResolveStaticNames(SyntaxTreeVisitor):
@@ -206,18 +252,25 @@ class ResolveStaticNames(SyntaxTreeVisitor):
 
         assert access.parent is not None, "should not be reached"
 
-        if not access.parent[0].try_replace_child(access, ConstantAccessExpression(value), access.parent[1]):
-            warnings.warn(f"Could not replace node {access} as child of {access.parent[0]} with constant value access to {value}")
+        if not access.parent[0].try_replace_child(
+            access, ConstantAccessExpression(value), access.parent[1]
+        ):
+            warnings.warn(
+                f"Could not replace node {access} as child of {access.parent[0]} with constant value access to {value}"
+            )
 
     def visit_attribute_expression(self, expression: AttributeExpression):
         super().visit_attribute_expression(expression)
 
-        if isinstance(expression.base, ConstantAccessExpression) and isinstance(expression.base.value, ClassDefinitionNode):
+        if isinstance(expression.base, ConstantAccessExpression) and isinstance(
+            expression.base.value, ClassDefinitionNode
+        ):
             pass  # todo: check if value is static access-able and replace in that case
 
     def visit_subscription_expression(self, expression: SubscriptionExpression):
         super().visit_subscription_expression(expression)
 
-        if isinstance(expression.base, ConstantAccessExpression) and isinstance(expression.base.value, ClassDefinitionNode):
+        if isinstance(expression.base, ConstantAccessExpression) and isinstance(
+            expression.base.value, ClassDefinitionNode
+        ):
             pass  # todo: check for generic at compile time
-
