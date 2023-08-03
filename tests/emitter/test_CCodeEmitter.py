@@ -7,7 +7,12 @@ import sys
 import typing
 from unittest import TestCase
 from pycompiler import Parser, Lexer, TypeResolver
-from pycompiler.Parser import AssignmentExpression, NameAccessExpression, ConstantAccessExpression, CallExpression
+from pycompiler.Parser import (
+    AssignmentExpression,
+    NameAccessExpression,
+    ConstantAccessExpression,
+    CallExpression,
+)
 from pycompiler.Lexer import TokenType
 
 
@@ -42,8 +47,14 @@ class TestCCodeEmitter(TestCase):
         if os.path.exists(f"{folder}/ast.txt"):
             data = pathlib.Path(f"{folder}/ast.txt").read_text()
             self.assertEqual(
-                "".join(e.strip() for e in data.split("\n")).replace(" ", "").replace(",NEWLINE", "").replace("NEWLINE,", ""),
-                repr(ast_nodes).replace(" ", "").replace(",NEWLINE", "").replace("NEWLINE,", ""),
+                "".join(e.strip() for e in data.split("\n"))
+                .replace(" ", "")
+                .replace(",NEWLINE", "")
+                .replace("NEWLINE,", ""),
+                repr(ast_nodes)
+                .replace(" ", "")
+                .replace(",NEWLINE", "")
+                .replace("NEWLINE,", ""),
             )
 
         c_compare = parser.emit_c_code(expr=ast_nodes)
@@ -116,3 +127,5 @@ class TestCCodeEmitter(TestCase):
     def test_list(self):
         self.run_named_folder_test("list_tests")
 
+    def test_tuple(self):
+        self.run_named_folder_test("tuple_tests")

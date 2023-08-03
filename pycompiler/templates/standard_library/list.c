@@ -352,4 +352,11 @@ void PY_STD_initListType(void)
     PY_setClassAttributeByNameOrCreate(PY_TYPE_LIST, "sort", PY_createBoxForFunction(PY_STD_list_sort));
     // copy
     // __sorted__
+    // count
+    // __contains__
+    // pop
+    // copy
+    // __mul__
+    // __imul__
+    // __iter__
 }

@@ -557,6 +557,8 @@ class TupleConstructor(AbstractASTNode):
                 item.emit_c_code(base, context)
                 context.add_code(", ")
 
+            self.items[-1].emit_c_code(base, context)
+
             context.add_code(")")
         else:
             context.add_code("PY_STD_tuple_CREATE(0)")

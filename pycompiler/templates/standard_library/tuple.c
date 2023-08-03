@@ -91,6 +91,7 @@ PyObjectContainer* PY_STD_tuple_CREATE(uint8_t argc, ...)
     va_start(ap, argc);
     for(int i = 0; i < argc; i++){
         PyObjectContainer* t = va_arg(ap, PyObjectContainer*);
+        INCREF(t);
         args[i] = t;
     }
     va_end(ap);
@@ -174,5 +175,10 @@ void PY_STD_initTupleType(void)
     // __iadd__
     // __add__
     // __hash__
+    // count
+    // __contains__
+    // __mul__
+    // __imul__
+    // __iter__
 }
 
