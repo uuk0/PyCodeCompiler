@@ -15,6 +15,13 @@ root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 example_folder = f"{os.path.dirname(__file__)}/examples"
 
 
+STANDARD_LIBRARY_FILES = [
+    f"{root}/pycompiler/templates/standard_library/{file}"
+    for file in os.listdir(f"{root}/pycompiler/templates/standard_library")
+    if file.endswith(".c")
+]
+
+
 class TestCCodeEmitter(TestCase):
     def run_named_folder_test(self, name: str):
         if not os.path.exists(f"{root}/compiler.txt"):
@@ -54,19 +61,16 @@ class TestCCodeEmitter(TestCase):
             self.compile_only(folder, compiler)
 
     def compile_and_run(self, folder, compiler):
-        shutil.copy(f"{root}/pycompiler/templates/pyinclude.h", f"{folder}/pyinclude.h")
-        shutil.copy(f"{root}/pycompiler/templates/pystandardlib.h", f"{folder}/pystandardlib.h")
-
         command = [
             compiler.replace("\\", "/"),
             "-g",
             f"{folder}/test.c".replace("\\", "/"),
             f"{folder}/result.c".replace("\\", "/"),
             f"{root}/pycompiler/templates/pyinclude.c",
-            f"{root}/pycompiler/templates/pystandardlib.c",
+            f"-I{root}/pycompiler/templates",
             "-o",
             f"{folder}/test.exe",
-        ]
+        ] + STANDARD_LIBRARY_FILES
 
         print(" ".join(command))
         exit_code = subprocess.call(command)
@@ -76,14 +80,12 @@ class TestCCodeEmitter(TestCase):
         self.assertEqual(exit_code, 0)
 
     def compile_only(self, folder, compiler):
-        shutil.copy(f"{root}/pycompiler/templates/pyinclude.h", f"{folder}/pyinclude.h")
-        shutil.copy(f"{root}/pycompiler/templates/pystandardlib.h", f"{folder}/pystandardlib.h")
-
         command = [
             compiler.replace("\\", "/"),
             "-g",
             "-c",
             f"{folder}/result.c".replace("\\", "/"),
+            f"-I{root}/pycompiler/templates",
         ]
 
         print(" ".join(command))

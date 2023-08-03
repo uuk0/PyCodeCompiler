@@ -15,16 +15,19 @@ struct PyObjectContainer;
 struct PyGeneratorContainer;
 struct PyFunctionContext;
 
+extern struct PyObjectContainer* PY_builtin_int_compare_container;
+
 
 enum PyObjectType
 {
-    PY_TYPE_NONE,           // -
-    PY_TYPE_BOOL,           // 0 = False, 1 = True
+    PY_TYPE_NONE,           // -                                             See: PY_NONE
+    PY_TYPE_BOOL,           // 0 = False, 1 = True                           See: PY_TRUE, PY_FALSE
     PY_TYPE_INT,            // int64_t
     PY_TYPE_FLOAT,          // double precision
     PY_TYPE_PY_IMPL,        // a class implemented in python
     PY_TYPE_PY_TYPE,        // a type reference to a PyClassContainer
     PY_TYPE_FUNC_POINTER,   // a c function pointer (boxed)
+    PY_GENERATOR,           // a generator
 };
 typedef enum PyObjectType PyObjectType;
 

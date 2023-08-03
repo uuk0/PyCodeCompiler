@@ -1,5 +1,5 @@
 #include "pyinclude.h"
-#include "pystandardlib.h"
+#include "standard_library/init.h"
 
 // code compiled from python to c via PyCodeCompiler
 

@@ -1,9 +1,9 @@
 //
-// Created by baulu on 02.08.2023.
+// Created by baulu on 03.08.2023.
 //
 
-#ifndef TEMPLATES_PYSTANDARDLIB_H
-#define TEMPLATES_PYSTANDARDLIB_H
+#ifndef TEMPLATES_LIST_H
+#define TEMPLATES_LIST_H
 
 #include "pyinclude.h"
 
@@ -21,6 +21,6 @@ PyObjectContainer* PY_STD_list_getAtIndex(PyObjectContainer* self, uint8_t argc,
 PyObjectContainer* PY_STD_list_removeAtIndex(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args);
 PyObjectContainer* PY_STD_list_toBool(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args);
 
-void PY_STD_INIT();
+void PY_STD_initListType(void);
 
-#endif //TEMPLATES_PYSTANDARDLIB_H
+#endif //TEMPLATES_LIST_H

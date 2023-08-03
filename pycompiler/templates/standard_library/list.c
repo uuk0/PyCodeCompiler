@@ -1,11 +1,7 @@
-//
-// Created by baulu on 02.08.2023.
-//
-
 #include <stdlib.h>
 #include <assert.h>
 #include <memory.h>
-#include "pystandardlib.h"
+#include "list.h"
 
 PyObjectContainer* PY_issubclass(PyObjectContainer* self, int argc, PyObjectContainer** args)
 {
@@ -288,7 +284,7 @@ void PY_STD_list_removeIndex(PY_STD_list_container* list, uint16_t index)
     // TODO: maybe release some memory?
 }
 
-static void PY_STD_initListType()
+void PY_STD_initListType(void)
 {
     PY_TYPE_LIST = PY_createClassContainer("list");
     PY_TYPE_LIST->flags |= PY_CLASS_IS_STD_IMPLEMENTED;
@@ -309,19 +305,4 @@ static void PY_STD_initListType()
     PY_setClassAttributeByNameOrCreate(PY_TYPE_LIST, "__bool__", PY_createBoxForFunction(PY_STD_list_toBool));
     // __iadd__
     // __add__
-}
-
-static bool STD_IS_INITIALISED = false;
-
-void PY_STD_INIT()
-{
-    if (STD_IS_INITIALISED)
-    {
-        return;
-    }
-
-    STD_IS_INITIALISED = true;
-
-    initialize();
-    PY_STD_initListType();
 }

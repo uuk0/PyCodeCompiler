@@ -15,6 +15,8 @@ PyObjectContainer* PY_NONE;
 PyObjectContainer* PY_FALSE;
 PyObjectContainer* PY_TRUE;
 
+PyObjectContainer* PY_builtin_int_compare_container;
+
 PyClassContainer* PY_TYPE_OBJECT;
 
 PyObjectContainer* createEmptyContainer(PyObjectType type)
@@ -166,24 +168,6 @@ static PyObjectContainer* PY_getObjectAttributeByNameOrStatic_StaticTransformer(
 
     return attr;
 }
-
-static PyObjectContainer* PY_builtin_int_compare(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args)
-{
-    assert(argc == 1);
-    // TODO: do float check!
-    if (args[0]->type != PY_TYPE_INT)
-    {
-        return PY_FALSE;
-    }
-
-    if (*(int64_t*)self->raw_value == *(int64_t*)args[0]->raw_value)
-    {
-        return PY_TRUE;
-    }
-    return PY_FALSE;
-}
-
-static PyObjectContainer* PY_builtin_int_compare_container;
 
 static PyObjectContainer* PY_getObjectAttributeByNameOrStatic_primitive(PyObjectContainer* obj, char* name)
 {
@@ -449,8 +433,6 @@ void initialize()
     PY_TRUE->raw_value = (void*)1;
 
     PY_TYPE_OBJECT = PY_createClassContainer("object");
-
-    PY_builtin_int_compare_container = PY_createBoxForFunction(PY_builtin_int_compare);
 
     initialized = true;
 }
