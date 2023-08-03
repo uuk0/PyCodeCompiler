@@ -11,7 +11,6 @@ int _initialise();
 int _initialise() {
     PY_STD_INIT();
     PyObjectContainer* test;
-
     test = PY_createInteger(10);
 
     while (PY_getTruthValueOf(test)) {
