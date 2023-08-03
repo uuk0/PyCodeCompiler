@@ -3,26 +3,6 @@
 #include <memory.h>
 #include "list.h"
 
-PyObjectContainer* PY_issubclass(PyObjectContainer* self, int argc, PyObjectContainer** args)
-{
-    assert(argc == 2);
-    assert(self == NULL);
-    assert(args[0]->type == PY_TYPE_PY_TYPE);
-    assert(args[1]->type == PY_TYPE_PY_TYPE);
-
-    return PY_createBoolean(PY_isSubclassOf(args[0]->raw_value, args[1]->raw_value));
-}
-
-PyObjectContainer* PY_isinstance(PyObjectContainer* self, int argc, PyObjectContainer** args)
-{
-    assert(argc == 2);
-    assert(self == NULL);
-    assert(args[0]->type == PY_TYPE_PY_IMPL);
-    assert(args[1]->type == PY_TYPE_PY_TYPE);
-
-    return PY_createBoolean(PY_isInstanceOf(args[0], args[1]->raw_value));
-}
-
 PyClassContainer* PY_TYPE_LIST;
 
 struct PY_STD_list_container
@@ -249,6 +229,34 @@ PyObjectContainer* PY_STD_list_removeAtIndex(PyObjectContainer* self, uint8_t ar
     return PY_NONE;
 }
 
+PyObjectContainer* PY_STD_list_clear(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args)
+{
+    assert(self != NULL);
+    assert(self->type == PY_TYPE_PY_IMPL);
+    assert(self->py_type == PY_TYPE_LIST);
+    assert(argc == 0);
+    PY_STD_list_container* list = (PY_STD_list_container*)self->raw_value;
+    assert(list != NULL);
+
+    // for (int i = 0; i < list->curr_size; i++)
+    // {
+    //     DECREF(list->array[i]);
+    // }
+
+    free(list->array);
+    list->array = malloc(PY_STD_LIST_START_SIZE * sizeof(PyObjectContainer*));
+
+    if (list->array == NULL)
+    {
+        perror("malloc PY_STD_list_clear");
+        exit(EXIT_FAILURE);
+    }
+    list->curr_size = 0;
+    list->rem_size = PY_STD_LIST_START_SIZE;
+
+    return PY_NONE;
+}
+
 PyObjectContainer* PY_STD_list_toBool(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args)
 {
     assert(self != NULL);
@@ -297,9 +305,8 @@ void PY_STD_initListType(void)
     PY_setClassAttributeByNameOrCreate(PY_TYPE_LIST, "__setitem__", PY_createBoxForFunction(PY_STD_list_setAtIndex));
     PY_setClassAttributeByNameOrCreate(PY_TYPE_LIST, "__getitem__", PY_createBoxForFunction(PY_STD_list_getAtIndex));
     PY_setClassAttributeByNameOrCreate(PY_TYPE_LIST, "__delitem__", PY_createBoxForFunction(PY_STD_list_removeAtIndex));
-    // clear()
-    // ==
-    // !=
+    PY_setClassAttributeByNameOrCreate(PY_TYPE_LIST, "clear", PY_createBoxForFunction(PY_STD_list_clear));
+    // __eq__
     // __len__
     // __iter__
     PY_setClassAttributeByNameOrCreate(PY_TYPE_LIST, "__bool__", PY_createBoxForFunction(PY_STD_list_toBool));

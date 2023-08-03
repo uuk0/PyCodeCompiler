@@ -9,4 +9,5 @@ def test():
     obj.append(30)
     obj[0] = 25
     obj[1] = obj[1]
+    obj.clear()
 

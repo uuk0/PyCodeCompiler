@@ -1096,6 +1096,7 @@ class SyntaxTreeVisitor:
 
 
 Scope.STANDARD_LIBRARY_VALUES["list"] = StandardLibraryClass("list", "PY_TYPE_LIST")
+Scope.STANDARD_LIBRARY_VALUES["tuple"] = StandardLibraryClass("tuple", "PY_TYPE_TUPLE")
 
 
 class Parser:

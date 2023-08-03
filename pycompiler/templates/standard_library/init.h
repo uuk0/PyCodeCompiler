@@ -10,6 +10,7 @@
 #include "int.h"
 
 #include "list.h"
+#include "tuple.h"
 
 void PY_STD_INIT();
 

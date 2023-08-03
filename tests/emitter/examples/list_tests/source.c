@@ -57,6 +57,8 @@ PyObjectContainer* test_0() {
     PY_SetSubscriptionValue(obj_1, PY_createInteger(0), PY_createInteger(25));
 
     PY_SetSubscriptionValue(obj_1, PY_createInteger(1), PY_GetSubscriptionValue(obj_1, PY_createInteger(1)));
+
+    PY_invokeBoxedMethod(PY_getObjectAttributeByNameOrStatic(obj_1, "clear"), NULL, 0, NULL);
 }
 
 PyObjectContainer* test_0_safeWrap(PyObjectContainer* self , uint8_t argc , PyObjectContainer** args) {

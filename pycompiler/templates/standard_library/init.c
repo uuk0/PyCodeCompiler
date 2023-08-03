@@ -23,4 +23,5 @@ void PY_STD_INIT()
     PY_STD_initIntType();
 
     PY_STD_initListType();
+    PY_STD_initTupleType();
 }
