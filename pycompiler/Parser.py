@@ -421,6 +421,25 @@ class ConstantAccessExpression(AbstractASTNodeExpression):
             raise NotImplementedError(self.value)
 
 
+class PriorityBrackets(AbstractASTNode):
+    def __init__(self, inner_node: AbstractASTNode):
+        super().__init__()
+        self.inner_node = inner_node
+
+    def __eq__(self, other):
+        return type(other) == PriorityBrackets and self.inner_node == other.inner_node
+
+    def __repr__(self):
+        return f"BRACKET({self.inner_node})"
+
+    def try_replace_child(self, original: AbstractASTNode | None, replacement: AbstractASTNode, position: ParentAttributeSection) -> bool:
+        self.inner_node = replacement
+        return True
+
+    def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder, is_target=False):
+        self.inner_node.emit_c_code(base, context, is_target=is_target)
+
+
 class AttributeExpression(AbstractASTNodeExpression):
     def __init__(self, base: AbstractASTNode, dot: Lexer.Token, attribute: Lexer.Token):
         super().__init__()
@@ -1027,6 +1046,8 @@ class SyntaxTreeVisitor:
             return self.visit_constant(obj)
         elif obj_type == WhileStatement:
             return self.visit_while_statement(obj)
+        elif obj_type == PriorityBrackets:
+            return self.visit_priority_bracket(obj)
         else:
             raise RuntimeError(obj)
 
@@ -1093,6 +1114,9 @@ class SyntaxTreeVisitor:
 
     def visit_walrus_operator(self, operator: WalrusOperatorExpression):
         return self.visit_any(operator.target), self.visit_any(operator.value)
+
+    def visit_priority_bracket(self, node: PriorityBrackets):
+        return self.visit_any(node.inner_node),
 
 
 Scope.STANDARD_LIBRARY_VALUES["list"] = StandardLibraryClass("list", "PY_TYPE_LIST")
@@ -1305,8 +1329,7 @@ class Parser:
         identifier = self.lexer.try_parse_identifier()
 
         if identifier is None:
-            c = self.lexer.get_chars(1)
-            self.lexer.give_back(c)
+            c = self.lexer.inspect_chars(1)
 
             if not c:
                 return
@@ -1318,6 +1341,30 @@ class Parser:
                 base = self.parse_quoted_string("'")
             elif c == '"':
                 base = self.parse_quoted_string('"')
+
+            elif c == "(":  # PriorityBracket or TUPLE
+                self.lexer.save_state()
+                self.lexer.get_chars(1)
+                inner = self.try_parse_expression()
+                if inner is None:
+                    raise SyntaxError
+
+                self.lexer.try_parse_whitespaces()
+                if self.lexer.get_chars(1) == ",":  # TUPLE
+                    self.lexer.get_chars(1)
+                    self.lexer.discard_save_state()
+                    raise NotImplementedError
+
+                elif self.lexer.get_chars(1) == ")":  # PriorityBracket
+                    self.lexer.get_chars(1)
+                    self.lexer.discard_save_state()
+
+                    base = PriorityBrackets(inner)
+
+                else:
+                    self.lexer.rollback_state()
+                    return
+
             else:
                 return
 
