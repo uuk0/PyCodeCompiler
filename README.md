@@ -82,7 +82,7 @@ Make the compiled test suite from python not fail in the major test cases
 - function calls (`()`)
 - function declarations (python 3.12 syntax with generics via `[]` after the function name)
   - TODO: yield
-- class declarations (python 3.12 syntax with generics via `[]` after the function name)
+- class declarations (python 3.12 syntax with generics via `[]` after the class name)
   - instantiation (only for static-know classes)
   - TODO: class references, call mechanism should be able to construct class dynamically
 - while loops
@@ -90,4 +90,9 @@ Make the compiled test suite from python not fail in the major test cases
 - list and tuple explict construction (using `(a, b)` or `[a, b]`)
   - TODO: comprehensions
   - TODO: assignment targets
-- TODO: pass, if-elif-else, for, comparisons, arithmetic
+- TODO: if-elif-else, for, arithmetic, while-break
+- TODO: generators (yield, yield from)
+- TODO: module imports (-> require the construction of module scopes at runtime)
+  - module init function invoked where the import should happen
+  - include at TOP of module
+  - raise exception when using `__import__` and similar (or implement a way to make them work!)
