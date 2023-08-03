@@ -27,6 +27,7 @@ if typing.TYPE_CHECKING:
         WalrusOperatorExpression,
         PriorityBrackets,
         TupleConstructor,
+        ListConstructor,
     )
 
 
@@ -119,6 +120,11 @@ class ResolveParentAttribute(SyntaxTreeVisitor):
 
     def visit_tuple_constructor(self, node: TupleConstructor):
         super().visit_tuple_constructor(node)
+        for n in node.items:
+            n.parent = node
+
+    def visit_list_constructor(self, node: ListConstructor):
+        super().visit_list_constructor(node)
         for n in node.items:
             n.parent = node
 

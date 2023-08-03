@@ -1,5 +1,3 @@
-
-
 def test():
     obj = list()
     obj.append(10)
@@ -11,3 +9,4 @@ def test():
     obj[1] = obj[1]
     obj.clear()
 
+    [10, 20, [50, 423]]

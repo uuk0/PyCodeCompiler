@@ -524,7 +524,7 @@ class PriorityBrackets(AbstractASTNode):
         self.inner_node.emit_c_code(base, context, is_target=is_target)
 
 
-class TupleConstructor(AbstractASTNode):
+class TupleConstructor(AbstractASTNodeExpression):
     def __init__(self, items: typing.List[AbstractASTNode]):
         super().__init__()
         self.items = items
@@ -541,7 +541,7 @@ class TupleConstructor(AbstractASTNode):
         replacement: AbstractASTNode,
         position: ParentAttributeSection,
     ) -> bool:
-        self.items.replace(original, replacement)
+        self.items[self.items.index(original)] = replacement
         return True
 
     def emit_c_code(
@@ -562,6 +562,46 @@ class TupleConstructor(AbstractASTNode):
             context.add_code(")")
         else:
             context.add_code("PY_STD_tuple_CREATE(0)")
+
+
+class ListConstructor(AbstractASTNodeExpression):
+    def __init__(self, items: typing.List[AbstractASTNode]):
+        super().__init__()
+        self.items = items
+
+    def __eq__(self, other):
+        return type(other) == TupleConstructor and self.items == other.items
+
+    def __repr__(self):
+        return f"LIST({repr(self.items)[1:-1]})"
+
+    def try_replace_child(
+        self,
+        original: AbstractASTNode | None,
+        replacement: AbstractASTNode,
+        position: ParentAttributeSection,
+    ) -> bool:
+        self.items[self.items.index(original)] = replacement
+        return True
+
+    def emit_c_code(
+        self,
+        base: CCodeEmitter,
+        context: CCodeEmitter.CExpressionBuilder,
+        is_target=False,
+    ):
+        if self.items:
+            context.add_code(f"PY_STD_list_CREATE({len(self.items)}, ")
+
+            for item in self.items[:-1]:
+                item.emit_c_code(base, context)
+                context.add_code(", ")
+
+            self.items[-1].emit_c_code(base, context)
+
+            context.add_code(")")
+        else:
+            context.add_code("PY_STD_list_CREATE(0)")
 
 
 class AttributeExpression(AbstractASTNodeExpression):
@@ -1427,6 +1467,8 @@ class SyntaxTreeVisitor:
             return self.visit_priority_bracket(obj)
         elif obj_type == TupleConstructor:
             return self.visit_tuple_constructor(obj)
+        elif obj_type == ListConstructor:
+            return self.visit_list_constructor(obj)
         else:
             raise RuntimeError(obj)
 
@@ -1500,6 +1542,9 @@ class SyntaxTreeVisitor:
         return (self.visit_any(node.inner_node),)
 
     def visit_tuple_constructor(self, node: TupleConstructor):
+        return (self.visit_any_list(node.items),)
+
+    def visit_list_constructor(self, node: ListConstructor):
         return (self.visit_any_list(node.items),)
 
 
@@ -1793,6 +1838,34 @@ class Parser:
                 else:
                     self.lexer.rollback_state()
                     return
+
+            elif c == "[":
+                self.lexer.get_chars(1)
+                elements = []
+
+                self.lexer.try_parse_whitespaces()
+
+                while self.lexer.inspect_chars(1) != "]":
+                    self.lexer.try_parse_whitespaces(include_newline=True)
+                    expression = self.try_parse_expression()
+                    self.lexer.try_parse_whitespaces()
+
+                    if expression is None:
+                        raise SyntaxError
+
+                    elements.append(expression)
+
+                    if self.lexer.inspect_chars(1) != ",":
+                        break
+
+                    self.lexer.get_chars(1)
+
+                self.lexer.try_parse_whitespaces(include_newline=True)
+
+                if self.lexer.get_chars(1) != "]":
+                    raise SyntaxError
+
+                base = ListConstructor(elements)
 
             else:
                 return

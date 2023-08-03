@@ -87,4 +87,7 @@ Make the compiled test suite from python not fail in the major test cases
   - TODO: class references, call mechanism should be able to construct class dynamically
 - while loops
   - TODO: continue, break
+- list and tuple explict construction (using `(a, b)` or `[a, b]`)
+  - TODO: comprehensions
+  - TODO: assignment targets
 - TODO: pass, if-elif-else, for, comparisons, arithmetic

@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <memory.h>
+#include <stdarg.h>
 #include "list.h"
 
 PyClassContainer* PY_TYPE_LIST;
@@ -49,6 +50,50 @@ PyObjectContainer* PY_STD_list_init(PyObjectContainer* self, uint8_t argc, PyObj
     }
 
     return NULL;
+}
+
+PyObjectContainer* PY_STD_list_CONSTRUCT(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
+{
+    assert(self->type == PY_TYPE_PY_IMPL);
+    assert(self->py_type == PY_TYPE_LIST);
+    assert(self->raw_value == NULL);
+    PY_STD_list_container* container = malloc(sizeof(PY_STD_list_container));
+    if (container == NULL)
+    {
+        perror("malloc PY_STD_list_CONSTRUCT A");
+        exit(EXIT_FAILURE);
+    }
+    self->raw_value = container;
+    container->curr_size = argc;
+    container->array = malloc(argc * sizeof(PyObjectContainer*));
+    if (container->array == NULL)
+    {
+        perror("malloc PY_STD_list_CONSTRUCT B");
+        exit(EXIT_FAILURE);
+    }
+    memcpy(container->array, args, argc * sizeof(PyObjectContainer*));
+
+    return self;
+}
+
+
+PyObjectContainer* PY_STD_list_CREATE(uint8_t argc, ...)
+{
+    PyObjectContainer* tuple = PY_createClassInstance(PY_TYPE_LIST);
+
+    va_list ap;
+    PyObjectContainer* args[argc];
+    va_start(ap, argc);
+    for(int i = 0; i < argc; i++){
+        PyObjectContainer* t = va_arg(ap, PyObjectContainer*);
+        INCREF(t);
+        args[i] = t;
+    }
+    va_end(ap);
+
+    PY_STD_list_CONSTRUCT(tuple, argc, args, NULL);
+
+    return tuple;
 }
 
 // <list>.append(<item>)
