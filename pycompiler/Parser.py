@@ -349,6 +349,22 @@ class PyCommentNode(AbstractASTNode):
         context.add_code(f"// SOURCE: {self.inner_string.text}\n")
 
 
+class PassStatement(AbstractASTNode):
+    def __repr__(self):
+        return "PASS"
+
+    def __eq__(self, other):
+        return type(other) == PassStatement
+
+    def emit_c_code(
+        self,
+        base: CCodeEmitter,
+        context: CCodeEmitter.CExpressionBuilder,
+        is_target=False,
+    ):
+        pass
+
+
 class AssignmentExpression(AbstractASTNode):
     def __init__(
         self,
@@ -1469,6 +1485,8 @@ class SyntaxTreeVisitor:
             return self.visit_tuple_constructor(obj)
         elif obj_type == ListConstructor:
             return self.visit_list_constructor(obj)
+        elif obj_type == PassStatement:
+            return self.visit_pass_statement(obj)
         else:
             raise RuntimeError(obj)
 
@@ -1547,6 +1565,9 @@ class SyntaxTreeVisitor:
     def visit_list_constructor(self, node: ListConstructor):
         return (self.visit_any_list(node.items),)
 
+    def visit_pass_statement(self, node: PassStatement):
+        pass
+
 
 Scope.STANDARD_LIBRARY_VALUES["list"] = StandardLibraryClass("list", "PY_TYPE_LIST")
 Scope.STANDARD_LIBRARY_VALUES["tuple"] = StandardLibraryClass("tuple", "PY_TYPE_TUPLE")
@@ -1594,6 +1615,8 @@ class Parser:
                     if self.lexer.inspect_chars(1) not in ("\n", None):
                         for node in ast_stream:
                             print(node)
+                        print(self.indent_level)
+                        print(repr(self.lexer.file[self.lexer.file_cursor :]))
                         raise SyntaxError(
                             f"expected <newline> or ';' after expression, got {repr(self.lexer.get_chars(1))}"
                         )
@@ -1736,6 +1759,11 @@ class Parser:
 
         if while_statement := self.try_parse_while_statement():
             return while_statement
+
+        if self.indent_level != 0 and (
+            pass_statement := self.try_parse_pass_statement()
+        ):
+            return pass_statement
 
         if self.is_in_function and (
             return_statement := self.try_parse_return_statement()
@@ -2534,3 +2562,19 @@ class Parser:
             condition,
             body,
         )
+
+    def try_parse_pass_statement(self) -> PassStatement | None:
+        pass_token = self.lexer.get_chars(len("pass "))
+
+        if (
+            pass_token != "pass "
+            and pass_token != "pass\n"
+            and not (
+                pass_token is None
+                and (pass_token := self.lexer.get_chars(len("pass")) == "pass")
+            )
+        ):
+            self.lexer.give_back(pass_token)
+            return
+
+        return PassStatement()
