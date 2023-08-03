@@ -420,6 +420,75 @@ bool PY_getTruthValueOf(PyObjectContainer* obj)
         case PY_TYPE_PY_IMPL:
             return PY_getTruthValueOfPyObj(obj);
     }
+
+    return false;
+}
+
+int8_t PY_getArgumentFlags(CallStructureInfo* info, uint8_t index)
+{
+    assert(info != NULL);
+    if (index < info->offset)
+    {
+        return -1;
+    }
+
+    index -= info->offset;
+
+    uint8_t page_index = index >> 4;
+    uint64_t page = info->bitmask[page_index];
+    uint8_t offset = index & 15;
+    uint8_t section = (page >> (2 * offset)) & 3;
+    return (int8_t)section;
+}
+
+PyObjectContainer* PY_ARGUMENT_getKeywordArgumentOrNull(uint8_t argc, PyObjectContainer** args, CallStructureInfo* info, char* name)
+{
+    if (info == NULL)
+    {
+        return NULL;
+    }
+
+    for (int i = info->offset; i < argc; i++)
+    {
+        int8_t flag = PY_getArgumentFlags(info, i);
+
+        if (flag == CALL_STRUCTURE_KEYWORD)
+        {
+            char* key = (char*)info->data[i - info->offset];
+
+            if (strcmp(key, name) == 0)
+            {
+                return args[i];
+            }
+        }
+    }
+
+    return NULL;
+}
+
+PyObjectContainer* PY_ARGUMENT_getKeywordArgumentOrDefault(uint8_t argc, PyObjectContainer** args, CallStructureInfo* info, char* name, PyObjectContainer* default_value)
+{
+    if (info == NULL)
+    {
+        return default_value;
+    }
+
+    for (int i = info->offset; i < argc; i++)
+    {
+        int8_t flag = PY_getArgumentFlags(info, i);
+
+        if (flag == CALL_STRUCTURE_KEYWORD)
+        {
+            char* key = (char*)info->data[i - info->offset];
+
+            if (strcmp(key, name) == 0)
+            {
+                return args[i];
+            }
+        }
+    }
+
+    return default_value;
 }
 
 void initialize()

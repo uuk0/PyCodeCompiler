@@ -292,6 +292,43 @@ void PY_STD_list_removeIndex(PY_STD_list_container* list, uint16_t index)
     // TODO: maybe release some memory?
 }
 
+static int PY_STD_list_sort_cmp(const void* lhs_r, const void* rhs_r)
+{
+    PyObjectContainer* lhs = *(PyObjectContainer**)lhs_r;
+    PyObjectContainer* rhs = *(PyObjectContainer**)rhs_r;
+
+    PyObjectContainer* cmp = PY_getObjectAttributeByNameOrStatic(lhs, "__lt__");
+    if (PY_invokeBoxedMethod(cmp, lhs, 1, &rhs, NULL) == PY_TRUE)
+    {
+        return -1;
+    }
+
+    PyObjectContainer* eq = PY_getObjectAttributeByNameOrStatic(lhs, "__eq__");
+    if (PY_invokeBoxedMethod(eq, lhs, 1, &rhs, NULL) == PY_TRUE)
+    {
+        return 0;
+    }
+
+    return 1;
+}
+
+PyObjectContainer* PY_STD_list_sort(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
+{
+    assert(self != NULL);
+    assert(self->type == PY_TYPE_PY_IMPL);
+    assert(self->py_type == PY_TYPE_LIST);
+    assert(argc <= 1);
+
+    PY_STD_list_container* list = (PY_STD_list_container*)self->raw_value;
+
+    PyObjectContainer* sort_key = PY_ARGUMENT_getKeywordArgumentOrNull(argc, args, info, "key");
+    // todo: use sort_key if provided
+
+    qsort(list->array, list->curr_size, sizeof(PyObjectContainer*), PY_STD_list_sort_cmp);
+
+    return PY_NONE;
+}
+
 void PY_STD_initListType(void)
 {
     PY_TYPE_LIST = PY_createClassContainer("list");
@@ -312,5 +349,7 @@ void PY_STD_initListType(void)
     PY_setClassAttributeByNameOrCreate(PY_TYPE_LIST, "__bool__", PY_createBoxForFunction(PY_STD_list_toBool));
     // __iadd__
     // __add__
-    // sort
+    PY_setClassAttributeByNameOrCreate(PY_TYPE_LIST, "sort", PY_createBoxForFunction(PY_STD_list_sort));
+    // copy
+    // __sorted__
 }

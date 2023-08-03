@@ -65,10 +65,16 @@ struct PyObjectContainer
 typedef struct PyObjectContainer PyObjectContainer;
 
 
+#define CALL_STRUCTURE_NORMAL 0
+#define CALL_STRUCTURE_STAR 1
+#define CALL_STRUCTURE_KEYWORD 2
+#define CALL_STRUCTURE_STAR_STAR 3
+
 struct CallStructureInfo
 {
     uint8_t offset;
     uint64_t bitmask[8];  // possible 255 args, each 2 bit -> 512 bit -> 8
+    void** data;
 };
 typedef struct CallStructureInfo CallStructureInfo;
 
@@ -128,6 +134,10 @@ PyObjectContainer* PY_createBoolean(bool value);
 bool PY_unpackBoolean(PyObjectContainer* obj);
 
 bool PY_getTruthValueOf(PyObjectContainer* obj);
+
+int8_t PY_getArgumentFlags(CallStructureInfo* info, uint8_t index);
+PyObjectContainer* PY_ARGUMENT_getKeywordArgumentOrNull(uint8_t argc, PyObjectContainer** args, CallStructureInfo* info, char* name);
+PyObjectContainer* PY_ARGUMENT_getKeywordArgumentOrDefault(uint8_t argc, PyObjectContainer** args, CallStructureInfo* info, char* name, PyObjectContainer* default_value);
 
 void initialize();
 
