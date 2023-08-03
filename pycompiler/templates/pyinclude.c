@@ -23,7 +23,7 @@ PyObjectContainer* createEmptyContainer(PyObjectType type)
 
     if (container == NULL)
     {
-        perror("malloc");
+        perror("malloc createEmptyContainer");
         exit(EXIT_FAILURE);
     }
 
@@ -43,7 +43,7 @@ PyClassContainer* PY_createClassContainer(char* name)
 
     if (container == NULL)
     {
-        perror("malloc");
+        perror("malloc PY_createClassContainer");
         exit(EXIT_FAILURE);
     }
 
@@ -66,7 +66,7 @@ void PY_ClassContainer_AllocateParentArray(PyClassContainer* cls, uint8_t count)
 
     if (cls->parents == NULL)
     {
-        perror("malloc");
+        perror("malloc PY_ClassContainer_AllocateParentArray");
         exit(EXIT_FAILURE);
     }
 }
@@ -103,6 +103,7 @@ bool PY_isInstanceOf(PyObjectContainer* obj, PyClassContainer* cls)
 
 PyObjectContainer* PY_createClassInstance(PyClassContainer* cls)
 {
+    assert(cls != NULL);
     PyObjectContainer* obj = createEmptyContainer(PY_TYPE_PY_IMPL);
     obj->py_type = cls;
 
@@ -111,7 +112,7 @@ PyObjectContainer* PY_createClassInstance(PyClassContainer* cls)
         obj->attr_array = calloc(cls->attr_count, sizeof(PyObjectContainer *));
 
         if (obj->attr_array == NULL) {
-            perror("malloc");
+            perror("malloc PY_createClassInstance");
             exit(EXIT_FAILURE);
         }
     }
@@ -166,10 +167,43 @@ static PyObjectContainer* PY_getObjectAttributeByNameOrStatic_StaticTransformer(
     return attr;
 }
 
+static PyObjectContainer* PY_builtin_int_compare(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args)
+{
+    assert(argc == 1);
+    // TODO: do float check!
+    if (args[0]->type != PY_TYPE_INT)
+    {
+        return PY_FALSE;
+    }
+
+    if (*(int64_t*)self->raw_value == *(int64_t*)args[0]->raw_value)
+    {
+        return PY_TRUE;
+    }
+    return PY_FALSE;
+}
+
+static PyObjectContainer* PY_builtin_int_compare_container;
+
+static PyObjectContainer* PY_getObjectAttributeByNameOrStatic_primitive(PyObjectContainer* obj, char* name)
+{
+    if (obj->type == PY_TYPE_INT)
+    {
+        if (strcmp(name, "__eq__") == 0)
+        {
+            return PY_builtin_int_compare_container;
+        }
+    }
+
+    assert(false == "no special attribute found!");
+}
+
 PyObjectContainer* PY_getObjectAttributeByNameOrStatic(PyObjectContainer* obj, char* name)
 {
-    // todo: can we implement it for other types also?
-    assert(obj->type == PY_TYPE_PY_IMPL);
+    if (obj->type != PY_TYPE_PY_IMPL)
+    {
+        return PY_getObjectAttributeByNameOrStatic_StaticTransformer(obj, PY_getObjectAttributeByNameOrStatic_primitive(obj, name));
+    }
 
     PyClassContainer* cls = obj->py_type;
     assert(cls != NULL);
@@ -249,14 +283,14 @@ void PY_setClassAttributeByNameOrCreate(PyClassContainer* cls, char* name, PyObj
     cls->static_attribute_names = realloc(cls->static_attribute_names, (i + 2) * sizeof(char*));
     if (cls->static_attribute_names == NULL)
     {
-        perror("malloc");
+        perror("malloc PY_setClassAttributeByNameOrCreate A");
         exit(EXIT_FAILURE);
     }
 
     cls->static_attribute_values = realloc(cls->static_attribute_values, (i + 2) * sizeof(PyObjectContainer*));
     if (cls->static_attribute_values == NULL)
     {
-        perror("malloc");
+        perror("malloc PY_setClassAttributeByNameOrCreate B");
         exit(EXIT_FAILURE);
     }
 
@@ -334,7 +368,7 @@ PyObjectContainer* PY_createInteger(int64_t value)
 
     if (value_holder == NULL)
     {
-        perror("malloc");
+        perror("malloc PY_createInteger");
         exit(EXIT_FAILURE);
     }
 
@@ -415,6 +449,8 @@ void initialize()
     PY_TRUE->raw_value = (void*)1;
 
     PY_TYPE_OBJECT = PY_createClassContainer("object");
+
+    PY_builtin_int_compare_container = PY_createBoxForFunction(PY_builtin_int_compare);
 
     initialized = true;
 }

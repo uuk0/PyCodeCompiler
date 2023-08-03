@@ -50,9 +50,9 @@ PyObjectContainer* PY_STD_list_init(PyObjectContainer* self, uint8_t argc, PyObj
     {
         PY_STD_list_container* list = malloc(sizeof(PY_STD_list_container));
 
-        if (self->raw_value == NULL)
+        if (list == NULL)
         {
-            perror("malloc");
+            perror("malloc PY_STD_list_init A");
             exit(EXIT_FAILURE);
         }
 
@@ -63,7 +63,7 @@ PyObjectContainer* PY_STD_list_init(PyObjectContainer* self, uint8_t argc, PyObj
 
         if (list->array == NULL)
         {
-            perror("malloc");
+            perror("malloc PY_STD_list_init B");
             exit(EXIT_FAILURE);
         }
     }
@@ -96,7 +96,7 @@ PyObjectContainer* PY_STD_list_append(PyObjectContainer* self, uint8_t argc, PyO
         list->array = realloc(list->array, 2 * list->curr_size * sizeof(PyObjectContainer*));
         if (list->array == NULL)
         {
-            perror("malloc");
+            perror("malloc PY_STD_list_append");
             exit(EXIT_FAILURE);
         }
 
@@ -129,7 +129,7 @@ PyObjectContainer* PY_STD_list_insert(PyObjectContainer* self, uint8_t argc, PyO
         list->array = realloc(list->array, 2 * list->curr_size * sizeof(PyObjectContainer*));
         if (list->array == NULL)
         {
-            perror("malloc");
+            perror("malloc PY_STD_list_insert");
             exit(EXIT_FAILURE);
         }
 
@@ -155,7 +155,7 @@ PyObjectContainer* PY_STD_list_index(PyObjectContainer* self, uint8_t argc, PyOb
     assert(argc == 1);
 
     PyObjectContainer* cmp = PY_getObjectAttributeByNameOrStatic(args[0], "__eq__");
-    assert(cmp == NULL);
+    assert(cmp != NULL);
 
     PY_STD_list_container* list = (PY_STD_list_container*)self->raw_value;
 
@@ -181,9 +181,10 @@ PyObjectContainer* PY_STD_list_remove(PyObjectContainer* self, uint8_t argc, PyO
     assert(argc == 1);
 
     PyObjectContainer* cmp = PY_getObjectAttributeByNameOrStatic(args[0], "__eq__");
-    assert(cmp == NULL);
+    assert(cmp != NULL);
 
     PY_STD_list_container* list = (PY_STD_list_container*)self->raw_value;
+    assert(list != NULL);
 
     for (int i = 0; i < list->curr_size; i++)
     {
@@ -244,6 +245,7 @@ PyObjectContainer* PY_STD_list_removeAtIndex(PyObjectContainer* self, uint8_t ar
 
     PY_STD_list_container* list = (PY_STD_list_container*)self->raw_value;
 
+    assert(list != NULL);
     assert(index >= 0 && index < list->curr_size);
 
     PY_STD_list_removeIndex(list, index);
@@ -276,7 +278,9 @@ void PY_STD_list_removeIndex(PY_STD_list_container* list, uint16_t index)
     list->array[index] = NULL;
     DECREF(obj);
 
-    memcpy(list->array[index + 1], list->array[index], sizeof(PyObjectContainer*) * (list->curr_size - index));
+    if (list->curr_size - index > 2) {
+        memcpy(list->array[index + 1], list->array[index], sizeof(PyObjectContainer *) * (list->curr_size - index - 2));
+    }
     list->array[list->curr_size] = NULL;
     list->curr_size++;
     list->rem_size++;
@@ -292,6 +296,7 @@ static void PY_STD_initListType()
     PY_setClassAttributeByNameOrCreate(PY_TYPE_LIST, "append", PY_createBoxForFunction(PY_STD_list_append));
     PY_setClassAttributeByNameOrCreate(PY_TYPE_LIST, "insert", PY_createBoxForFunction(PY_STD_list_insert));
     // extend(<array>)
+    PY_setClassAttributeByNameOrCreate(PY_TYPE_LIST, "index", PY_createBoxForFunction(PY_STD_list_index));
     PY_setClassAttributeByNameOrCreate(PY_TYPE_LIST, "remove", PY_createBoxForFunction(PY_STD_list_remove));
     PY_setClassAttributeByNameOrCreate(PY_TYPE_LIST, "__setitem__", PY_createBoxForFunction(PY_STD_list_setAtIndex));
     PY_setClassAttributeByNameOrCreate(PY_TYPE_LIST, "__getitem__", PY_createBoxForFunction(PY_STD_list_getAtIndex));
