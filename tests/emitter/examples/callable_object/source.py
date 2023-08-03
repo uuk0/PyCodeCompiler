@@ -9,4 +9,3 @@ class Test:
 def test():
     obj = Test()
     return obj()
-

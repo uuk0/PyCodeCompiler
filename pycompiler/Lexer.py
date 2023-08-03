@@ -66,7 +66,11 @@ class Token:
         self.text = text
 
     def __eq__(self, other):
-        return type(other) == Token and self.token_type == other.token_type and self.text == other.text
+        return (
+            type(other) == Token
+            and self.token_type == other.token_type
+            and self.text == other.text
+        )
 
     def __repr__(self):
         return f"{self.token_type.name}({repr(self.text)})"
@@ -78,7 +82,9 @@ class Lexer:
         self.file_cursor = 0
         self._saved_states: typing.List[int] = []
 
-        self._token_parse_table: typing.Dict[TokenType, typing.Callable[[], Token | None]] = {
+        self._token_parse_table: typing.Dict[
+            TokenType, typing.Callable[[], Token | None]
+        ] = {
             TokenType.NEWLINE: self.try_parse_newline,
             TokenType.WHITESPACES: self.try_parse_whitespaces,
             TokenType.IDENTIFIER: self.try_parse_identifier,
@@ -102,13 +108,13 @@ class Lexer:
     def inspect_chars(self, count: int) -> str | None:
         if self.file_cursor + count > len(self.file):
             return
-        return self.file[self.file_cursor:self.file_cursor + count]
+        return self.file[self.file_cursor : self.file_cursor + count]
 
     def get_chars(self, count: int) -> str | None:
         if self.file_cursor + count > len(self.file):
             return
 
-        text = self.file[self.file_cursor:self.file_cursor+count]
+        text = self.file[self.file_cursor : self.file_cursor + count]
         self.file_cursor += count
         return text
 
@@ -250,7 +256,6 @@ class Lexer:
         else:
             return Token(TokenType.OPENING_ROUND_BRACKET, c)
 
-
     def try_parse_closing_round_bracket(self) -> Token | None:
         c = self.get_chars(1)
 
@@ -258,7 +263,6 @@ class Lexer:
             self.give_back(c)
         else:
             return Token(TokenType.CLOSING_ROUND_BRACKET, c)
-
 
     def try_parse_opening_square_bracket(self) -> Token | None:
         c = self.get_chars(1)
@@ -291,4 +295,3 @@ class Lexer:
             self.give_back(c)
         else:
             return Token(TokenType.CLOSING_CURLY_BRACKET, c)
-

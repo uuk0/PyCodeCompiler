@@ -1,7 +1,14 @@
 import typing
 from unittest import TestCase
 from pycompiler import Parser, Lexer, TypeResolver
-from pycompiler.Parser import AssignmentExpression, NameAccessExpression, ConstantAccessExpression, ClassDefinitionNode, PyNewlineNode, WhileStatement
+from pycompiler.Parser import (
+    AssignmentExpression,
+    NameAccessExpression,
+    ConstantAccessExpression,
+    ClassDefinitionNode,
+    PyNewlineNode,
+    WhileStatement,
+)
 from pycompiler.Lexer import TokenType
 
 
@@ -28,4 +35,3 @@ class TestWhileStatement(TestCase):
             ],
             expr,
         )
-

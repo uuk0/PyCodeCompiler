@@ -26,7 +26,9 @@ class TestAssignment(TestCase):
             Parser.AssignmentExpression(
                 [
                     Parser.SubscriptionExpression(
-                        Parser.NameAccessExpression(Lexer.TokenType.IDENTIFIER("target")),
+                        Parser.NameAccessExpression(
+                            Lexer.TokenType.IDENTIFIER("target")
+                        ),
                         Lexer.TokenType.OPENING_SQUARE_BRACKET("["),
                         Parser.NameAccessExpression(Lexer.TokenType.IDENTIFIER("self")),
                         Lexer.TokenType.CLOSING_SQUARE_BRACKET("]"),
@@ -53,4 +55,3 @@ class TestAssignment(TestCase):
             ),
             expr,
         )
-

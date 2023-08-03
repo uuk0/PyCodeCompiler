@@ -437,17 +437,7 @@ class AssignmentExpression(AbstractASTNode):
         source: str | AbstractASTNode,
     ):
         if isinstance(tar, SubscriptionExpression):
-            context.add_code("PY_SetSubscriptionValue(")
-            tar.base.emit_c_code(base, context)
-            context.add_code(", ")
-            tar.expression.emit_c_code(base, context)
-            context.add_code(", ")
-            if isinstance(source, str):
-                context.add_code(source)
-            else:
-                source.emit_c_code(base, context)
-            context.add_code(")")
-
+            self._emit_target_subscription(context, tar, base, source)
         else:
             tar.emit_c_code(base, context)
             context.add_code(" = ")
@@ -455,6 +445,18 @@ class AssignmentExpression(AbstractASTNode):
                 context.add_code(source)
             else:
                 source.emit_c_code(base, context)
+
+    def _emit_target_subscription(self, context, tar, base, source):
+        context.add_code("PY_SetSubscriptionValue(")
+        tar.base.emit_c_code(base, context)
+        context.add_code(", ")
+        tar.expression.emit_c_code(base, context)
+        context.add_code(", ")
+        if isinstance(source, str):
+            context.add_code(source)
+        else:
+            source.emit_c_code(base, context)
+        context.add_code(")")
 
 
 class NameAccessExpression(AbstractASTNodeExpression):
@@ -721,16 +723,15 @@ class SubscriptionExpression(AbstractASTNodeExpression):
             context.add_code("PY_GetSubscriptionValue(")
             self.base.emit_c_code(base, context)
             context.add_code(", ")
-            self.expression.emit_c_code(base, context)
-            context.add_code(")")
         else:
             temporary = base.get_fresh_name("temp")
             context.parent.add_code(f"PyObjectContainer* {temporary} = ")
             context.add_code(f";\nPY_SetSubscriptionValue(")
             self.base.emit_c_code(base, context)
             context.add_code(f", {temporary}, ")
-            self.expression.emit_c_code(base, context)
-            context.add_code(")")
+
+        self.expression.emit_c_code(base, context)
+        context.add_code(")")
 
 
 class CallExpression(AbstractASTNodeExpression):
@@ -877,7 +878,7 @@ class CallExpression(AbstractASTNodeExpression):
 
         context.parent.add_code(
             f"""
-PyObjectContainer* {temporary} = PY_createClassInstance({'PY_CLASS_' if not isinstance(cls, StandardLibraryClass) else ''}{cls.normal_name});
+PyObjectContainer* {temporary} = PY_createClassInstance({'' if isinstance(cls, StandardLibraryClass) else 'PY_CLASS_'}{cls.normal_name});
 PyObjectContainer* {constructor} = PY_getObjectAttributeByNameOrStatic({temporary}, "__init__");
 
 assert({constructor} != NULL);
@@ -895,18 +896,7 @@ DECREF({constructor});
             temporary = base.get_fresh_name("temporary")
 
             with context.parent.get_statement_builder(indent=context.indent) as intro:
-                intro.add_code(f"PyObjectContainer* {temporary} = ")
-                self.base.emit_c_code(base, intro)
-                intro.add_code(";\n")
-
-                args = base.get_fresh_name("args")
-
-                intro.add_code(f"PyObjectContainer* {args}[{len(self.args)}];\n")
-                for i, arg in enumerate(self.args):
-                    intro.add_code(f"{args}[{i}] = ")
-                    arg.emit_c_code(base, intro)
-                    print(i, arg)
-                    intro.add_code(";\n")
+                args = self._emit_c_code_any_call_args_resolver(intro, temporary, base)
 
             context.add_code(
                 f"PY_invokeBoxedMethod({temporary}, NULL, {len(self.args)}, {args}, NULL)"
@@ -915,6 +905,23 @@ DECREF({constructor});
             context.add_code("PY_invokeBoxedMethod(")
             self.base.emit_c_code(base, context)
             context.add_code(", NULL, 0, NULL, NULL)")
+
+    # TODO Rename this here and in `emit_c_code_any_call`
+    def _emit_c_code_any_call_args_resolver(self, intro, temporary, base):
+        intro.add_code(f"PyObjectContainer* {temporary} = ")
+        self.base.emit_c_code(base, intro)
+        intro.add_code(";\n")
+
+        result = base.get_fresh_name("args")
+
+        intro.add_code(f"PyObjectContainer* {result}[{len(self.args)}];\n")
+        for i, arg in enumerate(self.args):
+            intro.add_code(f"{result}[{i}] = ")
+            arg.emit_c_code(base, intro)
+            print(i, arg)
+            intro.add_code(";\n")
+
+        return result
 
 
 class ReturnStatement(AbstractASTNode):
@@ -1832,31 +1839,7 @@ class Parser:
 
                 self.lexer.try_parse_whitespaces()
                 if self.lexer.inspect_chars(1) == ",":  # TUPLE
-                    self.lexer.get_chars(1)
-                    self.lexer.discard_save_state()
-
-                    elements = [inner]
-
-                    while True:
-                        self.lexer.try_parse_whitespaces()
-                        expression = self.try_parse_expression()
-                        self.lexer.try_parse_whitespaces()
-
-                        if expression is None:
-                            break
-
-                        elements.append(expression)
-
-                        if not self.lexer.inspect_chars(1) == ",":
-                            break
-
-                        self.lexer.get_chars(1)
-
-                    if self.lexer.get_chars(1) != ")":
-                        raise SyntaxError
-
-                    base = TupleConstructor(elements)
-
+                    base = self.try_parse_expression_tuple_like(inner)
                 elif self.lexer.inspect_chars(1) == ")":  # PriorityBracket
                     self.lexer.get_chars(1)
                     self.lexer.discard_save_state()
@@ -1868,33 +1851,7 @@ class Parser:
                     return
 
             elif c == "[":
-                self.lexer.get_chars(1)
-                elements = []
-
-                self.lexer.try_parse_whitespaces()
-
-                while self.lexer.inspect_chars(1) != "]":
-                    self.lexer.try_parse_whitespaces(include_newline=True)
-                    expression = self.try_parse_expression()
-                    self.lexer.try_parse_whitespaces()
-
-                    if expression is None:
-                        raise SyntaxError
-
-                    elements.append(expression)
-
-                    if self.lexer.inspect_chars(1) != ",":
-                        break
-
-                    self.lexer.get_chars(1)
-
-                self.lexer.try_parse_whitespaces(include_newline=True)
-
-                if self.lexer.get_chars(1) != "]":
-                    raise SyntaxError
-
-                base = ListConstructor(elements)
-
+                base = self._extracted_from_try_parse_expression_64()
             else:
                 return
 
@@ -1986,6 +1943,62 @@ class Parser:
 
         self.lexer.try_parse_whitespaces()
         return base
+
+    # TODO Rename this here and in `try_parse_expression`
+    def _extracted_from_try_parse_expression_64(self):
+        self.lexer.get_chars(1)
+        elements = []
+
+        self.lexer.try_parse_whitespaces()
+
+        while self.lexer.inspect_chars(1) != "]":
+            self.lexer.try_parse_whitespaces(include_newline=True)
+            expression = self.try_parse_expression()
+            self.lexer.try_parse_whitespaces()
+
+            if expression is None:
+                raise SyntaxError
+
+            elements.append(expression)
+
+            if self.lexer.inspect_chars(1) != ",":
+                break
+
+            self.lexer.get_chars(1)
+
+        self.lexer.try_parse_whitespaces(include_newline=True)
+
+        if self.lexer.get_chars(1) != "]":
+            raise SyntaxError
+
+        return ListConstructor(elements)
+
+    # TODO Rename this here and in `try_parse_expression`
+    def try_parse_expression_tuple_like(self, inner):
+        self.lexer.get_chars(1)
+        self.lexer.discard_save_state()
+
+        elements = [inner]
+
+        while True:
+            self.lexer.try_parse_whitespaces()
+            expression = self.try_parse_expression()
+            self.lexer.try_parse_whitespaces()
+
+            if expression is None:
+                break
+
+            elements.append(expression)
+
+            if self.lexer.inspect_chars(1) != ",":
+                break
+
+            self.lexer.get_chars(1)
+
+        if self.lexer.get_chars(1) != ")":
+            raise SyntaxError
+
+        return TupleConstructor(elements)
 
     def parse_function_call(
         self, base: AbstractASTNode, opening_bracket: Lexer.Token

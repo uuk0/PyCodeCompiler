@@ -8,7 +8,12 @@ class TestCommentParser(TestCase):
         parser = pycompiler.Parser.Parser("# test comment")
         tree = parser.parse()
         self.assertEqual(
-            [pycompiler.Parser.PyCommentNode(pycompiler.Lexer.TokenType.HASHTAG("#"), pycompiler.Lexer.TokenType.REMAINING_STRING(" test comment"))],
+            [
+                pycompiler.Parser.PyCommentNode(
+                    pycompiler.Lexer.TokenType.HASHTAG("#"),
+                    pycompiler.Lexer.TokenType.REMAINING_STRING(" test comment"),
+                )
+            ],
             tree,
         )
 
@@ -17,9 +22,13 @@ class TestCommentParser(TestCase):
         tree = parser.parse()
         self.assertEqual(
             [
-                pycompiler.Parser.PyNewlineNode(pycompiler.Lexer.TokenType.NEWLINE("\n")),
-                pycompiler.Parser.PyCommentNode(pycompiler.Lexer.TokenType.HASHTAG("#"), pycompiler.Lexer.TokenType.REMAINING_STRING(" test comment")),
+                pycompiler.Parser.PyNewlineNode(
+                    pycompiler.Lexer.TokenType.NEWLINE("\n")
+                ),
+                pycompiler.Parser.PyCommentNode(
+                    pycompiler.Lexer.TokenType.HASHTAG("#"),
+                    pycompiler.Lexer.TokenType.REMAINING_STRING(" test comment"),
+                ),
             ],
             tree,
         )
-

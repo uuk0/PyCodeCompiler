@@ -1,7 +1,12 @@
 import typing
 from unittest import TestCase
 from pycompiler import Parser, Lexer, TypeResolver
-from pycompiler.Parser import AssignmentExpression, NameAccessExpression, ConstantAccessExpression, CallExpression
+from pycompiler.Parser import (
+    AssignmentExpression,
+    NameAccessExpression,
+    ConstantAccessExpression,
+    CallExpression,
+)
 from pycompiler.Lexer import TokenType
 
 
@@ -138,4 +143,3 @@ class TestFunctionCall(TestCase):
             ),
             expr,
         )
-

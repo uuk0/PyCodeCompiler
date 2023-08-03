@@ -97,7 +97,7 @@ class TestExpressions(TestCase):
         expression = parser.try_parse_expression()
         self.assertEqual(parser.lexer.get_chars(1), None)
         self.assertEqual(
-            Parser.ConstantAccessExpression("hello world\""),
+            Parser.ConstantAccessExpression('hello world"'),
             expression,
         )
 
@@ -130,7 +130,7 @@ class TestExpressions(TestCase):
         expression = parser.try_parse_expression()
         self.assertEqual(parser.lexer.get_chars(1), None)
         self.assertEqual(
-            Parser.ConstantAccessExpression("hello world\'"),
+            Parser.ConstantAccessExpression("hello world'"),
             expression,
         )
 
@@ -149,5 +149,3 @@ class TestExpressions(TestCase):
             Parser.ConstantAccessExpression("hello \nworld\n"),
             expression,
         )
-
-

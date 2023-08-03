@@ -43,7 +43,9 @@ class TestScopeGeneratorVisitor(TestCase):
         TypeResolver.ScopeGeneratorVisitor(scope).visit_any_list(expr)
 
         self.assertEqual({"test", "a"}, scope.variable_name_stack)
-        self.assertRaises(NameError, lambda: TypeResolver.LocalNameValidator().visit_any_list(expr))
+        self.assertRaises(
+            NameError, lambda: TypeResolver.LocalNameValidator().visit_any_list(expr)
+        )
 
     def test_function_declaration_exposed(self):
         parser = Parser.Parser("def a(x): return x")
@@ -77,8 +79,9 @@ class TestScopeGeneratorVisitor(TestCase):
         self.assertEqual({"x"}, func_def.body[0].scope.variable_name_stack)
 
         TypeResolver.ScopeGeneratorVisitor(scope).visit_any_list(expr)
-        self.assertRaises(NameError, lambda: TypeResolver.LocalNameValidator().visit_any_list(expr))
-
+        self.assertRaises(
+            NameError, lambda: TypeResolver.LocalNameValidator().visit_any_list(expr)
+        )
 
     def test_function_declaration_generic_exposed(self):
         parser = Parser.Parser("def a[x](): return x")
@@ -112,4 +115,6 @@ class TestScopeGeneratorVisitor(TestCase):
         self.assertEqual({"x"}, func_def.body[0].scope.variable_name_stack)
 
         TypeResolver.ScopeGeneratorVisitor(scope).visit_any_list(expr)
-        self.assertRaises(NameError, lambda: TypeResolver.LocalNameValidator().visit_any_list(expr))
+        self.assertRaises(
+            NameError, lambda: TypeResolver.LocalNameValidator().visit_any_list(expr)
+        )
