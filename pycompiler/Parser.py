@@ -1759,7 +1759,28 @@ class Parser:
                 if self.lexer.inspect_chars(1) == ",":  # TUPLE
                     self.lexer.get_chars(1)
                     self.lexer.discard_save_state()
-                    raise NotImplementedError
+
+                    elements = [inner]
+
+                    while True:
+                        self.lexer.try_parse_whitespaces()
+                        expression = self.try_parse_expression()
+                        self.lexer.try_parse_whitespaces()
+
+                        if expression is None:
+                            break
+
+                        elements.append(expression)
+
+                        if not self.lexer.inspect_chars(1) == ",":
+                            break
+
+                        self.lexer.get_chars(1)
+
+                    if self.lexer.get_chars(1) != ")":
+                        raise SyntaxError
+
+                    base = TupleConstructor(elements)
 
                 elif self.lexer.inspect_chars(1) == ")":  # PriorityBracket
                     self.lexer.get_chars(1)

@@ -9,6 +9,7 @@ from pycompiler.Parser import (
     BinaryOperatorExpression,
     WalrusOperatorExpression,
     PriorityBrackets,
+    TupleConstructor,
 )
 from pycompiler.Lexer import TokenType
 
@@ -46,6 +47,53 @@ class TestWalrusOperator(TestCase):
                         NameAccessExpression(TokenType.IDENTIFIER("ab")),
                         ConstantAccessExpression(10),
                     ),
+                ),
+            ],
+            expr,
+        )
+
+
+class TestTupleConstructor(TestCase):
+    def test_singleton(self):
+        parser = Parser.Parser("(10,)")
+        expr = parser.parse()
+
+        self.assertEqual(
+            [
+                TupleConstructor(
+                    [ConstantAccessExpression(10)],
+                ),
+            ],
+            expr,
+        )
+
+    def test_duplex(self):
+        parser = Parser.Parser("(10, 20)")
+        expr = parser.parse()
+
+        self.assertEqual(
+            [
+                TupleConstructor(
+                    [
+                        ConstantAccessExpression(10),
+                        ConstantAccessExpression(20),
+                    ],
+                ),
+            ],
+            expr,
+        )
+
+    def test_duplex_trailing(self):
+        parser = Parser.Parser("(10, 20,)")
+        expr = parser.parse()
+
+        self.assertEqual(
+            [
+                TupleConstructor(
+                    [
+                        ConstantAccessExpression(10),
+                        ConstantAccessExpression(20),
+                    ],
                 ),
             ],
             expr,
