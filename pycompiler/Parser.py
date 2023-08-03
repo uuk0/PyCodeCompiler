@@ -1350,12 +1350,12 @@ class Parser:
                     raise SyntaxError
 
                 self.lexer.try_parse_whitespaces()
-                if self.lexer.get_chars(1) == ",":  # TUPLE
+                if self.lexer.inspect_chars(1) == ",":  # TUPLE
                     self.lexer.get_chars(1)
                     self.lexer.discard_save_state()
                     raise NotImplementedError
 
-                elif self.lexer.get_chars(1) == ")":  # PriorityBracket
+                elif self.lexer.inspect_chars(1) == ")":  # PriorityBracket
                     self.lexer.get_chars(1)
                     self.lexer.discard_save_state()
 
@@ -1634,8 +1634,7 @@ class Parser:
         return ConstantAccessExpression(text)
 
     def try_parse_integer_or_float(self) -> ConstantAccessExpression:
-        c = self.lexer.get_chars(1)
-        text = c
+        text = self.lexer.get_chars(1)
 
         while True:
             c = self.lexer.get_chars(1)
