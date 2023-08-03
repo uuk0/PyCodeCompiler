@@ -596,7 +596,7 @@ PyObjectContainer* {temporary} = PY_createClassInstance({'PY_CLASS_' if not isin
 PyObjectContainer* {constructor} = PY_getObjectAttributeByNameOrStatic({temporary}, "__init__");
 
 assert({constructor} != NULL);
-PY_invokeBoxedMethod({constructor}, NULL, {len(self.args)}, {args if self.args else 'NULL'});
+PY_invokeBoxedMethod({constructor}, NULL, {len(self.args)}, {args if self.args else 'NULL'}, NULL);
 DECREF({constructor});
 """)
 
@@ -620,11 +620,11 @@ DECREF({constructor});
                     print(i, arg)
                     intro.add_code(";\n")
 
-            context.add_code(f"PY_invokeBoxedMethod({temporary}, NULL, {len(self.args)}, {args})")
+            context.add_code(f"PY_invokeBoxedMethod({temporary}, NULL, {len(self.args)}, {args}, NULL)")
         else:
             context.add_code("PY_invokeBoxedMethod(")
             self.base.emit_c_code(base, context)
-            context.add_code(", NULL, 0, NULL)")
+            context.add_code(", NULL, 0, NULL, NULL)")
 
 
 class ReturnStatement(AbstractASTNode):
@@ -729,7 +729,7 @@ class FunctionDefinitionNode(AbstractASTNode):
         base.add_include("<assert.h>")
 
         safe_name = f"{func_name}_safeWrap"
-        safe_func = base.CFunctionBuilder(safe_name, ["PyObjectContainer* self", "uint8_t argc", "PyObjectContainer** args"], "PyObjectContainer*", base.scope)
+        safe_func = base.CFunctionBuilder(safe_name, ["PyObjectContainer* self", "uint8_t argc", "PyObjectContainer** args", "CallStructureInfo* info"], "PyObjectContainer*", base.scope)
         base.add_function(safe_func)
 
         # todo: there are other arg types!

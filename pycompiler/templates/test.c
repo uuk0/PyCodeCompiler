@@ -6,7 +6,7 @@
 
 #include "pyinclude.h"
 
-PyObjectContainer* test(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args)
+PyObjectContainer* test(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
 {
     return PY_createInteger(10);
 }
@@ -18,7 +18,7 @@ int main()
 
     PyObjectContainer* obj = PY_createClassInstance(cls);
     PyObjectContainer* func = PY_getObjectAttributeByNameOrStatic(obj, "test");
-    PyObjectContainer* value = PY_invokeBoxedMethod(func, NULL, 0, NULL);
+    PyObjectContainer* value = PY_invokeBoxedMethod(func, NULL, 0, NULL, NULL);
     int64_t unboxed_value = PY_unpackInteger(value);
     assert(unboxed_value == 10);
 }

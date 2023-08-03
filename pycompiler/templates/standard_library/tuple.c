@@ -20,7 +20,7 @@ typedef struct PY_STD_tuple_container PY_STD_tuple_container;
 #define PY_STD_TUPLE_START_SIZE 4
 
 
-PyObjectContainer* PY_STD_tuple_init(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args)
+PyObjectContainer* PY_STD_tuple_init(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
 {
     assert(self->type == PY_TYPE_PY_IMPL);
     assert(self->py_type == PY_TYPE_TUPLE);
@@ -56,7 +56,7 @@ PyObjectContainer* PY_STD_tuple_init(PyObjectContainer* self, uint8_t argc, PyOb
  * Not directly exposed as a python function, but acts like
  * the (...) expression
  * */
-PyObjectContainer* PY_STD_tuple_CONSTRUCT(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args)
+PyObjectContainer* PY_STD_tuple_CONSTRUCT(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
 {
     assert(self->type == PY_TYPE_PY_IMPL);
     assert(self->py_type == PY_TYPE_TUPLE);
@@ -81,7 +81,7 @@ PyObjectContainer* PY_STD_tuple_CONSTRUCT(PyObjectContainer* self, uint8_t argc,
 }
 
 
-PyObjectContainer* PY_STD_tuple_index(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args)
+PyObjectContainer* PY_STD_tuple_index(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
 {
     assert(self != NULL);
     assert(self->type == PY_TYPE_PY_IMPL);
@@ -96,7 +96,7 @@ PyObjectContainer* PY_STD_tuple_index(PyObjectContainer* self, uint8_t argc, PyO
     for (int i = 0; i < tuple->curr_size; i++)
     {
         PyObjectContainer* obj = tuple->array[i];
-        PyObjectContainer* is_eq = PY_invokeBoxedMethod(cmp, args[0], 1, &obj);
+        PyObjectContainer* is_eq = PY_invokeBoxedMethod(cmp, args[0], 1, &obj, NULL);
         if (is_eq == PY_TRUE)
         {
             return PY_createInteger(i);
@@ -106,7 +106,7 @@ PyObjectContainer* PY_STD_tuple_index(PyObjectContainer* self, uint8_t argc, PyO
     return PY_NONE;  // TODO: raise exception?
 }
 
-PyObjectContainer* PY_STD_tuple_getAtIndex(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args)
+PyObjectContainer* PY_STD_tuple_getAtIndex(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
 {
     assert(self != NULL);
     assert(self->type == PY_TYPE_PY_IMPL);
@@ -123,7 +123,7 @@ PyObjectContainer* PY_STD_tuple_getAtIndex(PyObjectContainer* self, uint8_t argc
 }
 
 
-PyObjectContainer* PY_STD_tuple_toBool(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args)
+PyObjectContainer* PY_STD_tuple_toBool(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
 {
     assert(self != NULL);
     assert(self->type == PY_TYPE_PY_IMPL);

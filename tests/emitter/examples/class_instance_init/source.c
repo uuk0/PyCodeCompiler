@@ -9,7 +9,7 @@
 int _initialise();
 void PY_CLASS_INIT_PY_CLASS_test_2();
 PyObjectContainer* init_1(PyObjectContainer* self_0);
-PyObjectContainer* init_1_safeWrap(PyObjectContainer* self , uint8_t argc , PyObjectContainer** args);
+PyObjectContainer* init_1_safeWrap(PyObjectContainer* self , uint8_t argc , PyObjectContainer** args , CallStructureInfo* info);
 
 // Global Variables
 PyClassContainer* PY_CLASS_test_2;
@@ -29,7 +29,7 @@ int _initialise() {
     PyObjectContainer* constructor_1 = PY_getObjectAttributeByNameOrStatic(obj_instance_0, "__init__");
 
     assert(constructor_1 != NULL);
-    PY_invokeBoxedMethod(constructor_1, NULL, 0, NULL);
+    PY_invokeBoxedMethod(constructor_1, NULL, 0, NULL, NULL);
     DECREF(constructor_1);
     obj = obj_instance_0;
 }
@@ -52,7 +52,7 @@ PyObjectContainer* init_1(PyObjectContainer* self_0) {
     value_3 = PY_createInteger(0);
 }
 
-PyObjectContainer* init_1_safeWrap(PyObjectContainer* self , uint8_t argc , PyObjectContainer** args) {
+PyObjectContainer* init_1_safeWrap(PyObjectContainer* self , uint8_t argc , PyObjectContainer** args , CallStructureInfo* info) {
     if (self == NULL)
     {
         assert(argc == 1);

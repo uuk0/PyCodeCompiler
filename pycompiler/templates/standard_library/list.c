@@ -15,7 +15,7 @@ typedef struct PY_STD_list_container PY_STD_list_container;
 
 #define PY_STD_LIST_START_SIZE 4
 
-PyObjectContainer* PY_STD_list_init(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args)
+PyObjectContainer* PY_STD_list_init(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
 {
     assert(self != NULL);
     assert(self->type == PY_TYPE_PY_IMPL);
@@ -52,7 +52,7 @@ PyObjectContainer* PY_STD_list_init(PyObjectContainer* self, uint8_t argc, PyObj
 }
 
 // <list>.append(<item>)
-PyObjectContainer* PY_STD_list_append(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args)
+PyObjectContainer* PY_STD_list_append(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
 {
     assert(self != NULL);
     assert(self->type == PY_TYPE_PY_IMPL);
@@ -85,7 +85,7 @@ PyObjectContainer* PY_STD_list_append(PyObjectContainer* self, uint8_t argc, PyO
 }
 
 // <list>.insert(<index>, <item>)
-PyObjectContainer* PY_STD_list_insert(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args)
+PyObjectContainer* PY_STD_list_insert(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
 {
     assert(self != NULL);
     assert(self->type == PY_TYPE_PY_IMPL);
@@ -123,7 +123,7 @@ PyObjectContainer* PY_STD_list_insert(PyObjectContainer* self, uint8_t argc, PyO
     return PY_NONE;
 }
 
-PyObjectContainer* PY_STD_list_index(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args)
+PyObjectContainer* PY_STD_list_index(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
 {
     assert(self != NULL);
     assert(self->type == PY_TYPE_PY_IMPL);
@@ -138,7 +138,7 @@ PyObjectContainer* PY_STD_list_index(PyObjectContainer* self, uint8_t argc, PyOb
     for (int i = 0; i < list->curr_size; i++)
     {
         PyObjectContainer* obj = list->array[i];
-        PyObjectContainer* is_eq = PY_invokeBoxedMethod(cmp, args[0], 1, &obj);
+        PyObjectContainer* is_eq = PY_invokeBoxedMethod(cmp, args[0], 1, &obj, NULL);
         if (is_eq == PY_TRUE)
         {
             return PY_createInteger(i);
@@ -149,7 +149,7 @@ PyObjectContainer* PY_STD_list_index(PyObjectContainer* self, uint8_t argc, PyOb
 }
 
 void PY_STD_list_removeIndex(PY_STD_list_container* list, uint16_t index);
-PyObjectContainer* PY_STD_list_remove(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args)
+PyObjectContainer* PY_STD_list_remove(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
 {
     assert(self != NULL);
     assert(self->type == PY_TYPE_PY_IMPL);
@@ -165,7 +165,7 @@ PyObjectContainer* PY_STD_list_remove(PyObjectContainer* self, uint8_t argc, PyO
     for (int i = 0; i < list->curr_size; i++)
     {
         PyObjectContainer* obj = list->array[i];
-        PyObjectContainer* is_eq = PY_invokeBoxedMethod(cmp, args[0], 1, &obj);
+        PyObjectContainer* is_eq = PY_invokeBoxedMethod(cmp, args[0], 1, &obj, NULL);
         if (is_eq == PY_TRUE)
         {
             PY_STD_list_removeIndex(list, i);
@@ -176,7 +176,7 @@ PyObjectContainer* PY_STD_list_remove(PyObjectContainer* self, uint8_t argc, PyO
     assert(false);  // IndexError
 }
 
-PyObjectContainer* PY_STD_list_setAtIndex(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args)
+PyObjectContainer* PY_STD_list_setAtIndex(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
 {
     assert(self != NULL);
     assert(self->type == PY_TYPE_PY_IMPL);
@@ -194,7 +194,7 @@ PyObjectContainer* PY_STD_list_setAtIndex(PyObjectContainer* self, uint8_t argc,
     return PY_NONE;
 }
 
-PyObjectContainer* PY_STD_list_getAtIndex(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args)
+PyObjectContainer* PY_STD_list_getAtIndex(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
 {
     assert(self != NULL);
     assert(self->type == PY_TYPE_PY_IMPL);
@@ -210,7 +210,7 @@ PyObjectContainer* PY_STD_list_getAtIndex(PyObjectContainer* self, uint8_t argc,
     return list->array[index];
 }
 
-PyObjectContainer* PY_STD_list_removeAtIndex(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args)
+PyObjectContainer* PY_STD_list_removeAtIndex(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
 {
     assert(self != NULL);
     assert(self->type == PY_TYPE_PY_IMPL);
@@ -229,7 +229,7 @@ PyObjectContainer* PY_STD_list_removeAtIndex(PyObjectContainer* self, uint8_t ar
     return PY_NONE;
 }
 
-PyObjectContainer* PY_STD_list_clear(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args)
+PyObjectContainer* PY_STD_list_clear(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
 {
     assert(self != NULL);
     assert(self->type == PY_TYPE_PY_IMPL);
@@ -257,7 +257,7 @@ PyObjectContainer* PY_STD_list_clear(PyObjectContainer* self, uint8_t argc, PyOb
     return PY_NONE;
 }
 
-PyObjectContainer* PY_STD_list_toBool(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args)
+PyObjectContainer* PY_STD_list_toBool(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
 {
     assert(self != NULL);
     assert(self->type == PY_TYPE_PY_IMPL);
@@ -312,4 +312,5 @@ void PY_STD_initListType(void)
     PY_setClassAttributeByNameOrCreate(PY_TYPE_LIST, "__bool__", PY_createBoxForFunction(PY_STD_list_toBool));
     // __iadd__
     // __add__
+    // sort
 }

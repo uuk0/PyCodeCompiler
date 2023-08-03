@@ -9,9 +9,9 @@
 int _initialise();
 void PY_CLASS_INIT_PY_CLASS_test_4();
 PyObjectContainer* target_1(PyObjectContainer* self_0);
-PyObjectContainer* target_1_safeWrap(PyObjectContainer* self , uint8_t argc , PyObjectContainer** args);
+PyObjectContainer* target_1_safeWrap(PyObjectContainer* self , uint8_t argc , PyObjectContainer** args , CallStructureInfo* info);
 PyObjectContainer* testtarget_3(PyObjectContainer* self_2);
-PyObjectContainer* testtarget_3_safeWrap(PyObjectContainer* self , uint8_t argc , PyObjectContainer** args);
+PyObjectContainer* testtarget_3_safeWrap(PyObjectContainer* self , uint8_t argc , PyObjectContainer** args , CallStructureInfo* info);
 
 // Global Variables
 PyClassContainer* PY_CLASS_test_4;
@@ -42,7 +42,7 @@ PyObjectContainer* target_1(PyObjectContainer* self_0) {
     return PY_createInteger(10);
 }
 
-PyObjectContainer* target_1_safeWrap(PyObjectContainer* self , uint8_t argc , PyObjectContainer** args) {
+PyObjectContainer* target_1_safeWrap(PyObjectContainer* self , uint8_t argc , PyObjectContainer** args , CallStructureInfo* info) {
     if (self == NULL)
     {
         assert(argc == 1);
@@ -56,10 +56,10 @@ PyObjectContainer* target_1_safeWrap(PyObjectContainer* self , uint8_t argc , Py
 }
 
 PyObjectContainer* testtarget_3(PyObjectContainer* self_2) {
-    return PY_invokeBoxedMethod(PY_getObjectAttributeByNameOrStatic(self_2, "target"), NULL, 0, NULL);
+    return PY_invokeBoxedMethod(PY_getObjectAttributeByNameOrStatic(self_2, "target"), NULL, 0, NULL, NULL);
 }
 
-PyObjectContainer* testtarget_3_safeWrap(PyObjectContainer* self , uint8_t argc , PyObjectContainer** args) {
+PyObjectContainer* testtarget_3_safeWrap(PyObjectContainer* self , uint8_t argc , PyObjectContainer** args , CallStructureInfo* info) {
     if (self == NULL)
     {
         assert(argc == 1);

@@ -9,11 +9,11 @@
 int _initialise();
 void PY_CLASS_INIT_PY_CLASS_Test_4();
 PyObjectContainer* init_1(PyObjectContainer* self_0);
-PyObjectContainer* init_1_safeWrap(PyObjectContainer* self , uint8_t argc , PyObjectContainer** args);
+PyObjectContainer* init_1_safeWrap(PyObjectContainer* self , uint8_t argc , PyObjectContainer** args , CallStructureInfo* info);
 PyObjectContainer* call_3(PyObjectContainer* self_2);
-PyObjectContainer* call_3_safeWrap(PyObjectContainer* self , uint8_t argc , PyObjectContainer** args);
+PyObjectContainer* call_3_safeWrap(PyObjectContainer* self , uint8_t argc , PyObjectContainer** args , CallStructureInfo* info);
 PyObjectContainer* test_5();
-PyObjectContainer* test_5_safeWrap(PyObjectContainer* self , uint8_t argc , PyObjectContainer** args);
+PyObjectContainer* test_5_safeWrap(PyObjectContainer* self , uint8_t argc , PyObjectContainer** args , CallStructureInfo* info);
 
 // Global Variables
 PyClassContainer* PY_CLASS_Test_4;
@@ -44,7 +44,7 @@ PyObjectContainer* init_1(PyObjectContainer* self_0) {
     return PY_NONE;
 }
 
-PyObjectContainer* init_1_safeWrap(PyObjectContainer* self , uint8_t argc , PyObjectContainer** args) {
+PyObjectContainer* init_1_safeWrap(PyObjectContainer* self , uint8_t argc , PyObjectContainer** args , CallStructureInfo* info) {
     if (self == NULL)
     {
         assert(argc == 1);
@@ -61,7 +61,7 @@ PyObjectContainer* call_3(PyObjectContainer* self_2) {
     return PY_createInteger(10);
 }
 
-PyObjectContainer* call_3_safeWrap(PyObjectContainer* self , uint8_t argc , PyObjectContainer** args) {
+PyObjectContainer* call_3_safeWrap(PyObjectContainer* self , uint8_t argc , PyObjectContainer** args , CallStructureInfo* info) {
     if (self == NULL)
     {
         assert(argc == 1);
@@ -82,14 +82,14 @@ PyObjectContainer* test_5() {
     PyObjectContainer* constructor_1 = PY_getObjectAttributeByNameOrStatic(obj_instance_0, "__init__");
 
     assert(constructor_1 != NULL);
-    PY_invokeBoxedMethod(constructor_1, NULL, 0, NULL);
+    PY_invokeBoxedMethod(constructor_1, NULL, 0, NULL, NULL);
     DECREF(constructor_1);
     obj_6 = obj_instance_0;
 
-    return PY_invokeBoxedMethod(obj_6, NULL, 0, NULL);
+    return PY_invokeBoxedMethod(obj_6, NULL, 0, NULL, NULL);
 }
 
-PyObjectContainer* test_5_safeWrap(PyObjectContainer* self , uint8_t argc , PyObjectContainer** args) {
+PyObjectContainer* test_5_safeWrap(PyObjectContainer* self , uint8_t argc , PyObjectContainer** args , CallStructureInfo* info) {
     assert(self == NULL);
     assert(argc == 0);
     return test_5();

@@ -65,7 +65,15 @@ struct PyObjectContainer
 typedef struct PyObjectContainer PyObjectContainer;
 
 
-typedef PyObjectContainer* PY_FUNC_UNBOXED(PyObjectContainer* self, uint8_t param_count, PyObjectContainer** args);
+struct CallStructureInfo
+{
+    uint8_t offset;
+    uint64_t bitmask[8];  // possible 255 args, each 2 bit -> 512 bit -> 8
+};
+typedef struct CallStructureInfo CallStructureInfo;
+
+
+typedef PyObjectContainer* PY_FUNC_UNBOXED(PyObjectContainer* self, uint8_t param_count, PyObjectContainer** args, CallStructureInfo* info);
 typedef PyObjectContainer* PY_GEN_FUNC_UNBOXED(struct PyGeneratorContainer* generator, PyObjectContainer* self, uint8_t param_count, PyObjectContainer** args);
 
 
@@ -109,7 +117,7 @@ void PY_setObjectAttributeByName(PyObjectContainer* obj, char* name, PyObjectCon
 void PY_setClassAttributeByName(PyClassContainer* cls, char* name, PyObjectContainer* value);
 void PY_setClassAttributeByNameOrCreate(PyClassContainer* cls, char* name, PyObjectContainer* value);
 
-PyObjectContainer* PY_invokeBoxedMethod(PyObjectContainer* obj, PyObjectContainer* self, uint8_t param_count, PyObjectContainer** args);
+PyObjectContainer* PY_invokeBoxedMethod(PyObjectContainer* obj, PyObjectContainer* self, uint8_t param_count, PyObjectContainer** args, CallStructureInfo* info);
 
 PyObjectContainer* PY_GetSubscriptionValue(PyObjectContainer* obj, PyObjectContainer* index);
 void PY_SetSubscriptionValue(PyObjectContainer* obj, PyObjectContainer* index, PyObjectContainer* value);

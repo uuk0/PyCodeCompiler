@@ -284,7 +284,7 @@ void PY_setClassAttributeByNameOrCreate(PyClassContainer* cls, char* name, PyObj
     cls->static_attribute_values[i+1] = NULL;
 }
 
-PyObjectContainer* PY_invokeBoxedMethod(PyObjectContainer* obj, PyObjectContainer* self, uint8_t param_count, PyObjectContainer** args)
+PyObjectContainer* PY_invokeBoxedMethod(PyObjectContainer* obj, PyObjectContainer* self, uint8_t param_count, PyObjectContainer** args, CallStructureInfo* info)
 {
     assert(obj != NULL);
 
@@ -312,7 +312,7 @@ PyObjectContainer* PY_invokeBoxedMethod(PyObjectContainer* obj, PyObjectContaine
         self = obj->source;
     }
 
-    PyObjectContainer* result = function(self, param_count, args);
+    PyObjectContainer* result = function(self, param_count, args, info);
 
     if (decref_after)
     {
@@ -329,7 +329,7 @@ PyObjectContainer* PY_GetSubscriptionValue(PyObjectContainer* obj, PyObjectConta
     PyObjectContainer* method = PY_getObjectAttributeByNameOrStatic(obj, "__getitem__");
     assert(method != NULL);
 
-    return PY_invokeBoxedMethod(method, NULL, 1, &index);
+    return PY_invokeBoxedMethod(method, NULL, 1, &index, NULL);
 }
 
 void PY_SetSubscriptionValue(PyObjectContainer* obj, PyObjectContainer* index, PyObjectContainer* value)
@@ -343,7 +343,7 @@ void PY_SetSubscriptionValue(PyObjectContainer* obj, PyObjectContainer* index, P
     mem[0] = index;
     mem[1] = value;
 
-    PY_invokeBoxedMethod(method, NULL, 2, mem);
+    PY_invokeBoxedMethod(method, NULL, 2, mem, NULL);
 }
 
 PyObjectContainer* PY_createInteger(int64_t value)
@@ -395,7 +395,7 @@ static bool PY_getTruthValueOfPyObj(PyObjectContainer* obj)
 
     if (bool_method != NULL)
     {
-        PyObjectContainer* result = PY_invokeBoxedMethod(bool_method, NULL, 0, NULL);
+        PyObjectContainer* result = PY_invokeBoxedMethod(bool_method, NULL, 0, NULL, NULL);
         return PY_getTruthValueOf(result);
     }
 
