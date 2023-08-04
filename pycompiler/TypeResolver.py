@@ -103,6 +103,9 @@ class ResolveParentAttribute(SyntaxTreeVisitor):
         for line in while_statement.body:
             line.parent = while_statement, ParentAttributeSection.BODY
 
+        for line in while_statement.else_node:
+            line.parent = while_statement, ParentAttributeSection.ELSE_BRANCH
+
     def visit_binary_operator(self, operator: BinaryOperatorExpression):
         super().visit_binary_operator(operator)
 
@@ -270,6 +273,7 @@ class ScopeGeneratorVisitor(SyntaxTreeVisitor):
         self.scope = self.scope.copy()
 
         self.visit_any_list(while_statement.body)
+        self.visit_any_list(while_statement.else_node)
 
         self.scope.close()
         self.scope = outer_scope

@@ -143,12 +143,15 @@ class ParentAttributeSection(enum.Enum):
     PARAMETER = enum.auto()
     BODY = enum.auto()
 
+    ELSE_BRANCH = enum.auto()
+
 
 class CCodeEmitter:
     class CExpressionBuilder:
-        def __init__(self):
+        def __init__(self, break_to_label: str = None):
             self.parent: CCodeEmitter.CExpressionBuilder | None = None
             self.snippets = []
+            self.break_to_label: str = break_to_label
 
         def get_statement_builder(self, indent=True) -> CCodeEmitter.CExpressionBuilder:
             raise NotImplementedError
@@ -172,8 +175,9 @@ class CCodeEmitter:
             parameter_decl: typing.List[str],
             return_type: str,
             scope: Scope,
+            break_to_label: str = None,
         ):
-            super().__init__()
+            super().__init__(break_to_label=break_to_label)
 
             self.name = name
             self.parameter_decl = parameter_decl
@@ -181,7 +185,9 @@ class CCodeEmitter:
             self.scope = scope
 
         def get_statement_builder(self, indent=True):
-            return CCodeEmitter.CStatementBuilder(self, indent=indent)
+            return CCodeEmitter.CStatementBuilder(
+                self, indent=indent, break_to_label=self.break_to_label
+            )
 
         def get_result(self) -> str:
             lines = super().get_result().split("\n")
@@ -206,14 +212,21 @@ class CCodeEmitter:
             return f"{self.return_type} {self.name}({' , '.join(self.parameter_decl)});"
 
     class CStatementBuilder(CExpressionBuilder):
-        def __init__(self, parent: CCodeEmitter.CExpressionBuilder = None, indent=True):
-            super().__init__()
+        def __init__(
+            self,
+            parent: CCodeEmitter.CExpressionBuilder = None,
+            indent=True,
+            break_to_label: str = None,
+        ):
+            super().__init__(break_to_label=break_to_label)
             self.indent = indent
             self.parent = parent
             self.scope = self.parent.scope if self.parent else None
 
         def get_statement_builder(self, indent=True):
-            return CCodeEmitter.CStatementBuilder(self, indent=indent)
+            return CCodeEmitter.CStatementBuilder(
+                self, indent=indent, break_to_label=self.break_to_label
+            )
 
         def __enter__(self):
             return self
@@ -1286,20 +1299,27 @@ class StandardLibraryClass(ClassDefinitionNode):
 
 
 class WhileStatement(AbstractASTNode):
-    def __init__(self, condition: AbstractASTNode, body: typing.List[AbstractASTNode]):
+    def __init__(
+        self,
+        condition: AbstractASTNode,
+        body: typing.List[AbstractASTNode],
+        else_node: typing.List[AbstractASTNode] = None,
+    ):
         super().__init__()
         self.condition = condition
         self.body = body
+        self.else_node = else_node or []
 
     def __eq__(self, other):
         return (
             type(other) == WhileStatement
             and self.condition == other.condition
             and self.body == other.body
+            and self.else_node == other.else_node
         )
 
     def __repr__(self):
-        return f"WHILE({self.condition}|{self.body})"
+        return f"WHILE({self.condition}|{self.body}|{self.else_node})"
 
     def try_replace_child(
         self,
@@ -1313,6 +1333,9 @@ class WhileStatement(AbstractASTNode):
         elif position == ParentAttributeSection.BODY and original is not None:
             self.body[self.body.index(original)] = replacement
             return True
+        elif position == ParentAttributeSection.ELSE_BRANCH:
+            self.else_node[self.else_node.index(original)] = replacement
+            return True
         return False
 
     def emit_c_code(
@@ -1325,11 +1348,16 @@ class WhileStatement(AbstractASTNode):
         self.condition.emit_c_code(base, context)
         context.add_code(")) {\n")
 
+        exit_label = (
+            base.get_fresh_name("while_exit_label") if self.else_node else "<break>"
+        )
+
         block = context.get_statement_builder()
 
         for line in self.body:
             inner_block = block.get_statement_builder(indent=False)
             inner_block.parent = block
+            inner_block.break_to_label = exit_label
 
             line.emit_c_code(base, inner_block)
 
@@ -1343,6 +1371,22 @@ class WhileStatement(AbstractASTNode):
         context.add_code(block.get_result())
 
         context.add_code("\n}\n")
+
+        if self.else_node:
+            for line in self.else_node:
+                inner_block = block.get_statement_builder(indent=False)
+                inner_block.parent = block
+
+                line.emit_c_code(base, inner_block)
+
+                if isinstance(line, AbstractASTNodeExpression):
+                    inner_block.add_code(";\n")
+                else:
+                    inner_block.add_code("\n")
+
+                context.add_code(inner_block.get_result() + "\n")
+
+            context.add_code(f'{exit_label}:\n"marker";')
 
 
 class BinaryOperatorExpression(AbstractASTNodeExpression):
@@ -1488,7 +1532,7 @@ class BinaryOperatorExpression(AbstractASTNodeExpression):
             self.rhs.emit_c_code(base, context)
             context.add_code("))")
         else:
-            raise RuntimeError
+            raise RuntimeError(self.operator)
 
 
 class WalrusOperatorExpression(AbstractASTNodeExpression):
@@ -1861,41 +1905,53 @@ class Parser:
 
         return code
 
+    def try_get_indent(self) -> str | None:
+        if self.indent_level == 0:
+            return ""
+
+        self.lexer.save_state()
+        empty = self.lexer.try_parse_whitespaces()
+
+        if self.lexer.inspect_chars(1) == "\n":
+            self.lexer.rollback_state()
+            return
+
+        if self.indent_markers:
+            if not empty or empty.text != self.indent_markers * self.indent_level:
+                print(
+                    "not enough",
+                    repr(empty.text) if empty else None,
+                    repr(self.indent_markers),
+                    self.indent_level,
+                )
+                self.lexer.rollback_state()
+                return
+
+        else:
+            if not empty or not empty.text:
+                print("no indent")
+                self.lexer.rollback_state()
+                return
+
+            self.indent_markers = empty.text[: len(empty.text) // self.indent_level]
+
+            if empty.text != self.indent_markers * self.indent_level:
+                print("not enough for level")
+                self.lexer.rollback_state()
+                return
+
+        self.lexer.discard_save_state()
+        return empty
+
     def parse_line(
         self, require_indent=True, include_comment=True
     ) -> AbstractASTNode | None:
         if include_comment and (comment := self.try_parse_comment()):
             return comment
 
-        if self.indent_level and require_indent:
-            empty = self.lexer.try_parse_whitespaces()
-
-            if self.lexer.inspect_chars(1) == "\n":
-                return
-
-            if self.indent_markers:
-                if not empty or empty.text != self.indent_markers * self.indent_level:
-                    print(
-                        "not enough",
-                        repr(empty.text) if empty else None,
-                        repr(self.indent_markers),
-                        self.indent_level,
-                    )
-                    self.lexer.give_back(empty)
-                    raise IndentationError
-
-            else:
-                if not empty or not empty.text:
-                    print("no indent")
-                    self.lexer.give_back(empty)
-                    raise IndentationError(empty)
-
-                self.indent_markers = empty.text[: len(empty.text) // self.indent_level]
-
-                if empty.text != self.indent_markers * self.indent_level:
-                    print("not enough for level")
-                    self.lexer.give_back(empty)
-                    raise IndentationError
+        if require_indent:
+            if self.try_get_indent() is None:
+                raise IndentationError
 
         if function := self.try_parse_function_definition():
             return function
@@ -1993,7 +2049,7 @@ class Parser:
                     return
 
             elif c == "[":
-                base = self._extracted_from_try_parse_expression_64()
+                base = self.try_pase_expression_list_like()
             else:
                 return
 
@@ -2134,8 +2190,7 @@ class Parser:
         self.lexer.try_parse_whitespaces()
         return base
 
-    # TODO Rename this here and in `try_parse_expression`
-    def _extracted_from_try_parse_expression_64(self):
+    def try_pase_expression_list_like(self):
         self.lexer.get_chars(1)
         elements = []
 
@@ -2163,7 +2218,6 @@ class Parser:
 
         return ListConstructor(elements)
 
-    # TODO Rename this here and in `try_parse_expression`
     def try_parse_expression_tuple_like(self, inner):
         self.lexer.get_chars(1)
         self.lexer.discard_save_state()
@@ -2761,9 +2815,31 @@ class Parser:
 
             self.indent_level -= 1
 
+        self.lexer.save_state()
+        else_branch = []
+
+        if self.try_get_indent() is None:
+            self.lexer.rollback_state()
+
+        elif self.lexer.inspect_chars(len("else:")) == "else:":
+            self.lexer.discard_save_state()
+            self.lexer.get_chars(len("else:"))
+
+            self.indent_level += 1
+            else_branch = self.parse(stop_on_indention_exit=True)
+
+            if len(else_branch) == 0:
+                raise SyntaxError("expected <body> after 'else'")
+
+            self.indent_level -= 1
+
+        else:
+            self.lexer.rollback_state()
+
         return WhileStatement(
             condition,
             body,
+            else_node=else_branch,
         )
 
     def try_parse_pass_statement(self) -> PassStatement | None:
