@@ -1354,8 +1354,8 @@ class BinaryOperatorExpression(AbstractASTNodeExpression):
         BIN_OR = enum.auto()
         BIN_AND = enum.auto()
         BIN_XOR = enum.auto()
-        LOGIC_AND = enum.auto()  # todo
-        LOGIC_OR = enum.auto()  # todo
+        LOGIC_AND = enum.auto()
+        LOGIC_OR = enum.auto()
         SHL = enum.auto()  # todo
         SHR = enum.auto()  # todo
         EQUALS = enum.auto()  # todo
@@ -1457,12 +1457,27 @@ class BinaryOperatorExpression(AbstractASTNodeExpression):
         context: CCodeEmitter.CExpressionBuilder,
         is_target=False,
     ):
-        func_name = self.OPERATOR_CALL_FUNCTIONS[self.operator]
-        context.add_code(f"{func_name}(")
-        self.lhs.emit_c_code(base, context)
-        context.add_code(", ")
-        self.rhs.emit_c_code(base, context)
-        context.add_code(")")
+        if self.operator in self.OPERATOR_CALL_FUNCTIONS:
+            func_name = self.OPERATOR_CALL_FUNCTIONS[self.operator]
+            context.add_code(f"{func_name}(")
+            self.lhs.emit_c_code(base, context)
+            context.add_code(", ")
+            self.rhs.emit_c_code(base, context)
+            context.add_code(")")
+        elif self.operator == self.BinaryOperation.LOGIC_OR:
+            context.add_code(f"PY_createBoolean(PY_unpackBoolean(")
+            self.lhs.emit_c_code(base, context)
+            context.add_code(") || PY_unpackBoolean(")
+            self.rhs.emit_c_code(base, context)
+            context.add_code("))")
+        elif self.operator == self.BinaryOperation.LOGIC_AND:
+            context.add_code(f"PY_createBoolean(PY_unpackBoolean(")
+            self.lhs.emit_c_code(base, context)
+            context.add_code(") && PY_unpackBoolean(")
+            self.rhs.emit_c_code(base, context)
+            context.add_code("))")
+        else:
+            raise RuntimeError
 
 
 class WalrusOperatorExpression(AbstractASTNodeExpression):
