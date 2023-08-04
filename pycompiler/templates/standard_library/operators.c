@@ -113,3 +113,8 @@ PyObjectContainer* PY_STD_operator_pow(PyObjectContainer* lhs, PyObjectContainer
     return PY_STD_operator_apply(lhs, rhs, "__pow__", "__rpow__");
 }
 
+PyObjectContainer* PY_STD_operator_matrix_multiply(PyObjectContainer* lhs, PyObjectContainer* rhs)
+{
+    return PY_STD_operator_apply(lhs, rhs, "__matmul__", "__rmatmul__");
+}
+
