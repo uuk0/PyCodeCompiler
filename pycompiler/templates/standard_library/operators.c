@@ -118,3 +118,42 @@ PyObjectContainer* PY_STD_operator_matrix_multiply(PyObjectContainer* lhs, PyObj
     return PY_STD_operator_apply(lhs, rhs, "__matmul__", "__rmatmul__");
 }
 
+PyObjectContainer* PY_STD_operator_bin_or(PyObjectContainer* lhs, PyObjectContainer* rhs)
+{
+    if (lhs->type == PY_TYPE_INT)
+    {
+        assert(rhs->type == PY_TYPE_INT);  // TODO: float
+        assert(PY_unpackInteger(rhs) != 0);
+
+        return PY_createInteger(PY_unpackInteger(lhs) | PY_unpackInteger(rhs));
+    }
+
+    return PY_STD_operator_apply(lhs, rhs, "__or__", "__ror__");
+}
+
+PyObjectContainer* PY_STD_operator_bin_and(PyObjectContainer* lhs, PyObjectContainer* rhs)
+{
+    if (lhs->type == PY_TYPE_INT)
+    {
+        assert(rhs->type == PY_TYPE_INT);  // TODO: float
+        assert(PY_unpackInteger(rhs) != 0);
+
+        return PY_createInteger(PY_unpackInteger(lhs) & PY_unpackInteger(rhs));
+    }
+
+    return PY_STD_operator_apply(lhs, rhs, "__and__", "__rand__");
+}
+
+PyObjectContainer* PY_STD_operator_bin_xor(PyObjectContainer* lhs, PyObjectContainer* rhs)
+{
+    if (lhs->type == PY_TYPE_INT)
+    {
+        assert(rhs->type == PY_TYPE_INT);  // TODO: float
+        assert(PY_unpackInteger(rhs) != 0);
+
+        return PY_createInteger(PY_unpackInteger(lhs) ^ PY_unpackInteger(rhs));
+    }
+
+    return PY_STD_operator_apply(lhs, rhs, "__xor__", "__rxor__");
+}
+

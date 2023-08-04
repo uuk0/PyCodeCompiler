@@ -1418,6 +1418,9 @@ class BinaryOperatorExpression(AbstractASTNodeExpression):
         BinaryOperation.MODULO: "PY_STD_operator_modulo",
         BinaryOperation.POW: "PY_STD_operator_pow",
         BinaryOperation.MATRIX_MULTIPLY: "PY_STD_operator_matrix_multiply",
+        BinaryOperation.BIN_OR: "PY_STD_operator_bin_or",
+        BinaryOperation.BIN_AND: "PY_STD_operator_bin_and",
+        BinaryOperation.BIN_XOR: "PY_STD_operator_bin_xor",
     }
 
     def __init__(
