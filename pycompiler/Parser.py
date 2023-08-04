@@ -509,6 +509,10 @@ class ConstantAccessExpression(AbstractASTNodeExpression):
         elif self.value is True:
             context.add_code("PY_TRUE")
 
+        elif isinstance(self.value, str):
+            norm = self.value.replace('"', '\\"')
+            context.add_code(f'"{norm}"')
+
         else:
             raise NotImplementedError(self.value)
 
@@ -1528,6 +1532,55 @@ class WalrusOperatorExpression(AbstractASTNodeExpression):
         self.value.emit_c_code(base, context)
 
 
+class AssertStatement(AbstractASTNode):
+    def __init__(self, statement: AbstractASTNode, message: AbstractASTNode | None):
+        super().__init__()
+        self.statement = statement
+        self.message = message
+
+    def __eq__(self, other):
+        return (
+            type(other) == AssertStatement
+            and self.statement == other.statement
+            and self.message == other.message
+        )
+
+    def __repr__(self):
+        return f"ASSERT({self.statement}|{self.message})"
+
+    def try_replace_child(
+        self,
+        original: AbstractASTNode | None,
+        replacement: AbstractASTNode,
+        position: ParentAttributeSection,
+    ) -> bool:
+        if position == ParentAttributeSection.LHS:
+            self.statement = replacement
+        elif position == ParentAttributeSection.RHS:
+            self.message = replacement
+        else:
+            return False
+        return True
+
+    def emit_c_code(
+        self,
+        base: CCodeEmitter,
+        context: CCodeEmitter.CExpressionBuilder,
+        is_target=False,
+    ):
+        base.add_include("<assert.h>")
+        name = base.get_fresh_name("assert_target")
+        context.add_code(f"PyObjectContainer* {name} = ")
+        self.statement.emit_c_code(base, context)
+        context.add_code(";\n")
+        if self.message is None:
+            context.add_code(f"assert(PY_getTruthValueOf({name}));\n")
+        else:
+            context.add_code(f"assert(PY_getTruthValueOf({name}) && ")
+            self.message.emit_c_code(base, context)
+            context.add_code(");\n")
+
+
 class SyntaxTreeVisitor:
     def visit_any(self, obj: AbstractASTNode):
         obj_type = type(obj)
@@ -1570,6 +1623,8 @@ class SyntaxTreeVisitor:
             return self.visit_pass_statement(obj)
         elif obj_type == BinaryOperatorExpression:
             return self.visit_binary_operator(obj)
+        elif obj_type == AssertStatement:
+            return self.visit_assert_statement(obj)
         else:
             print(type(obj))
             raise RuntimeError(obj)
@@ -1651,6 +1706,11 @@ class SyntaxTreeVisitor:
 
     def visit_pass_statement(self, node: PassStatement):
         pass
+
+    def visit_assert_statement(self, node: AssertStatement):
+        return self.visit_any(node.statement), (
+            self.visit_any(node.message) if node.message else None
+        )
 
 
 Scope.STANDARD_LIBRARY_VALUES["list"] = StandardLibraryClass("list", "PY_TYPE_LIST")
@@ -1850,6 +1910,9 @@ class Parser:
             pass_statement := self.try_parse_pass_statement()
         ):
             return pass_statement
+
+        if assert_statement := self.try_parse_assert_statement():
+            return assert_statement
 
         if self.is_in_function and (
             return_statement := self.try_parse_return_statement()
@@ -2718,3 +2781,25 @@ class Parser:
             return
 
         return PassStatement()
+
+    def try_parse_assert_statement(self) -> AssertStatement | None:
+        assert_token = self.lexer.get_chars(len("assert "))
+
+        if assert_token != "assert ":
+            self.lexer.give_back(assert_token)
+            return
+
+        expression = self.try_parse_expression()
+        if expression is None:
+            raise SyntaxError
+
+        self.lexer.try_parse_whitespaces()
+        message = None
+        if self.lexer.inspect_chars(1) == ",":
+            self.lexer.get_chars(1)
+            message = self.try_parse_expression()
+
+            if message is None:
+                raise SyntaxError
+
+        return AssertStatement(expression, message)

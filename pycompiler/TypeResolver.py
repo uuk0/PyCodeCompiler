@@ -28,6 +28,7 @@ if typing.TYPE_CHECKING:
         PriorityBrackets,
         TupleConstructor,
         ListConstructor,
+        AssertStatement,
     )
 
 
@@ -127,6 +128,13 @@ class ResolveParentAttribute(SyntaxTreeVisitor):
         super().visit_list_constructor(node)
         for n in node.items:
             n.parent = node
+
+    def visit_assert_statement(self, node: AssertStatement):
+        super().visit_assert_statement(node)
+
+        node.statement.parent = node
+        if node.message:
+            node.message.parent = node
 
 
 class BinaryOperatorPriorityRewriter(SyntaxTreeVisitor):

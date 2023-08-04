@@ -21,6 +21,7 @@ _KEYWORDS = [
     "as",
     "and",
     "or",
+    "assert",
 ]
 
 

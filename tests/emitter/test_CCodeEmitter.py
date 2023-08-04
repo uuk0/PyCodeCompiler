@@ -132,3 +132,6 @@ class TestCCodeEmitter(TestCase):
 
     def test_integer_operations(self):
         self.run_named_folder_test("integer_operations")
+
+    def test_assert_statement(self):
+        self.run_named_folder_test("assert_test")
