@@ -2010,14 +2010,14 @@ class Parser:
                     base, BinaryOperatorExpression.BinaryOperation.LOGIC_OR, expression
                 )
 
-            elif self.lexer.get_chars(2) == "==":
+            elif self.lexer.inspect_chars(2) == "==":
                 self.lexer.get_chars(2)
                 expression = self.try_parse_expression()
                 base = BinaryOperatorExpression(
                     base, BinaryOperatorExpression.BinaryOperation.EQUALS, expression
                 )
 
-            elif self.lexer.get_chars(2) == "!=":
+            elif self.lexer.inspect_chars(2) == "!=":
                 self.lexer.get_chars(2)
                 expression = self.try_parse_expression()
                 base = BinaryOperatorExpression(
@@ -2026,14 +2026,7 @@ class Parser:
                     expression,
                 )
 
-            elif self.lexer.get_chars(2) == ">":
-                self.lexer.get_chars(2)
-                expression = self.try_parse_expression()
-                base = BinaryOperatorExpression(
-                    base, BinaryOperatorExpression.BinaryOperation.GREATER, expression
-                )
-
-            elif self.lexer.get_chars(2) == ">=":
+            elif self.lexer.inspect_chars(2) == ">=":
                 self.lexer.get_chars(2)
                 expression = self.try_parse_expression()
                 base = BinaryOperatorExpression(
@@ -2042,20 +2035,27 @@ class Parser:
                     expression,
                 )
 
-            elif self.lexer.get_chars(2) == "<":
-                self.lexer.get_chars(2)
+            elif self.lexer.inspect_chars(1) == ">":
+                self.lexer.get_chars(1)
                 expression = self.try_parse_expression()
                 base = BinaryOperatorExpression(
-                    base, BinaryOperatorExpression.BinaryOperation.SMALLER, expression
+                    base, BinaryOperatorExpression.BinaryOperation.GREATER, expression
                 )
 
-            elif self.lexer.get_chars(2) == "<=":
+            elif self.lexer.inspect_chars(2) == "<=":
                 self.lexer.get_chars(2)
                 expression = self.try_parse_expression()
                 base = BinaryOperatorExpression(
                     base,
                     BinaryOperatorExpression.BinaryOperation.SMALLER_EQUAL,
                     expression,
+                )
+
+            elif self.lexer.inspect_chars(1) == "<":
+                self.lexer.get_chars(1)
+                expression = self.try_parse_expression()
+                base = BinaryOperatorExpression(
+                    base, BinaryOperatorExpression.BinaryOperation.SMALLER, expression
                 )
 
             else:
