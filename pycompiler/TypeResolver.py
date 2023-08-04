@@ -13,6 +13,7 @@ from pycompiler.Parser import (
     FunctionDefinitionNode,
     StandardLibraryClass,
     SubscriptionExpression,
+    BinaryOperatorExpression,
 )
 
 if typing.TYPE_CHECKING:
@@ -23,7 +24,6 @@ if typing.TYPE_CHECKING:
         AttributeExpression,
         ReturnStatement,
         CallExpression,
-        BinaryOperatorExpression,
         WalrusOperatorExpression,
         PriorityBrackets,
         TupleConstructor,
@@ -127,6 +127,79 @@ class ResolveParentAttribute(SyntaxTreeVisitor):
         super().visit_list_constructor(node)
         for n in node.items:
             n.parent = node
+
+
+class BinaryOperatorPriorityRewriter(SyntaxTreeVisitor):
+    def visit_binary_operator(self, operator: BinaryOperatorExpression):
+        lhs_inst = isinstance(operator.lhs, BinaryOperatorExpression)
+        rhs_inst = isinstance(operator.rhs, BinaryOperatorExpression)
+
+        if (
+            lhs_inst
+            and rhs_inst
+            and (
+                BinaryOperatorExpression.PRIORITIES[operator.lhs.operator]
+                < BinaryOperatorExpression.PRIORITIES[operator.operator]
+            )
+            and (
+                BinaryOperatorExpression.PRIORITIES[operator.rhs.operator]
+                < BinaryOperatorExpression.PRIORITIES[operator.operator]
+            )
+        ):
+            lhs = operator.lhs.lhs
+            rhs = BinaryOperatorExpression(
+                BinaryOperatorExpression(
+                    operator.lhs.rhs,
+                    operator.operator.operator.rhs.lhs,
+                ),
+                operator.rhs.operator,
+                operator.rhs.rhs,
+            )
+            rhs.parent = operator
+            lhs.parent = operator
+            rhs.lhs.parent = operator
+            rhs.rhs.parent = operator
+            operator.operator = operator.lhs.operator
+            operator.lhs = lhs
+            operator.rhs = rhs
+
+            # Need to sort out the lowest layer also
+            self.visit_binary_operator(operator)
+            return
+
+        elif lhs_inst and (
+            BinaryOperatorExpression.PRIORITIES[operator.lhs.operator]
+            < BinaryOperatorExpression.PRIORITIES[operator.operator]
+        ):
+            lhs = operator.lhs.lhs
+            rhs = BinaryOperatorExpression(
+                operator.lhs.rhs, operator.operator, operator.rhs
+            )
+            lhs.parent = operator
+            rhs.parent = operator
+            rhs.lhs.parent = rhs
+            rhs.rhs.parent = rhs
+            operator.operator = operator.lhs.operator
+            operator.lhs = lhs
+            operator.rhs = rhs
+
+        elif rhs_inst and (
+            BinaryOperatorExpression.PRIORITIES[operator.rhs.operator]
+            < BinaryOperatorExpression.PRIORITIES[operator.operator]
+        ):
+            rhs = operator.rhs.rhs
+            lhs = BinaryOperatorExpression(
+                operator.lhs, operator.operator, operator.rhs.lhs
+            )
+            lhs.parent = operator
+            rhs.parent = operator
+            lhs.lhs.parent = lhs
+            lhs.lhs.parent = lhs
+            operator.operator = operator.rhs.operator
+            operator.lhs = lhs
+            operator.rhs = rhs
+
+        super().visit_binary_operator(operator)
 
 
 class ScopeGeneratorVisitor(SyntaxTreeVisitor):

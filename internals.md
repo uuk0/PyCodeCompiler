@@ -1,4 +1,10 @@
 
+# Parsing
+
+We use a custom parser, which parses expressions right-recursive.
+It uses a special rewriter class (`BinaryOperatorPriorityRewriter`)
+for ordering the AST nodes in the correct way.
+
 
 # Runtime evaluation vs. Static Evaluation
 
@@ -15,7 +21,7 @@ needs to be boxed, and than later unboxed again.
 
 Users should use ideally the ```__slots__``` attribute to declare what attributes they will use,
 otherwise we need to keep a special table for dynamic attributes, holding besides the value also
-the type information and name of the attribute.
+the type information and name of the attribute (-> HashMap implementation!).
 
 Classes are getting transformed where possible to structs.
 Inner classes get a generic struct and are container-ed so everybody knows
@@ -34,4 +40,8 @@ From each section, one may reach any other section.
 
 Function variables are saved in the wrapper function by allocating
 a corresponding section of memory, used to hold all information about the generator.
+
+## Exceptions
+
+Currently not supported; Functions will crash with an assertion error
 

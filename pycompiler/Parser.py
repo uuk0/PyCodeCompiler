@@ -1354,8 +1354,10 @@ class BinaryOperatorExpression(AbstractASTNodeExpression):
         BIN_OR = enum.auto()
         BIN_AND = enum.auto()
         BIN_XOR = enum.auto()
-        LOGIC_AND = enum.auto()
-        LOGIC_OR = enum.auto()
+        LOGIC_AND = enum.auto()  # todo
+        LOGIC_OR = enum.auto()  # todo
+        SHL = enum.auto()  # todo
+        SHR = enum.auto()  # todo
 
     String2Type = {
         "+": BinaryOperation.PLUS,
@@ -1369,6 +1371,24 @@ class BinaryOperatorExpression(AbstractASTNodeExpression):
         "|": BinaryOperation.BIN_OR,
         "&": BinaryOperation.BIN_AND,
         "^": BinaryOperation.BIN_XOR,
+    }
+
+    PRIORITIES: typing.Dict[BinaryOperation, int] = {
+        BinaryOperation.LOGIC_AND: -10,
+        BinaryOperation.LOGIC_OR: -10,
+        BinaryOperation.PLUS: 0,
+        BinaryOperation.MINUS: 0,
+        BinaryOperation.BIN_OR: 0,
+        BinaryOperation.BIN_AND: 0,
+        BinaryOperation.BIN_XOR: 0,
+        BinaryOperation.SHL: 0,
+        BinaryOperation.SHR: 0,
+        BinaryOperation.MULTIPLY: 10,
+        BinaryOperation.TRUE_DIV: 10,
+        BinaryOperation.FLOOR_DIV: 10,
+        BinaryOperation.MODULO: 10,
+        BinaryOperation.MATRIX_MULTIPLY: 10,
+        BinaryOperation.POW: 20,
     }
 
     def __init__(
@@ -1494,7 +1514,10 @@ class SyntaxTreeVisitor:
             return self.visit_list_constructor(obj)
         elif obj_type == PassStatement:
             return self.visit_pass_statement(obj)
+        elif obj_type == BinaryOperatorExpression:
+            return self.visit_binary_operator(obj)
         else:
+            print(type(obj))
             raise RuntimeError(obj)
 
     def visit_any_list(self, objs: typing.List[AbstractASTNode]):
@@ -1558,7 +1581,7 @@ class SyntaxTreeVisitor:
         )
 
     def visit_binary_operator(self, operator: BinaryOperatorExpression):
-        pass
+        return self.visit_any(operator.lhs), self.visit_any(operator.rhs)
 
     def visit_walrus_operator(self, operator: WalrusOperatorExpression):
         return self.visit_any(operator.target), self.visit_any(operator.value)
@@ -1648,6 +1671,7 @@ class Parser:
             LocalNameValidator,
             ResolveStaticNames,
             NameNormalizer,
+            BinaryOperatorPriorityRewriter,
         )
 
         scope = Scope()
@@ -1656,6 +1680,7 @@ class Parser:
             expr = self.parse()
 
         ResolveParentAttribute().visit_any_list(expr)
+        BinaryOperatorPriorityRewriter().visit_any_list(expr)
         ScopeGeneratorVisitor(scope).visit_any_list(expr)
         NameNormalizer().visit_any_list(expr)
         LocalNameValidator().visit_any_list(expr)
