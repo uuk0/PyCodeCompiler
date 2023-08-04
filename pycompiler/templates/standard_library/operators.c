@@ -4,6 +4,7 @@
 
 #include <assert.h>
 #include "operators.h"
+#include <math.h>
 
 static inline PyObjectContainer* PY_STD_operator_apply(PyObjectContainer* lhs, PyObjectContainer* rhs, char* lopname, char* ropname)
 {
@@ -96,5 +97,19 @@ PyObjectContainer* PY_STD_operator_modulo(PyObjectContainer* lhs, PyObjectContai
     }
 
     return PY_STD_operator_apply(lhs, rhs, "__mod__", "__rmod__");
+}
+
+PyObjectContainer* PY_STD_operator_pow(PyObjectContainer* lhs, PyObjectContainer* rhs)
+{
+    if (lhs->type == PY_TYPE_INT) {
+        long double lhs_v = (long double) PY_unpackInteger(lhs);
+        long double rhs_v = (long double) PY_unpackInteger(rhs);
+
+        long double value = powl(lhs_v, rhs_v);
+
+        return PY_createInteger((int64_t)value);
+    }
+
+    return PY_STD_operator_apply(lhs, rhs, "__pow__", "__rpow__");
 }
 

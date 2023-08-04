@@ -13,5 +13,6 @@ PyObjectContainer* PY_STD_operator_mul(PyObjectContainer* lhs, PyObjectContainer
 PyObjectContainer* PY_STD_operator_truediv(PyObjectContainer* lhs, PyObjectContainer* rhs);
 PyObjectContainer* PY_STD_operator_floordiv(PyObjectContainer* lhs, PyObjectContainer* rhs);
 PyObjectContainer* PY_STD_operator_modulo(PyObjectContainer* lhs, PyObjectContainer* rhs);
+PyObjectContainer* PY_STD_operator_pow(PyObjectContainer* lhs, PyObjectContainer* rhs);
 
 #endif //TEMPLATES_OPERATORS_H

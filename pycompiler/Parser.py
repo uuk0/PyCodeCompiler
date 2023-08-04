@@ -1416,6 +1416,7 @@ class BinaryOperatorExpression(AbstractASTNodeExpression):
         BinaryOperation.TRUE_DIV: "PY_STD_operator_truediv",
         BinaryOperation.FLOOR_DIV: "PY_STD_operator_floordiv",
         BinaryOperation.MODULO: "PY_STD_operator_modulo",
+        BinaryOperation.POW: "PY_STD_operator_pow",
     }
 
     def __init__(
