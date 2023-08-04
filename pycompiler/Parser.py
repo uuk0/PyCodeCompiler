@@ -1421,6 +1421,8 @@ class BinaryOperatorExpression(AbstractASTNodeExpression):
         BinaryOperation.BIN_OR: "PY_STD_operator_bin_or",
         BinaryOperation.BIN_AND: "PY_STD_operator_bin_and",
         BinaryOperation.BIN_XOR: "PY_STD_operator_bin_xor",
+        BinaryOperation.EQUALS: "PY_STD_operator_equals",
+        BinaryOperation.NOT_EQUALS: "PY_STD_operator_not_equals",
     }
 
     def __init__(

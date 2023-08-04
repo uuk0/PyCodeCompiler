@@ -157,3 +157,38 @@ PyObjectContainer* PY_STD_operator_bin_xor(PyObjectContainer* lhs, PyObjectConta
     return PY_STD_operator_apply(lhs, rhs, "__xor__", "__rxor__");
 }
 
+PyObjectContainer* PY_STD_operator_equals(PyObjectContainer* lhs, PyObjectContainer* rhs)
+{
+    if (lhs->type == PY_TYPE_INT)
+    {
+        assert(rhs->type == PY_TYPE_INT);  // TODO: float
+        assert(PY_unpackInteger(rhs) != 0);
+
+        return PY_createBoolean(PY_unpackInteger(lhs) == PY_unpackInteger(rhs));
+    }
+
+    return PY_STD_operator_apply(lhs, rhs, "__eq__", "__eq__");
+}
+
+PyObjectContainer* PY_STD_operator_not_equals(PyObjectContainer* lhs, PyObjectContainer* rhs)
+{
+    if (lhs->type == PY_TYPE_INT)
+    {
+        assert(rhs->type == PY_TYPE_INT);  // TODO: float
+        assert(PY_unpackInteger(rhs) != 0);
+
+        return PY_createBoolean(PY_unpackInteger(lhs) != PY_unpackInteger(rhs));
+    }
+
+    PyObjectContainer* result = PY_STD_operator_apply(lhs, rhs, "__eq__", "__eq__");
+    if (result == PY_TRUE)
+    {
+        return PY_FALSE;
+    }
+    else if (result == PY_FALSE)
+    {
+        return PY_TRUE;
+    }
+    return result;  // todo: maybe error out?
+}
+
