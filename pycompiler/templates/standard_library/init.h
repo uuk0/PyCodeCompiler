@@ -7,6 +7,8 @@
 
 #include "pyinclude.h"
 
+#include "operators.h"
+
 #include "int.h"
 
 #include "list.h"

@@ -92,6 +92,7 @@ Make the compiled test suite from python not fail in the major test cases
   - TODO: assignment targets
 - TODO: if-elif-else, for, arithmetic, while-break
 - TODO: generators (yield, yield from)
+- TODO: compare-chains resolving
 - TODO: module imports (-> require the construction of module scopes at runtime)
   - module init function invoked where the import should happen
   - include at TOP of module

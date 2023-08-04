@@ -1358,6 +1358,12 @@ class BinaryOperatorExpression(AbstractASTNodeExpression):
         LOGIC_OR = enum.auto()  # todo
         SHL = enum.auto()  # todo
         SHR = enum.auto()  # todo
+        EQUALS = enum.auto()  # todo
+        NOT_EQUALS = enum.auto()  # todo
+        GREATER = enum.auto()  # todo
+        GREATER_EQUAL = enum.auto()  # todo
+        SMALLER = enum.auto()  # todo
+        SMALLER_EQUAL = enum.auto()  # todo
 
     String2Type = {
         "+": BinaryOperation.PLUS,
@@ -1371,11 +1377,23 @@ class BinaryOperatorExpression(AbstractASTNodeExpression):
         "|": BinaryOperation.BIN_OR,
         "&": BinaryOperation.BIN_AND,
         "^": BinaryOperation.BIN_XOR,
+        "==": BinaryOperation.EQUALS,
+        "!=": BinaryOperation.NOT_EQUALS,
+        ">": BinaryOperation.GREATER,
+        ">=": BinaryOperation.GREATER_EQUAL,
+        "<": BinaryOperation.SMALLER,
+        "<=": BinaryOperation.SMALLER_EQUAL,
     }
 
     PRIORITIES: typing.Dict[BinaryOperation, int] = {
-        BinaryOperation.LOGIC_AND: -10,
-        BinaryOperation.LOGIC_OR: -10,
+        BinaryOperation.LOGIC_AND: -20,
+        BinaryOperation.LOGIC_OR: -20,
+        BinaryOperation.EQUALS: -10,
+        BinaryOperation.NOT_EQUALS: -10,
+        BinaryOperation.GREATER: -10,
+        BinaryOperation.GREATER_EQUAL: -10,
+        BinaryOperation.SMALLER: -10,
+        BinaryOperation.SMALLER_EQUAL: -10,
         BinaryOperation.PLUS: 0,
         BinaryOperation.MINUS: 0,
         BinaryOperation.BIN_OR: 0,
@@ -1389,6 +1407,15 @@ class BinaryOperatorExpression(AbstractASTNodeExpression):
         BinaryOperation.MODULO: 10,
         BinaryOperation.MATRIX_MULTIPLY: 10,
         BinaryOperation.POW: 20,
+    }
+
+    OPERATOR_CALL_FUNCTIONS = {
+        BinaryOperation.PLUS: "PY_STD_operator_add",
+        BinaryOperation.MINUS: "PY_STD_operator_sub",
+        BinaryOperation.MULTIPLY: "PY_STD_operator_mul",
+        BinaryOperation.TRUE_DIV: "PY_STD_operator_truediv",
+        BinaryOperation.FLOOR_DIV: "PY_STD_operator_floordiv",
+        BinaryOperation.MODULO: "PY_STD_operator_modulo",
     }
 
     def __init__(
@@ -1430,7 +1457,12 @@ class BinaryOperatorExpression(AbstractASTNodeExpression):
         context: CCodeEmitter.CExpressionBuilder,
         is_target=False,
     ):
-        raise NotImplementedError
+        func_name = self.OPERATOR_CALL_FUNCTIONS[self.operator]
+        context.add_code(f"{func_name}(")
+        self.lhs.emit_c_code(base, context)
+        context.add_code(", ")
+        self.rhs.emit_c_code(base, context)
+        context.add_code(")")
 
 
 class WalrusOperatorExpression(AbstractASTNodeExpression):
@@ -1928,7 +1960,7 @@ class Parser:
 
             elif (
                 self.lexer.inspect_chars(1)
-                and self.lexer.inspect_chars(1) in "+*%/&|^@"
+                and self.lexer.inspect_chars(1) in "+-*%/&|^@"
             ):
                 if self.lexer.inspect_chars(2) in ("**", "//"):
                     operator = self.lexer.get_chars(2)

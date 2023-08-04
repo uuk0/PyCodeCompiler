@@ -105,8 +105,8 @@ class ResolveParentAttribute(SyntaxTreeVisitor):
     def visit_binary_operator(self, operator: BinaryOperatorExpression):
         super().visit_binary_operator(operator)
 
-        operator.lhs = operator, ParentAttributeSection.LHS
-        operator.rhs = operator, ParentAttributeSection.RHS
+        operator.lhs.parent = operator, ParentAttributeSection.LHS
+        operator.rhs.parent = operator, ParentAttributeSection.RHS
 
     def visit_walrus_operator(self, operator: WalrusOperatorExpression):
         super().visit_walrus_operator(operator)
@@ -155,10 +155,10 @@ class BinaryOperatorPriorityRewriter(SyntaxTreeVisitor):
                 operator.rhs.operator,
                 operator.rhs.rhs,
             )
-            rhs.parent = operator
-            lhs.parent = operator
-            rhs.lhs.parent = operator
-            rhs.rhs.parent = operator
+            rhs.parent = operator, ParentAttributeSection.RHS
+            lhs.parent = operator, ParentAttributeSection.LHS
+            rhs.lhs.parent = operator, ParentAttributeSection.LHS
+            rhs.rhs.parent = operator, ParentAttributeSection.RHS
             operator.operator = operator.lhs.operator
             operator.lhs = lhs
             operator.rhs = rhs
@@ -175,10 +175,10 @@ class BinaryOperatorPriorityRewriter(SyntaxTreeVisitor):
             rhs = BinaryOperatorExpression(
                 operator.lhs.rhs, operator.operator, operator.rhs
             )
-            lhs.parent = operator
-            rhs.parent = operator
-            rhs.lhs.parent = rhs
-            rhs.rhs.parent = rhs
+            lhs.parent = operator, ParentAttributeSection.LHS
+            rhs.parent = operator, ParentAttributeSection.RHS
+            rhs.lhs.parent = rhs, ParentAttributeSection.LHS
+            rhs.rhs.parent = rhs, ParentAttributeSection.RHS
             operator.operator = operator.lhs.operator
             operator.lhs = lhs
             operator.rhs = rhs
@@ -191,10 +191,10 @@ class BinaryOperatorPriorityRewriter(SyntaxTreeVisitor):
             lhs = BinaryOperatorExpression(
                 operator.lhs, operator.operator, operator.rhs.lhs
             )
-            lhs.parent = operator
-            rhs.parent = operator
-            lhs.lhs.parent = lhs
-            lhs.lhs.parent = lhs
+            lhs.parent = operator, ParentAttributeSection.LHS
+            rhs.parent = operator, ParentAttributeSection.RHS
+            lhs.lhs.parent = lhs, ParentAttributeSection.LHS
+            lhs.lhs.parent = lhs, ParentAttributeSection.RHS
             operator.operator = operator.rhs.operator
             operator.lhs = lhs
             operator.rhs = rhs
