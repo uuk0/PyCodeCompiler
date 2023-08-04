@@ -122,7 +122,7 @@ PyObjectContainer* PY_STD_operator_bin_or(PyObjectContainer* lhs, PyObjectContai
 {
     if (lhs->type == PY_TYPE_INT)
     {
-        assert(rhs->type == PY_TYPE_INT);  // TODO: float
+        assert(rhs->type == PY_TYPE_INT);
         assert(PY_unpackInteger(rhs) != 0);
 
         return PY_createInteger(PY_unpackInteger(lhs) | PY_unpackInteger(rhs));
@@ -135,7 +135,7 @@ PyObjectContainer* PY_STD_operator_bin_and(PyObjectContainer* lhs, PyObjectConta
 {
     if (lhs->type == PY_TYPE_INT)
     {
-        assert(rhs->type == PY_TYPE_INT);  // TODO: float
+        assert(rhs->type == PY_TYPE_INT);
         assert(PY_unpackInteger(rhs) != 0);
 
         return PY_createInteger(PY_unpackInteger(lhs) & PY_unpackInteger(rhs));
@@ -148,7 +148,7 @@ PyObjectContainer* PY_STD_operator_bin_xor(PyObjectContainer* lhs, PyObjectConta
 {
     if (lhs->type == PY_TYPE_INT)
     {
-        assert(rhs->type == PY_TYPE_INT);  // TODO: float
+        assert(rhs->type == PY_TYPE_INT);
         assert(PY_unpackInteger(rhs) != 0);
 
         return PY_createInteger(PY_unpackInteger(lhs) ^ PY_unpackInteger(rhs));
@@ -161,8 +161,10 @@ PyObjectContainer* PY_STD_operator_equals(PyObjectContainer* lhs, PyObjectContai
 {
     if (lhs->type == PY_TYPE_INT)
     {
-        assert(rhs->type == PY_TYPE_INT);  // TODO: float
-        assert(PY_unpackInteger(rhs) != 0);
+        if (rhs->type != PY_TYPE_INT)  // TODO: float
+        {
+            return PY_FALSE;
+        }
 
         return PY_createBoolean(PY_unpackInteger(lhs) == PY_unpackInteger(rhs));
     }
@@ -174,8 +176,10 @@ PyObjectContainer* PY_STD_operator_not_equals(PyObjectContainer* lhs, PyObjectCo
 {
     if (lhs->type == PY_TYPE_INT)
     {
-        assert(rhs->type == PY_TYPE_INT);  // TODO: float
-        assert(PY_unpackInteger(rhs) != 0);
+        if (rhs->type != PY_TYPE_INT)  // TODO: float
+        {
+            return PY_TRUE;
+        }
 
         return PY_createBoolean(PY_unpackInteger(lhs) != PY_unpackInteger(rhs));
     }
