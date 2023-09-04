@@ -369,6 +369,29 @@ int64_t PY_unpackInteger(PyObjectContainer* obj)
     return *((int64_t*)obj->raw_value);
 }
 
+PyObjectContainer* PY_createFloat(double value)
+{
+    double* value_holder = malloc(sizeof(double));
+
+    if (value_holder == NULL)
+    {
+        perror("malloc PY_createFloat");
+        exit(EXIT_FAILURE);
+    }
+
+    *value_holder = value;
+    PyObjectContainer* container = createEmptyContainer(PY_TYPE_FLOAT);
+    container->raw_value = value_holder;
+    return container;
+}
+
+double PY_unpackFloat(PyObjectContainer* obj)
+{
+    assert(obj->type == PY_TYPE_FLOAT);
+
+    return *((double*)obj->raw_value);
+}
+
 PyObjectContainer* PY_createBoolean(bool value)
 {
     if (value)
@@ -377,7 +400,6 @@ PyObjectContainer* PY_createBoolean(bool value)
     }
     return PY_FALSE;
 }
-
 
 bool PY_unpackBoolean(PyObjectContainer* obj)
 {
@@ -388,6 +410,7 @@ bool PY_unpackBoolean(PyObjectContainer* obj)
     }
     return false;
 }
+
 
 static bool PY_getTruthValueOfPyObj(PyObjectContainer* obj)
 {

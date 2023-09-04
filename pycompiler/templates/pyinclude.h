@@ -128,8 +128,14 @@ PyObjectContainer* PY_invokeBoxedMethod(PyObjectContainer* obj, PyObjectContaine
 PyObjectContainer* PY_GetSubscriptionValue(PyObjectContainer* obj, PyObjectContainer* index);
 void PY_SetSubscriptionValue(PyObjectContainer* obj, PyObjectContainer* index, PyObjectContainer* value);
 
+// Primitive Data Objects
+
 PyObjectContainer* PY_createInteger(int64_t value);
 int64_t PY_unpackInteger(PyObjectContainer* obj);
+
+PyObjectContainer* PY_createFloat(double value);
+double PY_unpackFloat(PyObjectContainer* obj);
+
 PyObjectContainer* PY_createBoolean(bool value);
 bool PY_unpackBoolean(PyObjectContainer* obj);
 

@@ -26,9 +26,23 @@ PyObjectContainer* PY_STD_operator_add(PyObjectContainer* lhs, PyObjectContainer
 {
     if (lhs->type == PY_TYPE_INT)
     {
-        assert(rhs->type == PY_TYPE_INT);  // TODO: float
+        if (rhs->type == PY_TYPE_FLOAT)
+        {
+            return PY_createFloat((float) PY_unpackInteger(lhs) + PY_unpackFloat(rhs));
+        }
 
+        assert(rhs->type == PY_TYPE_INT);
         return PY_createInteger(PY_unpackInteger(lhs) + PY_unpackInteger(rhs));
+    }
+    else if (lhs->type == PY_TYPE_FLOAT)
+    {
+        if (rhs->type == PY_TYPE_INT)
+        {
+            return PY_createFloat(PY_unpackFloat(lhs) + (double) PY_unpackInteger(rhs));
+        }
+
+        assert(rhs->type == PY_TYPE_FLOAT);
+        return PY_createFloat(PY_unpackFloat(lhs) + PY_unpackFloat(rhs));
     }
 
     return PY_STD_operator_apply(lhs, rhs, "__add__", "__radd__");
@@ -39,9 +53,24 @@ PyObjectContainer* PY_STD_operator_sub(PyObjectContainer* lhs, PyObjectContainer
 {
     if (lhs->type == PY_TYPE_INT)
     {
-        assert(rhs->type == PY_TYPE_INT);  // TODO: float
+        if (rhs->type == PY_TYPE_FLOAT)
+        {
+            return PY_createFloat((float) PY_unpackInteger(lhs) - PY_unpackFloat(rhs));
+        }
+
+        assert(rhs->type == PY_TYPE_INT);
 
         return PY_createInteger(PY_unpackInteger(lhs) - PY_unpackInteger(rhs));
+    }
+    else if (lhs->type == PY_TYPE_FLOAT)
+    {
+        if (rhs->type == PY_TYPE_INT)
+        {
+            return PY_createFloat(PY_unpackFloat(lhs) - (double) PY_unpackInteger(rhs));
+        }
+
+        assert(rhs->type == PY_TYPE_FLOAT);
+        return PY_createFloat(PY_unpackFloat(lhs) - PY_unpackFloat(rhs));
     }
 
     return PY_STD_operator_apply(lhs, rhs, "__sub__", "__rsub__");
@@ -51,9 +80,24 @@ PyObjectContainer* PY_STD_operator_mul(PyObjectContainer* lhs, PyObjectContainer
 {
     if (lhs->type == PY_TYPE_INT)
     {
-        assert(rhs->type == PY_TYPE_INT);  // TODO: float
+        if (rhs->type == PY_TYPE_FLOAT)
+        {
+            return PY_createFloat((float) PY_unpackInteger(lhs) * PY_unpackFloat(rhs));
+        }
+
+        assert(rhs->type == PY_TYPE_INT);
 
         return PY_createInteger(PY_unpackInteger(lhs) * PY_unpackInteger(rhs));
+    }
+    else if (lhs->type == PY_TYPE_FLOAT)
+    {
+        if (rhs->type == PY_TYPE_INT)
+        {
+            return PY_createFloat(PY_unpackFloat(lhs) * (double) PY_unpackInteger(rhs));
+        }
+
+        assert(rhs->type == PY_TYPE_FLOAT);
+        return PY_createFloat(PY_unpackFloat(lhs) * PY_unpackFloat(rhs));
     }
 
     return PY_STD_operator_apply(lhs, rhs, "__mul__", "__rmul__");
@@ -63,11 +107,26 @@ PyObjectContainer* PY_STD_operator_truediv(PyObjectContainer* lhs, PyObjectConta
 {
     if (lhs->type == PY_TYPE_INT)
     {
-        assert(rhs->type == PY_TYPE_INT);  // TODO: float
+        if (rhs->type == PY_TYPE_FLOAT)
+        {
+            assert(PY_unpackFloat(rhs) != 0);
+            return PY_createFloat((float) PY_unpackInteger(lhs) / PY_unpackFloat(rhs));
+        }
+
+        assert(rhs->type == PY_TYPE_INT);
         assert(PY_unpackInteger(rhs) != 0);
 
-        // return PY_createFloat(((double)PY_unpackInteger(lhs)) / ((double)PY_unpackInteger(rhs)));
-        assert(0 && "not implemented");
+        return PY_createFloat(((double)PY_unpackInteger(lhs)) / ((double)PY_unpackInteger(rhs)));
+    }
+    else if (lhs->type == PY_TYPE_FLOAT)
+    {
+        if (rhs->type == PY_TYPE_INT)
+        {
+            return PY_createFloat(PY_unpackFloat(lhs) / (double) PY_unpackInteger(rhs));
+        }
+
+        assert(rhs->type == PY_TYPE_FLOAT);
+        return PY_createFloat(PY_unpackFloat(lhs) / PY_unpackFloat(rhs));
     }
 
     return PY_STD_operator_apply(lhs, rhs, "__truediv__", "__rtruediv__");
@@ -77,10 +136,26 @@ PyObjectContainer* PY_STD_operator_floordiv(PyObjectContainer* lhs, PyObjectCont
 {
     if (lhs->type == PY_TYPE_INT)
     {
-        assert(rhs->type == PY_TYPE_INT);  // TODO: float
+        if (rhs->type == PY_TYPE_FLOAT)
+        {
+            assert(PY_unpackFloat(rhs) != 0);
+            return PY_createInteger((int64_t)((double)PY_unpackInteger(lhs) / PY_unpackFloat(rhs)));
+        }
+
+        assert(rhs->type == PY_TYPE_INT);
         assert(PY_unpackInteger(rhs) != 0);
 
         return PY_createInteger(PY_unpackInteger(lhs) / PY_unpackInteger(rhs));
+    }
+    else if (lhs->type == PY_TYPE_FLOAT)
+    {
+        if (rhs->type == PY_TYPE_INT)
+        {
+            return PY_createInteger((int64_t)(PY_unpackFloat(lhs) + (double) PY_unpackInteger(rhs)));
+        }
+
+        assert(rhs->type == PY_TYPE_FLOAT);
+        return PY_createInteger((int64_t)(PY_unpackFloat(lhs) + PY_unpackFloat(rhs)));
     }
 
     return PY_STD_operator_apply(lhs, rhs, "__floordiv__", "__rfloordiv__");
@@ -161,7 +236,11 @@ PyObjectContainer* PY_STD_operator_equals(PyObjectContainer* lhs, PyObjectContai
 {
     if (lhs->type == PY_TYPE_INT)
     {
-        if (rhs->type != PY_TYPE_INT)  // TODO: float
+        if (rhs->type == PY_TYPE_FLOAT)
+        {
+            return PY_createBoolean(((double) PY_unpackInteger(lhs)) == PY_unpackFloat(rhs));
+        }
+        else if (rhs->type != PY_TYPE_INT)
         {
             return PY_FALSE;
         }
@@ -176,7 +255,11 @@ PyObjectContainer* PY_STD_operator_not_equals(PyObjectContainer* lhs, PyObjectCo
 {
     if (lhs->type == PY_TYPE_INT)
     {
-        if (rhs->type != PY_TYPE_INT)  // TODO: float
+        if (rhs->type == PY_TYPE_FLOAT)
+        {
+            return PY_createBoolean(((double) PY_unpackInteger(lhs)) != PY_unpackFloat(rhs));
+        }
+        else if (rhs->type != PY_TYPE_INT)
         {
             return PY_TRUE;
         }
