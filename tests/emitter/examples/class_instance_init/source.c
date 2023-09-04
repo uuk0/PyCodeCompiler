@@ -13,6 +13,7 @@ PyObjectContainer* init_1_safeWrap(PyObjectContainer* self , uint8_t argc , PyOb
 
 // Global Variables
 PyClassContainer* PY_CLASS_test_2;
+PyObjectContainer* obj;
 
 
 
@@ -20,7 +21,6 @@ PyClassContainer* PY_CLASS_test_2;
 
 int _initialise() {
     PY_STD_INIT();
-    PyObjectContainer* obj;
     PY_CLASS_INIT_PY_CLASS_test_2();
 
     PyObjectContainer* obj_instance_0 = PY_createClassInstance(PY_CLASS_test_2);

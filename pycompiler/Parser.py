@@ -16,6 +16,7 @@ class Scope:
     def __init__(self):
         self._fresh_name_counter = 0
         self.parent: Scope | None = None
+        self.global_scope: Scope = self
 
         self.module_file: str | None = None
         self.class_name_stack: typing.List[str] = []
@@ -62,6 +63,7 @@ class Scope:
         scope.module_file = self.module_file
         scope.class_name_stack += self.class_name_stack
         scope.exposed_type_names = self.exposed_type_names
+        scope.global_scope = self.global_scope
         return scope
 
     def close(self, export_local_name: str | None = None):
@@ -118,6 +120,10 @@ class Scope:
             raise NameError(f"could not resolve static value of variable '{name}'")
 
         return self.parent.get_static_value_or_fail(name)
+
+    def get_module_global_variable_name(self, name: str) -> str | None:
+        if name in self.global_scope.variable_name_stack:
+            return self.global_scope.get_remapped_name(name)
 
 
 class FilledScope:
@@ -282,6 +288,9 @@ class CCodeEmitter:
             self.includes.append(target)
 
     def add_global_variable(self, var_type: str, var_name: str):
+        if (var_type, var_name) in self.global_variables:
+            return
+
         self.global_variables.append((var_type, var_name))
 
     def add_to_initializer_top(self, code: str):
@@ -411,7 +420,7 @@ class AssignmentExpression(AbstractASTNode):
             if original is None:
                 return False
 
-            self.lhs.replace(original, replacement)
+            self.lhs[self.lhs.index(original)] = replacement
         elif position == ParentAttributeSection.RHS:
             self.rhs = replacement
         else:
@@ -490,6 +499,27 @@ class NameAccessExpression(AbstractASTNodeExpression):
         is_target=False,
     ):
         context.add_code(self.scope.get_remapped_name(self.name.text))
+
+
+class GlobalCNameAccessExpression(AbstractASTNodeExpression):
+    def __init__(self, name: str):
+        super().__init__()
+        self.name = name
+
+    def __eq__(self, other):
+        return type(other) == NameAccessExpression and self.name == other.name
+
+    def __repr__(self):
+        return f"GLOBAL-C-VARIABLE({self.name})"
+
+    def emit_c_code(
+        self,
+        base: CCodeEmitter,
+        context: CCodeEmitter.CExpressionBuilder,
+        is_target=False,
+    ):
+        base.add_global_variable("PyObjectContainer*", self.name)
+        context.add_code(self.name)
 
 
 class ConstantAccessExpression(AbstractASTNodeExpression):
@@ -1637,6 +1667,8 @@ class SyntaxTreeVisitor:
             return self.visit_assignment(obj)
         elif obj_type == NameAccessExpression:
             return self.visit_name_access(obj)
+        elif obj_type == GlobalCNameAccessExpression:
+            return self.visit_global_c_name_access(obj)
         elif obj_type == AttributeExpression:
             return self.visit_attribute_expression(obj)
         elif obj_type == SubscriptionExpression:
@@ -1688,6 +1720,9 @@ class SyntaxTreeVisitor:
         )
 
     def visit_name_access(self, access: NameAccessExpression):
+        pass
+
+    def visit_global_c_name_access(self, access: GlobalCNameAccessExpression):
         pass
 
     def visit_attribute_expression(self, expression: AttributeExpression):
@@ -1828,6 +1863,7 @@ class Parser:
             ScopeGeneratorVisitor,
             LocalNameValidator,
             ResolveStaticNames,
+            ResolveGlobalNames,
             NameNormalizer,
             BinaryOperatorPriorityRewriter,
         )
@@ -1843,6 +1879,7 @@ class Parser:
         NameNormalizer().visit_any_list(expr)
         LocalNameValidator().visit_any_list(expr)
         ResolveStaticNames().visit_any_list(expr)
+        ResolveGlobalNames().visit_any_list(expr)
 
         builder = CCodeEmitter(scope)
         main = builder.CFunctionBuilder("_initialise", [], "int", scope)
@@ -1858,11 +1895,11 @@ class Parser:
                 if isinstance(line, (FunctionDefinitionNode, ClassDefinitionNode))
             ]
 
-            for var in expr[0].scope.variable_name_stack:
-                if var not in skip_names:
-                    main.add_code(
-                        f"PyObjectContainer* {expr[0].scope.get_remapped_name(var)};\n"
-                    )
+            # for var in expr[0].scope.variable_name_stack:
+            #     if var not in skip_names:
+            #         main.add_code(
+            #             f"PyObjectContainer* {expr[0].scope.get_remapped_name(var)};\n"
+            #         )
 
         for line in expr:
             inner_block = main.get_statement_builder(indent=False)

@@ -5,12 +5,15 @@
 
 int _initialise();
 
+// Global Variables
+PyObjectContainer* test;
+
+
 
 // implementations
 
 int _initialise() {
     PY_STD_INIT();
-    PyObjectContainer* test;
     test = PY_createInteger(10);
 
     while (PY_getTruthValueOf(test)) {

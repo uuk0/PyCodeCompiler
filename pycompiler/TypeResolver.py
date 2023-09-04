@@ -14,6 +14,7 @@ from pycompiler.Parser import (
     StandardLibraryClass,
     SubscriptionExpression,
     BinaryOperatorExpression,
+    GlobalCNameAccessExpression,
 )
 
 if typing.TYPE_CHECKING:
@@ -329,6 +330,18 @@ class LocalNameValidator(SyntaxTreeVisitor):
         if not access.scope.has_name_access(access.name.text):
             raise NameError(
                 f"Cannot find '{access.name.text}' at {access} in scope {access.scope}"
+            )
+
+
+class ResolveGlobalNames(SyntaxTreeVisitor):
+    def visit_name_access(self, access: NameAccessExpression):
+        super().visit_name_access(access)
+
+        if global_name := access.scope.get_module_global_variable_name(
+            access.name.text
+        ):
+            access.parent[0].try_replace_child(
+                access, GlobalCNameAccessExpression(global_name), access.parent[1]
             )
 
 
