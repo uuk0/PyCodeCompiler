@@ -238,7 +238,8 @@ PyObjectContainer* PY_STD_operator_equals(PyObjectContainer* lhs, PyObjectContai
     {
         if (rhs->type == PY_TYPE_FLOAT)
         {
-            return PY_createBoolean(((double) PY_unpackInteger(lhs)) == PY_unpackFloat(rhs));
+            double rhs_v = PY_unpackFloat(rhs);
+            return PY_createBoolean(rhs_v == (int64_t)rhs_v && PY_unpackInteger(lhs) == (int64_t)rhs_v);
         }
         else if (rhs->type != PY_TYPE_INT)
         {
@@ -246,6 +247,20 @@ PyObjectContainer* PY_STD_operator_equals(PyObjectContainer* lhs, PyObjectContai
         }
 
         return PY_createBoolean(PY_unpackInteger(lhs) == PY_unpackInteger(rhs));
+    }
+    else if (lhs->type == PY_TYPE_FLOAT)
+    {
+        if (rhs->type == PY_TYPE_INT)
+        {
+            double lhs_v = PY_unpackFloat(lhs);
+            return PY_createBoolean(lhs_v == (int64_t)lhs_v && PY_unpackInteger(rhs) == (int64_t)lhs_v);
+        }
+        else if (rhs->type != PY_TYPE_FLOAT)
+        {
+            return PY_FALSE;
+        }
+
+        return PY_createBoolean(PY_unpackFloat(lhs) == PY_unpackFloat(rhs));
     }
 
     return PY_STD_operator_apply(lhs, rhs, "__eq__", "__eq__");
@@ -257,7 +272,8 @@ PyObjectContainer* PY_STD_operator_not_equals(PyObjectContainer* lhs, PyObjectCo
     {
         if (rhs->type == PY_TYPE_FLOAT)
         {
-            return PY_createBoolean(((double) PY_unpackInteger(lhs)) != PY_unpackFloat(rhs));
+            double rhs_v = PY_unpackFloat(rhs);
+            return PY_createBoolean(rhs_v != (int64_t)rhs_v || PY_unpackInteger(lhs) != (int64_t)rhs_v);
         }
         else if (rhs->type != PY_TYPE_INT)
         {
@@ -265,6 +281,20 @@ PyObjectContainer* PY_STD_operator_not_equals(PyObjectContainer* lhs, PyObjectCo
         }
 
         return PY_createBoolean(PY_unpackInteger(lhs) != PY_unpackInteger(rhs));
+    }
+    else if (lhs->type == PY_TYPE_FLOAT)
+    {
+        if (rhs->type == PY_TYPE_INT)
+        {
+            double lhs_v = PY_unpackFloat(lhs);
+            return PY_createBoolean(lhs_v != (int64_t)lhs_v || PY_unpackInteger(rhs) != (int64_t)lhs_v);
+        }
+        else if (rhs->type != PY_TYPE_FLOAT)
+        {
+            return PY_TRUE;
+        }
+
+        return PY_createBoolean(PY_unpackFloat(lhs) != PY_unpackFloat(rhs));
     }
 
     PyObjectContainer* result = PY_STD_operator_apply(lhs, rhs, "__eq__", "__eq__");
@@ -276,6 +306,6 @@ PyObjectContainer* PY_STD_operator_not_equals(PyObjectContainer* lhs, PyObjectCo
     {
         return PY_TRUE;
     }
-    return result;  // todo: maybe error out?
+    return PY_FALSE;  // todo: maybe error out?
 }
 
