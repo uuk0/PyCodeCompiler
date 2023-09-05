@@ -130,6 +130,37 @@ PyObjectContainer* PY_STD_list_append(PyObjectContainer* self, uint8_t argc, PyO
     return PY_NONE;
 }
 
+PyObjectContainer* PY_STD_list_append_fast(PyObjectContainer* self, PyObjectContainer* param)
+{
+    assert(self != NULL);
+    assert(self->type == PY_TYPE_PY_IMPL);
+    assert(self->py_type == PY_TYPE_LIST);
+
+    PY_STD_list_container* list = (PY_STD_list_container*)self->raw_value;
+
+    if (list->rem_size > 0)
+    {
+        list->rem_size--;
+        list->array[list->curr_size] = param;
+        list->curr_size++;
+    }
+    else
+    {
+        list->array = realloc(list->array, 2 * list->curr_size * sizeof(PyObjectContainer*));
+        if (list->array == NULL)
+        {
+            perror("malloc PY_STD_list_append");
+            exit(EXIT_FAILURE);
+        }
+
+        list->rem_size = list->curr_size - 1;
+        list->array[list->curr_size] = param;
+        list->curr_size++;
+    }
+
+    return PY_NONE;
+}
+
 // <list>.insert(<index>, <item>)
 PyObjectContainer* PY_STD_list_insert(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
 {
@@ -224,30 +255,70 @@ PyObjectContainer* PY_STD_list_remove(PyObjectContainer* self, uint8_t argc, PyO
 
 PyObjectContainer* PY_STD_list_setAtIndex(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
 {
+    assert(argc == 2);
+    assert(args[0]->type == PY_TYPE_INT);
+    PY_STD_list_setAtIndex_fast_with_int(self, PY_unpackInteger(args[0]), args[1]);
+
+    return PY_NONE;
+}
+
+PyObjectContainer* PY_STD_list_setAtIndex_fast(PyObjectContainer* self, PyObjectContainer* index_wrapper, PyObjectContainer* value)
+{
     assert(self != NULL);
     assert(self->type == PY_TYPE_PY_IMPL);
     assert(self->py_type == PY_TYPE_LIST);
-    assert(argc == 2);
-    assert(args[0]->type == PY_TYPE_INT);
-    int64_t index = *(int64_t*)args[0]->raw_value;
+    int64_t index = PY_unpackInteger(index_wrapper);
 
     PY_STD_list_container* list = (PY_STD_list_container*)self->raw_value;
 
     assert(index >= 0 && index < list->curr_size);
 
-    list->array[index] = args[1];
+    list->array[index] = value;
+
+    return PY_NONE;
+}
+
+PyObjectContainer* PY_STD_list_setAtIndex_fast_with_int(PyObjectContainer* self, int64_t index, PyObjectContainer* value)
+{
+    assert(self != NULL);
+    assert(self->type == PY_TYPE_PY_IMPL);
+    assert(self->py_type == PY_TYPE_LIST);
+
+    PY_STD_list_container* list = (PY_STD_list_container*)self->raw_value;
+
+    assert(index >= 0 && index < list->curr_size);
+
+    list->array[index] = value;
 
     return PY_NONE;
 }
 
 PyObjectContainer* PY_STD_list_getAtIndex(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
 {
+    assert(argc == 1);
+    assert(args[0]->type == PY_TYPE_INT);
+    return PY_STD_list_getAtIndex_fast_with_int(self, PY_unpackInteger(args[0]));
+}
+
+PyObjectContainer* PY_STD_list_getAtIndex_fast(PyObjectContainer* self, PyObjectContainer* raw_index)
+{
     assert(self != NULL);
     assert(self->type == PY_TYPE_PY_IMPL);
     assert(self->py_type == PY_TYPE_LIST);
-    assert(argc == 1);
-    assert(args[0]->type == PY_TYPE_INT);
-    int64_t index = *(int64_t*)args[0]->raw_value;
+    int64_t index = PY_unpackInteger(raw_index);
+
+    PY_STD_list_container* list = (PY_STD_list_container*)self->raw_value;
+
+    assert(index >= 0 && index < list->curr_size);
+
+    return list->array[index];
+}
+
+PyObjectContainer* PY_STD_list_getAtIndex_fast_with_int(PyObjectContainer* self, int64_t index)
+{
+    assert(self != NULL);
+    assert(self->type == PY_TYPE_PY_IMPL);
+    assert(self->py_type == PY_TYPE_LIST);
 
     PY_STD_list_container* list = (PY_STD_list_container*)self->raw_value;
 
@@ -277,17 +348,17 @@ PyObjectContainer* PY_STD_list_removeAtIndex(PyObjectContainer* self, uint8_t ar
 
 PyObjectContainer* PY_STD_list_clear(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
 {
+    assert(argc == 0);
+    return PY_STD_list_clear_fast(self);
+}
+
+PyObjectContainer* PY_STD_list_clear_fast(PyObjectContainer* self)
+{
     assert(self != NULL);
     assert(self->type == PY_TYPE_PY_IMPL);
     assert(self->py_type == PY_TYPE_LIST);
-    assert(argc == 0);
     PY_STD_list_container* list = (PY_STD_list_container*)self->raw_value;
     assert(list != NULL);
-
-    // for (int i = 0; i < list->curr_size; i++)
-    // {
-    //     DECREF(list->array[i]);
-    // }
 
     free(list->array);
     list->array = malloc(PY_STD_LIST_START_SIZE * sizeof(PyObjectContainer*));
@@ -340,10 +411,27 @@ PyObjectContainer* PY_STD_list_eq(PyObjectContainer* self, uint8_t argc, PyObjec
 
 PyObjectContainer* PY_STD_list_len(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
 {
+    if (self != NULL)
+    {
+        assert(argc == 0);
+    }
+    else
+    {
+        assert(argc == 1);
+        self = args[0];
+    }
     assert(self != NULL);
     assert(self->type == PY_TYPE_PY_IMPL);
     assert(self->py_type == PY_TYPE_LIST);
-    assert(argc == 0);
+    PY_STD_list_container* list = (PY_STD_list_container*)self->raw_value;
+    return PY_createInteger(list->curr_size);
+}
+
+PyObjectContainer* PY_STD_list_len_fast(PyObjectContainer* self)
+{
+    assert(self != NULL);
+    assert(self->type == PY_TYPE_PY_IMPL);
+    assert(self->py_type == PY_TYPE_LIST);
     PY_STD_list_container* list = (PY_STD_list_container*)self->raw_value;
     return PY_createInteger(list->curr_size);
 }

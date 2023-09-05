@@ -3,6 +3,7 @@ from __future__ import annotations
 import typing
 import warnings
 
+from pycompiler.Lexer import TokenType
 from pycompiler.Parser import (
     SyntaxTreeVisitor,
     Scope,
@@ -15,16 +16,18 @@ from pycompiler.Parser import (
     SubscriptionExpression,
     BinaryOperatorExpression,
     GlobalCNameAccessExpression,
+    ClassExactDataType,
+    ClassDefinitionNode,
+    CallExpression,
+    AssignmentExpression,
+    PY_FUNC_LEN,
 )
 
 if typing.TYPE_CHECKING:
     from pycompiler.Parser import (
-        ClassDefinitionNode,
-        AssignmentExpression,
         AbstractASTNode,
         AttributeExpression,
         ReturnStatement,
-        CallExpression,
         WalrusOperatorExpression,
         PriorityBrackets,
         TupleConstructor,
@@ -345,6 +348,132 @@ class ResolveGlobalNames(SyntaxTreeVisitor):
             )
 
 
+class ResolveKnownDataTypes(SyntaxTreeVisitor):
+    def visit_assignment(self, assignment: AssignmentExpression):
+        super().visit_assignment(assignment)
+
+        if assignment.rhs.static_value_type is not None:
+            for target in assignment.lhs:
+                if isinstance(target, NameAccessExpression):
+                    assignment.scope.set_local_var_type_or_clear(
+                        target.name.text, assignment.rhs.static_value_type
+                    )
+
+                # todo: try to do some stuff / at least invalidate from here down
+
+    def visit_call_expression(self, node: CallExpression):
+        super().visit_call_expression(node)
+
+        if isinstance(node.base, ConstantAccessExpression):
+            if isinstance(node.base.value, ClassDefinitionNode):
+                node.static_value_type = ClassExactDataType(node.base.value)
+            elif node.base.value == PY_FUNC_LEN:
+                if len(node.args) != 1:
+                    raise ValueError(
+                        f"len(...) expected exactly 1 arg, got {len(node.args)}"
+                    )
+
+                arg = node.args[0].value
+                if (
+                    arg.static_value_type
+                    and isinstance(arg.static_value_type, ClassExactDataType)
+                    and "__len__" in arg.static_value_type.ref.function_table
+                ):
+                    len_func = arg.static_value_type.ref.function_table["__len__"]
+                    node.base = len_func
+
+
+class ResolveLocalVariableAccessTypes(SyntaxTreeVisitor):
+    DIRTY = False
+
+    def visit_name_access(self, access: NameAccessExpression):
+        super().visit_name_access(access)
+
+        data_type = access.scope.variable_type_map.get(access.name.text, None)
+
+        if data_type is not None and access.static_value_type != data_type:
+            ResolveLocalVariableAccessTypes.DIRTY = True
+            access.static_value_type = data_type
+
+
+class ResolveClassFunctionNode(SyntaxTreeVisitor):
+    def visit_attribute_expression(self, expression: AttributeExpression):
+        if (
+            expression.base.static_value_type
+            and isinstance(expression.base.static_value_type, ClassExactDataType)
+            and isinstance(expression.parent[0], CallExpression)
+        ):
+            data_type = expression.base.static_value_type.ref
+
+            if expression.attribute.text in data_type.function_table:
+                expression.parent[0].args.insert(
+                    0,
+                    CallExpression.CallExpressionArgument(
+                        expression.base, CallExpression.ParameterType.NORMAL
+                    ),
+                )
+                target = data_type.function_table[expression.attribute.text]
+                expression.parent[0].try_replace_child(
+                    expression,
+                    target,
+                    expression.parent[1],
+                )
+
+    def visit_subscription_expression(self, expression: SubscriptionExpression):
+        if not expression.base.static_value_type or not isinstance(
+            expression.base.static_value_type, ClassExactDataType
+        ):
+            return
+
+        data_type = expression.base.static_value_type.ref
+
+        if isinstance(expression.parent[0], AssignmentExpression):
+            if "__setitem__" in data_type.function_table:
+                print(expression.parent[0].parent[0])
+                expression.parent[0].parent[0].try_replace_child(
+                    expression.parent[0],
+                    CallExpression(
+                        data_type.function_table["__setitem__"],
+                        [],
+                        TokenType.OPENING_ROUND_BRACKET("("),
+                        [
+                            CallExpression.CallExpressionArgument(
+                                expression.base, CallExpression.ParameterType.NORMAL
+                            ),
+                            CallExpression.CallExpressionArgument(
+                                expression.expression,
+                                CallExpression.ParameterType.NORMAL,
+                            ),
+                            CallExpression.CallExpressionArgument(
+                                expression.parent[0].rhs,
+                                CallExpression.ParameterType.NORMAL,
+                            ),
+                        ],
+                        TokenType.CLOSING_ROUND_BRACKET(")"),
+                    ),
+                    expression.parent[0].parent[1],
+                )
+        elif "__getitem__" in data_type.function_table:
+            expression.parent[0].try_replace_child(
+                expression,
+                CallExpression(
+                    data_type.function_table["__getitem__"],
+                    [],
+                    TokenType.OPENING_ROUND_BRACKET("("),
+                    [
+                        CallExpression.CallExpressionArgument(
+                            expression.base, CallExpression.ParameterType.NORMAL
+                        ),
+                        CallExpression.CallExpressionArgument(
+                            expression.expression, CallExpression.ParameterType.NORMAL
+                        ),
+                    ],
+                    TokenType.CLOSING_ROUND_BRACKET(")"),
+                ),
+                expression.parent[1],
+            )
+
+
 class ResolveStaticNames(SyntaxTreeVisitor):
     def visit_name_access(self, access: NameAccessExpression):
         super().visit_name_access(access)
@@ -370,6 +499,10 @@ class ResolveStaticNames(SyntaxTreeVisitor):
             expression.base.value, ClassDefinitionNode
         ):
             pass  # todo: check if value is static access-able and replace in that case
+        elif expression.base.static_value_type and isinstance(
+            expression.base.static_value_type, ClassExactDataType
+        ):
+            pass
 
     def visit_subscription_expression(self, expression: SubscriptionExpression):
         super().visit_subscription_expression(expression)

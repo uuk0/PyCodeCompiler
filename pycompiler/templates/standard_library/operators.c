@@ -309,3 +309,10 @@ PyObjectContainer* PY_STD_operator_not_equals(PyObjectContainer* lhs, PyObjectCo
     return PY_FALSE;  // todo: maybe error out?
 }
 
+PyObjectContainer* PY_STD_operator_len(PyObjectContainer* value)
+{
+    PyObjectContainer* len = PY_getObjectAttributeByNameOrStatic(value, "__len__");
+    assert(len != NULL);
+    return PY_invokeBoxedMethod(len, value, 0, NULL, NULL);
+}
+

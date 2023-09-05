@@ -284,39 +284,39 @@ void PY_setClassAttributeByNameOrCreate(PyClassContainer* cls, char* name, PyObj
     cls->static_attribute_values[i+1] = NULL;
 }
 
-PyObjectContainer* PY_invokeBoxedMethod(PyObjectContainer* obj, PyObjectContainer* self, uint8_t param_count, PyObjectContainer** args, CallStructureInfo* info)
+PyObjectContainer* PY_invokeBoxedMethod(PyObjectContainer* method, PyObjectContainer* self, uint8_t param_count, PyObjectContainer** args, CallStructureInfo* info)
 {
-    assert(obj != NULL);
+    assert(method != NULL);
 
     bool decref_after = false;
 
-    if (obj->type == PY_TYPE_PY_IMPL) {
-        obj = PY_getObjectAttributeByNameOrStatic(obj, "__call__");
+    if (method->type == PY_TYPE_PY_IMPL) {
+        method = PY_getObjectAttributeByNameOrStatic(method, "__call__");
 
-        while (obj->type == PY_TYPE_PY_IMPL) {
-            PyObjectContainer* new_obj = PY_getObjectAttributeByNameOrStatic(obj, "__call__");
-            DECREF(obj);
-            obj = new_obj;
-            assert(obj != NULL);
+        while (method->type == PY_TYPE_PY_IMPL) {
+            PyObjectContainer* new_obj = PY_getObjectAttributeByNameOrStatic(method, "__call__");
+            DECREF(method);
+            method = new_obj;
+            assert(method != NULL);
         }
 
         decref_after = true;
     }
 
-    assert(obj->type == PY_TYPE_FUNC_POINTER);
+    assert(method->type == PY_TYPE_FUNC_POINTER);
 
-    PY_FUNC_UNBOXED* function = (PY_FUNC_UNBOXED*)obj->raw_value;
+    PY_FUNC_UNBOXED* function = (PY_FUNC_UNBOXED*)method->raw_value;
 
-    if (self == NULL && (obj->flags & PY_TYPE_FUNC_HAS_SELF))
+    if (self == NULL && (method->flags & PY_TYPE_FUNC_HAS_SELF))
     {
-        self = obj->source;
+        self = method->source;
     }
 
     PyObjectContainer* result = function(self, param_count, args, info);
 
     if (decref_after)
     {
-        DECREF(obj);
+        DECREF(method);
     }
 
     return result;

@@ -5,6 +5,7 @@
 #include <stdbool.h>
 #include "init.h"
 #include "list.h"
+#include "operators.h"
 
 
 static bool STD_IS_INITIALISED = false;

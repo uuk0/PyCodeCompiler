@@ -26,8 +26,20 @@ class Scope:
         self.generic_name_stack: typing.Set[str] = set()
         self.variable_name_stack: typing.Set[str] = set()
         self.variable_name_remap: typing.Dict[str, str] = {}
+        self.variable_type_map: typing.Dict[str, AbstractDataType | None] = {}
 
         self.strong_variables: typing.Dict[str, object] = {}
+
+    def set_local_var_type_or_clear(self, name: str, data_type: AbstractDataType):
+        if name in self.variable_type_map:
+            if self.variable_type_map[name] != data_type:
+                # todo: when e.g. using a list, we need to remove some generic variants, but it might still be valid!
+                raise ValueError(
+                    f"type conflict: '{name}' was declared as data type "
+                    f"{self.variable_type_map[name]} and {data_type}, which is a conflict!"
+                )
+            return
+        self.variable_type_map[name] = data_type
 
     def get_fresh_name(self, base_name: str) -> str:
         if self.parent is not None:
@@ -300,10 +312,35 @@ class CCodeEmitter:
         self.init_function.add_code(code)
 
 
+class AbstractDataType:
+    pass
+
+
+class ClassOrSubclassDataType(AbstractDataType):
+    def __init__(self, ref: ClassDefinitionNode):
+        self.ref = ref
+        self.generics = []
+
+    def __eq__(self, other):
+        return (
+            type(other) == type(self)
+            and self.ref == other.ref
+            and self.generics == other.generics
+        )
+
+    def __repr__(self):
+        return f"{type(self).__name__}({self.ref}, {self.generics})"
+
+
+class ClassExactDataType(ClassOrSubclassDataType):
+    pass
+
+
 class AbstractASTNode(abc.ABC):
     def __init__(self):
         self.scope = None
         self.parent: typing.Tuple[AbstractASTNode, ParentAttributeSection] | None = None
+        self.static_value_type = None
 
     def try_replace_child(
         self,
@@ -593,6 +630,7 @@ class TupleConstructor(AbstractASTNodeExpression):
     def __init__(self, items: typing.List[AbstractASTNode]):
         super().__init__()
         self.items = items
+        self.static_value_type = ClassExactDataType(PY_TYPE_TUPLE)
 
     def __eq__(self, other):
         return type(other) == TupleConstructor and self.items == other.items
@@ -633,6 +671,7 @@ class ListConstructor(AbstractASTNodeExpression):
     def __init__(self, items: typing.List[AbstractASTNode]):
         super().__init__()
         self.items = items
+        self.static_value_type = ClassExactDataType(PY_TYPE_LIST)
 
     def __eq__(self, other):
         return type(other) == TupleConstructor and self.items == other.items
@@ -882,11 +921,13 @@ class CallExpression(AbstractASTNodeExpression):
         context: CCodeEmitter.CExpressionBuilder,
         is_target=False,
     ):
-        if not isinstance(self.base, ConstantAccessExpression):
+        if isinstance(self.base, GlobalCNameAccessExpression):
+            obj = self.base
+        elif not isinstance(self.base, ConstantAccessExpression):
             self.emit_c_code_any_call(base, context)
             return
-
-        obj = typing.cast(ConstantAccessExpression, self.base).value
+        else:
+            obj = typing.cast(ConstantAccessExpression, self.base).value
 
         if isinstance(obj, FunctionDefinitionNode):
             func_name = obj.normal_name
@@ -895,6 +936,9 @@ class CallExpression(AbstractASTNodeExpression):
             return
         elif isinstance(obj, StandardLibraryBoundOperator):
             func_name = obj.exposed_operator
+        elif isinstance(obj, GlobalCNameAccessExpression):
+            func_name = obj.name
+
         else:
             raise NotImplementedError(obj)
 
@@ -1096,7 +1140,12 @@ class FunctionDefinitionNode(AbstractASTNode):
         replacement: AbstractASTNode,
         position: ParentAttributeSection,
     ) -> bool:
-        return False  # nothing to replace, needs to be replaced in the arg itself
+        for i, node in enumerate(self.body):
+            if node is original:
+                self.body[i] = replacement
+                return True
+
+        return False
 
     def emit_c_code(
         self,
@@ -1200,6 +1249,7 @@ class ClassDefinitionNode(AbstractASTNode):
         self.parents = parents
         self.body = body
         self.normal_name = name.text
+        self.function_table: typing.Dict[str, AbstractASTNode] = {}
 
     def __eq__(self, other):
         return (
@@ -1825,9 +1875,22 @@ class SyntaxTreeVisitor:
         )
 
 
-Scope.STANDARD_LIBRARY_VALUES["list"] = StandardLibraryClass("list", "PY_TYPE_LIST")
-Scope.STANDARD_LIBRARY_VALUES["tuple"] = StandardLibraryClass("tuple", "PY_TYPE_TUPLE")
-Scope.STANDARD_LIBRARY_VALUES["len"] = StandardLibraryBoundOperator(
+Scope.STANDARD_LIBRARY_VALUES["list"] = PY_TYPE_LIST = StandardLibraryClass(
+    "list", "PY_TYPE_LIST"
+)
+PY_TYPE_LIST.function_table.update(
+    {
+        "append": GlobalCNameAccessExpression("PY_STD_list_append_fast"),
+        "clear": GlobalCNameAccessExpression("PY_STD_list_clear_fast"),
+        "__setitem__": GlobalCNameAccessExpression("PY_STD_list_setAtIndex_fast"),
+        "__getitem__": GlobalCNameAccessExpression("PY_STD_list_getAtIndex_fast"),
+        "__len__": GlobalCNameAccessExpression("PY_STD_list_len_fast"),
+    }
+)
+Scope.STANDARD_LIBRARY_VALUES["tuple"] = PY_TYPE_TUPLE = StandardLibraryClass(
+    "tuple", "PY_TYPE_TUPLE"
+)
+Scope.STANDARD_LIBRARY_VALUES["len"] = PY_FUNC_LEN = StandardLibraryBoundOperator(
     "len", "PY_STD_operator_len"
 )
 
@@ -1898,6 +1961,9 @@ class Parser:
             ResolveParentAttribute,
             ScopeGeneratorVisitor,
             LocalNameValidator,
+            ResolveKnownDataTypes,
+            ResolveLocalVariableAccessTypes,
+            ResolveClassFunctionNode,
             ResolveStaticNames,
             ResolveGlobalNames,
             NameNormalizer,
@@ -1915,6 +1981,15 @@ class Parser:
         NameNormalizer().visit_any_list(expr)
         LocalNameValidator().visit_any_list(expr)
         ResolveStaticNames().visit_any_list(expr)
+
+        ResolveLocalVariableAccessTypes.DIRTY = True
+        while ResolveLocalVariableAccessTypes.DIRTY:
+            ResolveKnownDataTypes().visit_any_list(expr)
+            ResolveClassFunctionNode().visit_any_list(expr)
+
+            ResolveLocalVariableAccessTypes.DIRTY = False
+            ResolveLocalVariableAccessTypes().visit_any_list(expr)
+
         ResolveGlobalNames().visit_any_list(expr)
 
         builder = CCodeEmitter(scope)
@@ -1949,7 +2024,14 @@ class Parser:
 
             main.add_code(inner_block.get_result() + "\n")
 
-        code = '#include "pyinclude.h"\n#include "standard_library/init.h"\n\n// code compiled from python to c via PyCodeCompiler\n\n'
+        code = """#include <stdlib.h>
+
+#include "pyinclude.h"
+#include "standard_library/init.h"
+
+// code compiled from python to c via PyCodeCompiler
+
+"""
 
         for include in builder.includes:
             code += f"#include {include}\n"
@@ -2850,12 +2932,18 @@ class Parser:
         self.is_in_function = previous_in_func
         self.indent_level -= 1
 
-        return ClassDefinitionNode(
+        cls = ClassDefinitionNode(
             class_name,
             generics,
             parents,
             body,
         )
+
+        for node in body:
+            if isinstance(node, FunctionDefinitionNode):
+                cls.function_table[node.name.text] = node
+
+        return cls
 
     def try_parse_while_statement(self) -> WhileStatement | None:
         # while <condition>: ...

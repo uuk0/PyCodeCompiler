@@ -124,7 +124,7 @@ void PY_setObjectAttributeByName(PyObjectContainer* obj, char* name, PyObjectCon
 void PY_setClassAttributeByName(PyClassContainer* cls, char* name, PyObjectContainer* value);
 void PY_setClassAttributeByNameOrCreate(PyClassContainer* cls, char* name, PyObjectContainer* value);
 
-PyObjectContainer* PY_invokeBoxedMethod(PyObjectContainer* obj, PyObjectContainer* self, uint8_t param_count, PyObjectContainer** args, CallStructureInfo* info);
+PyObjectContainer* PY_invokeBoxedMethod(PyObjectContainer* method, PyObjectContainer* self, uint8_t param_count, PyObjectContainer** args, CallStructureInfo* info);
 
 PyObjectContainer* PY_GetSubscriptionValue(PyObjectContainer* obj, PyObjectContainer* index);
 void PY_SetSubscriptionValue(PyObjectContainer* obj, PyObjectContainer* index, PyObjectContainer* value);

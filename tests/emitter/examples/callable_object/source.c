@@ -1,3 +1,5 @@
+#include <stdlib.h>
+
 #include "pyinclude.h"
 #include "standard_library/init.h"
 

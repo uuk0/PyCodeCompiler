@@ -1,3 +1,5 @@
+#include <stdlib.h>
+
 #include "pyinclude.h"
 #include "standard_library/init.h"
 
@@ -29,51 +31,39 @@ PyObjectContainer* test_0() {
     DECREF(constructor_1);
     obj_1 = obj_instance_0;
 
-    PyObjectContainer* temporary_2 = PY_getObjectAttributeByNameOrStatic(obj_1, "append");
+    PY_STD_list_append_fast (obj_1 , PY_createInteger(10));
+
+    PY_STD_list_append_fast (obj_1 , PY_createInteger(20));
+
+    PyObjectContainer* temporary_2 = PY_getObjectAttributeByNameOrStatic(obj_1, "index");
     PyObjectContainer* args_3[1];
     args_3[0] = PY_createInteger(10);
     PY_invokeBoxedMethod(temporary_2, NULL, 1, args_3, NULL);
 
-    PyObjectContainer* temporary_4 = PY_getObjectAttributeByNameOrStatic(obj_1, "append");
+    PyObjectContainer* temporary_4 = PY_getObjectAttributeByNameOrStatic(obj_1, "remove");
     PyObjectContainer* args_5[1];
-    args_5[0] = PY_createInteger(20);
+    args_5[0] = PY_createInteger(10);
     PY_invokeBoxedMethod(temporary_4, NULL, 1, args_5, NULL);
 
-    PyObjectContainer* temporary_6 = PY_getObjectAttributeByNameOrStatic(obj_1, "index");
-    PyObjectContainer* args_7[1];
-    args_7[0] = PY_createInteger(10);
-    PY_invokeBoxedMethod(temporary_6, NULL, 1, args_7, NULL);
+    PY_STD_list_append_fast (obj_1 , PY_createInteger(30));
 
-    PyObjectContainer* temporary_8 = PY_getObjectAttributeByNameOrStatic(obj_1, "remove");
-    PyObjectContainer* args_9[1];
-    args_9[0] = PY_createInteger(10);
-    PY_invokeBoxedMethod(temporary_8, NULL, 1, args_9, NULL);
+    PY_STD_list_setAtIndex_fast (obj_1 , PY_createInteger(0) , PY_createInteger(25));
 
-    PyObjectContainer* temporary_10 = PY_getObjectAttributeByNameOrStatic(obj_1, "append");
-    PyObjectContainer* args_11[1];
-    args_11[0] = PY_createInteger(30);
-    PY_invokeBoxedMethod(temporary_10, NULL, 1, args_11, NULL);
+    PY_STD_list_setAtIndex_fast (obj_1 , PY_createInteger(1) , PY_GetSubscriptionValue(obj_1, PY_createInteger(1)));
 
-    PY_SetSubscriptionValue(obj_1, PY_createInteger(0), PY_createInteger(25));
-
-    PY_SetSubscriptionValue(obj_1, PY_createInteger(1), PY_GetSubscriptionValue(obj_1, PY_createInteger(1)));
-
-    PY_invokeBoxedMethod(PY_getObjectAttributeByNameOrStatic(obj_1, "clear"), NULL, 0, NULL, NULL);
+    PY_STD_list_clear_fast (obj_1);
 
 
     PY_STD_list_CREATE(3, PY_createInteger(10), PY_createInteger(20), PY_STD_list_CREATE(2, PY_createInteger(50), PY_createInteger(423)));
 
 
-    PyObjectContainer* assert_target_12 = PY_STD_operator_equals(PY_STD_operator_len (obj_1), PY_createInteger(0));
-    assert(PY_getTruthValueOf(assert_target_12));
+    PyObjectContainer* assert_target_6 = PY_STD_operator_equals(PY_STD_list_len_fast (obj_1), PY_createInteger(0));
+    assert(PY_getTruthValueOf(assert_target_6));
 
-    PyObjectContainer* temporary_13 = PY_getObjectAttributeByNameOrStatic(obj_1, "append");
-    PyObjectContainer* args_14[1];
-    args_14[0] = PY_createInteger(10);
-    PY_invokeBoxedMethod(temporary_13, NULL, 1, args_14, NULL);
+    PY_STD_list_append_fast (obj_1 , PY_createInteger(10));
 
-    PyObjectContainer* assert_target_15 = PY_STD_operator_equals(PY_STD_operator_len (obj_1), PY_createInteger(1));
-    assert(PY_getTruthValueOf(assert_target_15));
+    PyObjectContainer* assert_target_7 = PY_STD_operator_equals(PY_STD_list_len_fast (obj_1), PY_createInteger(1));
+    assert(PY_getTruthValueOf(assert_target_7));
 }
 
 PyObjectContainer* test_0_safeWrap(PyObjectContainer* self , uint8_t argc , PyObjectContainer** args , CallStructureInfo* info) {

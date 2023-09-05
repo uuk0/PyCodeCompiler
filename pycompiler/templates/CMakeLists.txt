@@ -21,4 +21,6 @@ add_library(templates
 
 add_executable(test
         test.c
-        pyinclude.c)
+        pyinclude.c
+        result.c
+)
