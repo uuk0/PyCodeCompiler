@@ -14,6 +14,7 @@
 #include "list.h"
 #include "tuple.h"
 #include "dict.h"
+#include "string.h"
 
 #include "importhelper.h"
 

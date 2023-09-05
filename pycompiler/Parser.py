@@ -600,7 +600,7 @@ class ConstantAccessExpression(AbstractASTNodeExpression):
 
         elif isinstance(self.value, str):
             norm = self.value.replace('"', '\\"')
-            context.add_code(f'"{norm}"')
+            context.add_code(f'PY_createString("{norm}")')
 
         else:
             raise NotImplementedError(self.value)

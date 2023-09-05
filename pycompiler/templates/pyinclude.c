@@ -6,6 +6,7 @@
 #include <errno.h>
 #include <assert.h>
 #include "pyinclude.h"
+#include "standard_library/string.h"
 #include <string.h>
 
 
@@ -177,6 +178,19 @@ static PyObjectContainer* PY_getObjectAttributeByNameOrStatic_primitive(PyObject
         {
             return PY_builtin_int_compare_container;
         }
+        assert(false);
+    }
+    if (obj->type == PY_TYPE_FLOAT)
+    {
+        assert(false);
+    }
+    else if (obj->type == PY_TYPE_STRING)
+    {
+        if (strcmp(name, "__hash__") == 0)
+        {
+            return PY_STD_string_hash_CONTAINER;
+        }
+        assert(false);
     }
 
     assert(false == "no special attribute found!");

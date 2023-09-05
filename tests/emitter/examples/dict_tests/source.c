@@ -30,6 +30,8 @@ PyObjectContainer* test_0() {
     PY_invokeBoxedMethod(constructor_1, NULL, 0, NULL, NULL);
     DECREF(constructor_1);
     obj_1 = obj_instance_0;
+
+    PY_STD_dict_setitem_fast (obj_1 , PY_createString("test") , PY_createInteger(10));
 }
 
 PyObjectContainer* test_0_safeWrap(PyObjectContainer* self , uint8_t argc , PyObjectContainer** args , CallStructureInfo* info) {
