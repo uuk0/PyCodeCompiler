@@ -24,13 +24,9 @@ PyObjectContainer* obj;
 int _initialise() {
     PY_STD_INIT();
     PY_CLASS_INIT_PY_CLASS_test_2();
-
     PyObjectContainer* obj_instance_0 = PY_createClassInstance(PY_CLASS_test_2);
-    PyObjectContainer* constructor_1 = PY_getObjectAttributeByNameOrStatic(obj_instance_0, "__init__");
+    init_1(obj_instance_0);
 
-    assert(constructor_1 != NULL);
-    PY_invokeBoxedMethod(constructor_1, NULL, 0, NULL, NULL);
-    DECREF(constructor_1);
     obj = obj_instance_0;
 }
 

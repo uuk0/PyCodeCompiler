@@ -79,13 +79,9 @@ PyObjectContainer* call_3_safeWrap(PyObjectContainer* self , uint8_t argc , PyOb
 PyObjectContainer* test_5() {
     PyObjectContainer* obj_6;
 
-
     PyObjectContainer* obj_instance_0 = PY_createClassInstance(PY_CLASS_Test_4);
-    PyObjectContainer* constructor_1 = PY_getObjectAttributeByNameOrStatic(obj_instance_0, "__init__");
+    init_1(obj_instance_0);
 
-    assert(constructor_1 != NULL);
-    PY_invokeBoxedMethod(constructor_1, NULL, 0, NULL, NULL);
-    DECREF(constructor_1);
     obj_6 = obj_instance_0;
 
     return PY_invokeBoxedMethod(obj_6, NULL, 0, NULL, NULL);

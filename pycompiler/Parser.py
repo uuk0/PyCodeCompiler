@@ -541,7 +541,7 @@ class NameAccessExpression(AbstractASTNodeExpression):
 class GlobalCNameAccessExpression(AbstractASTNodeExpression):
     def __init__(self, name: str):
         super().__init__()
-        self.name = name
+        self.name = self.normal_name = name
 
     def __eq__(self, other):
         return type(other) == NameAccessExpression and self.name == other.name
@@ -962,18 +962,33 @@ class CallExpression(AbstractASTNodeExpression):
             ClassDefinitionNode, typing.cast(ConstantAccessExpression, self.base).value
         )
 
-        args = ""
-        if self.args:
-            args = base.get_fresh_name("args")
+        if "__init__" in cls.function_table:
+            func_decl = cls.function_table["__init__"].normal_name
 
-            context.parent.add_code(f"PyObjectContainer* {args}[{len(self.args)}];")
-            for i, arg in enumerate(self.args):
-                context.parent.add_code(f"{args}[{i}] = ")
-                arg.emit_c_code(base, context.parent)
-                context.parent.add_code(";\n")
+            context.parent.add_code(
+                f"PyObjectContainer* {temporary} = PY_createClassInstance({'' if isinstance(cls, StandardLibraryClass) else 'PY_CLASS_'}{cls.normal_name});\n"
+            )
+            context.parent.add_code(f"{func_decl}({temporary}")
 
-        context.parent.add_code(
-            f"""
+            if self.args:
+                for arg in self.args:
+                    context.parent.add_code(" , ")
+                    arg.emit_c_code(base, context.parent)
+
+            context.parent.add_code(");\n\n")
+        else:
+            args = ""
+            if self.args:
+                args = base.get_fresh_name("args")
+
+                context.parent.add_code(f"PyObjectContainer* {args}[{len(self.args)}];")
+                for i, arg in enumerate(self.args):
+                    context.parent.add_code(f"{args}[{i}] = ")
+                    arg.emit_c_code(base, context.parent)
+                    context.parent.add_code(";\n")
+
+            context.parent.add_code(
+                f"""
 PyObjectContainer* {temporary} = PY_createClassInstance({'' if isinstance(cls, StandardLibraryClass) else 'PY_CLASS_'}{cls.normal_name});
 PyObjectContainer* {constructor} = PY_getObjectAttributeByNameOrStatic({temporary}, "__init__");
 
@@ -981,7 +996,7 @@ assert({constructor} != NULL);
 PY_invokeBoxedMethod({constructor}, NULL, {len(self.args)}, {args if self.args else 'NULL'}, NULL);
 DECREF({constructor});
 """
-        )
+            )
 
         context.add_code(temporary)
 
