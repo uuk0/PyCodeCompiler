@@ -28,6 +28,7 @@ enum PyObjectType
     PY_TYPE_PY_TYPE,        // a type reference to a PyClassContainer
     PY_TYPE_FUNC_POINTER,   // a c function pointer (boxed)
     PY_GENERATOR,           // a generator
+    PY_EXCEPTION,           // an exception to throw
 };
 typedef enum PyObjectType PyObjectType;
 

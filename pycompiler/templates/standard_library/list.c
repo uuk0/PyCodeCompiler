@@ -338,6 +338,16 @@ PyObjectContainer* PY_STD_list_eq(PyObjectContainer* self, uint8_t argc, PyObjec
     return PY_TRUE;
 }
 
+PyObjectContainer* PY_STD_list_len(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
+{
+    assert(self != NULL);
+    assert(self->type == PY_TYPE_PY_IMPL);
+    assert(self->py_type == PY_TYPE_LIST);
+    assert(argc == 0);
+    PY_STD_list_container* list = (PY_STD_list_container*)self->raw_value;
+    return PY_createInteger(list->curr_size);
+}
+
 PyObjectContainer* PY_STD_list_toBool(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
 {
     assert(self != NULL);
@@ -425,7 +435,7 @@ void PY_STD_initListType(void)
     PY_setClassAttributeByNameOrCreate(PY_TYPE_LIST, "__delitem__", PY_createBoxForFunction(PY_STD_list_removeAtIndex));
     PY_setClassAttributeByNameOrCreate(PY_TYPE_LIST, "clear", PY_createBoxForFunction(PY_STD_list_clear));
     PY_setClassAttributeByNameOrCreate(PY_TYPE_LIST, "__eq__", PY_createBoxForFunction(PY_STD_list_eq));
-    // __len__
+    PY_setClassAttributeByNameOrCreate(PY_TYPE_LIST, "__len__", PY_createBoxForFunction(PY_STD_list_len));
     // __iter__
     PY_setClassAttributeByNameOrCreate(PY_TYPE_LIST, "__bool__", PY_createBoxForFunction(PY_STD_list_toBool));
     // __iadd__
