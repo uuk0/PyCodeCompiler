@@ -3,6 +3,7 @@
 #include <memory.h>
 #include <stdarg.h>
 #include "list.h"
+#include "operators.h"
 
 PyClassContainer* PY_TYPE_LIST;
 
@@ -302,6 +303,41 @@ PyObjectContainer* PY_STD_list_clear(PyObjectContainer* self, uint8_t argc, PyOb
     return PY_NONE;
 }
 
+PyObjectContainer* PY_STD_list_eq(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
+{
+    assert(self != NULL);
+    assert(self->type == PY_TYPE_PY_IMPL);
+    assert(self->py_type == PY_TYPE_LIST);
+    assert(argc == 1);
+    assert(args[0] != NULL);
+
+    if (args[0]->type != PY_TYPE_PY_IMPL || args[0]->py_type != PY_TYPE_LIST)
+    {
+        return PY_FALSE;
+    }
+
+    PY_STD_list_container* lhs = (PY_STD_list_container*)self->raw_value;
+    PY_STD_list_container* rhs = (PY_STD_list_container*)args[0]->raw_value;
+
+    if (lhs->curr_size != rhs->curr_size)
+    {
+        return PY_FALSE;
+    }
+
+    for (int i = 0; i < lhs->curr_size; i++)
+    {
+        PyObjectContainer* lhs_element = lhs->array[i];
+        PyObjectContainer* rhs_element = rhs->array[i];
+
+        if (PY_STD_operator_equals(lhs_element, rhs_element) == PY_FALSE)
+        {
+            return PY_FALSE;
+        }
+    }
+
+    return PY_TRUE;
+}
+
 PyObjectContainer* PY_STD_list_toBool(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
 {
     assert(self != NULL);
@@ -388,7 +424,7 @@ void PY_STD_initListType(void)
     PY_setClassAttributeByNameOrCreate(PY_TYPE_LIST, "__getitem__", PY_createBoxForFunction(PY_STD_list_getAtIndex));
     PY_setClassAttributeByNameOrCreate(PY_TYPE_LIST, "__delitem__", PY_createBoxForFunction(PY_STD_list_removeAtIndex));
     PY_setClassAttributeByNameOrCreate(PY_TYPE_LIST, "clear", PY_createBoxForFunction(PY_STD_list_clear));
-    // __eq__
+    PY_setClassAttributeByNameOrCreate(PY_TYPE_LIST, "__eq__", PY_createBoxForFunction(PY_STD_list_eq));
     // __len__
     // __iter__
     PY_setClassAttributeByNameOrCreate(PY_TYPE_LIST, "__bool__", PY_createBoxForFunction(PY_STD_list_toBool));

@@ -1,5 +1,5 @@
 /pycompiler/templates/.idea/
 /pycompiler/templates/cmake-build-debug/
 /compiler.txt
-*.exe
-result.c
+**/build
+/pycompiler/CMakeCache.txt

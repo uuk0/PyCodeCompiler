@@ -7,24 +7,11 @@ import sys
 import typing
 from unittest import TestCase
 from pycompiler import Parser, Lexer, TypeResolver
-from pycompiler.Parser import (
-    AssignmentExpression,
-    NameAccessExpression,
-    ConstantAccessExpression,
-    CallExpression,
-)
-from pycompiler.Lexer import TokenType
+from pycompiler.Compiler import Project
 
 
 root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 example_folder = f"{os.path.dirname(__file__)}/examples"
-
-
-STANDARD_LIBRARY_FILES = [
-    f"{root}/pycompiler/templates/standard_library/{file}"
-    for file in os.listdir(f"{root}/pycompiler/templates/standard_library")
-    if file.endswith(".c")
-]
 
 
 class TestCCodeEmitter(TestCase):
@@ -72,22 +59,12 @@ class TestCCodeEmitter(TestCase):
             self.compile_only(folder, compiler)
 
     def compile_and_run(self, folder, compiler):
-        command = [
-            compiler.replace("\\", "/"),
-            "-g",
-            f"{folder}/test.c".replace("\\", "/"),
-            f"{folder}/result.c".replace("\\", "/"),
-            f"{root}/pycompiler/templates/pyinclude.c",
-            f"-I{root}/pycompiler/templates",
-            "-o",
-            f"{folder}/test.exe",
-        ] + STANDARD_LIBRARY_FILES
+        project = Project(build_folder=f"{folder}/build")
+        project.add_entry_point(f"{folder}/test.c")
+        project.add_file(f"{folder}/result.c")
+        project.build()
 
-        print(" ".join(command))
-        exit_code = subprocess.call(command)
-        self.assertEqual(exit_code, 0)
-
-        exit_code = subprocess.call([f"{folder}/test.exe"])
+        exit_code = subprocess.call([f"{folder}/build/result.exe"])
         self.assertEqual(exit_code, 0)
 
     def compile_only(self, folder, compiler):

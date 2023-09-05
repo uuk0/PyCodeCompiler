@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.26)
-project(templates C)
 
-set(CMAKE_C_STANDARD 11)
+project(PyCCompiler)
 
 include_directories(.)
 
