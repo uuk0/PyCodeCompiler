@@ -23,6 +23,7 @@ enum PyObjectType
     PY_TYPE_NONE,           // -                                             See: PY_NONE
     PY_TYPE_BOOL,           // 0 = False, 1 = True                           See: PY_TRUE, PY_FALSE
     PY_TYPE_INT,            // int64_t
+    PY_TYPE_STRING,         // char*
     PY_TYPE_FLOAT,          // double precision
     PY_TYPE_PY_IMPL,        // a class implemented in python
     PY_TYPE_PY_TYPE,        // a type reference to a PyClassContainer
@@ -130,6 +131,9 @@ PyObjectContainer* PY_GetSubscriptionValue(PyObjectContainer* obj, PyObjectConta
 void PY_SetSubscriptionValue(PyObjectContainer* obj, PyObjectContainer* index, PyObjectContainer* value);
 
 // Primitive Data Objects
+
+PyObjectContainer* PY_createString(char* string);
+char* PY_unpackString(PyObjectContainer* obj);
 
 PyObjectContainer* PY_createInteger(int64_t value);
 int64_t PY_unpackInteger(PyObjectContainer* obj);

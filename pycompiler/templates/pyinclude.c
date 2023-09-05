@@ -346,6 +346,19 @@ void PY_SetSubscriptionValue(PyObjectContainer* obj, PyObjectContainer* index, P
     PY_invokeBoxedMethod(method, NULL, 2, mem, NULL);
 }
 
+PyObjectContainer* PY_createString(char* string)
+{
+    PyObjectContainer* container = createEmptyContainer(PY_TYPE_STRING);
+    container->raw_value = string;
+    return container;
+}
+
+char* PY_unpackString(PyObjectContainer* obj)
+{
+    assert(obj->type == PY_TYPE_STRING);
+    return obj->raw_value;
+}
+
 PyObjectContainer* PY_createInteger(int64_t value)
 {
     uint64_t* value_holder = malloc(sizeof(uint64_t));

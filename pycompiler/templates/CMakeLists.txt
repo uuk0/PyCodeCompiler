@@ -17,10 +17,14 @@ add_library(templates
         standard_library/tuple.h
         standard_library/operators.c
         standard_library/operators.h
+        standard_library/importhelper.c
+        standard_library/importhelper.h
+        standard_library/importhelper.c
+        standard_library/helpers/hashmap.c
+        standard_library/helpers/hashmap.h
 )
 
 add_executable(test
         test.c
         pyinclude.c
-        result.c
 )

@@ -1,30 +1,24 @@
 import os
 import pathlib
-import shutil
 import subprocess
-import sys
 
-import typing
 from unittest import TestCase
-from pycompiler import Parser, Lexer, TypeResolver
-from pycompiler.Parser import (
-    AssignmentExpression,
-    NameAccessExpression,
-    ConstantAccessExpression,
-    CallExpression,
-)
-from pycompiler.Lexer import TokenType
+from pycompiler import Parser
 
 
 root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 example_folder = f"{os.path.dirname(__file__)}/examples"
 
 
-STANDARD_LIBRARY_FILES = [
-    f"{root}/pycompiler/templates/standard_library/{file}"
-    for file in os.listdir(f"{root}/pycompiler/templates/standard_library")
-    if file.endswith(".c")
-]
+STANDARD_LIBRARY_FILES = []
+
+
+for r, dirs, files in os.walk(f"{root}/pycompiler/templates/standard_library"):
+    STANDARD_LIBRARY_FILES.extend(
+        os.path.join(r, file).replace("\\", "/")
+        for file in files
+        if file.endswith(".c")
+    )
 
 
 class TestCCodeEmitter(TestCase):

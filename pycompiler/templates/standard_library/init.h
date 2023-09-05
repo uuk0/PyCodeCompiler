@@ -14,6 +14,8 @@
 #include "list.h"
 #include "tuple.h"
 
+#include "importhelper.h"
+
 void PY_STD_INIT();
 
 #endif //TEMPLATES_INIT_H

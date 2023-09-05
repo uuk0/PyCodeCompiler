@@ -316,6 +316,10 @@ class AbstractDataType:
     pass
 
 
+INTEGER_DATA_TYPE = AbstractDataType()
+FLOAT_DATA_TYPE = AbstractDataType()
+
+
 class ClassOrSubclassDataType(AbstractDataType):
     def __init__(self, ref: ClassDefinitionNode):
         self.ref = ref
@@ -564,6 +568,11 @@ class ConstantAccessExpression(AbstractASTNodeExpression):
         super().__init__()
         self.value = value
         self.token = token
+
+        if isinstance(value, int):
+            self.static_value_type = INTEGER_DATA_TYPE
+        elif isinstance(value, float):
+            self.static_value_type = FLOAT_DATA_TYPE
 
     def __eq__(self, other):
         return type(other) == ConstantAccessExpression and self.value == other.value
