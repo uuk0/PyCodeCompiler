@@ -10,3 +10,7 @@ def test():
     obj.clear()
 
     [10, 20, [50, 423]]
+
+    assert len(obj) == 0
+    obj.append(10)
+    assert len(obj) == 1

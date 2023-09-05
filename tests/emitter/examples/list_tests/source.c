@@ -62,6 +62,18 @@ PyObjectContainer* test_0() {
 
 
     PY_STD_list_CREATE(3, PY_createInteger(10), PY_createInteger(20), PY_STD_list_CREATE(2, PY_createInteger(50), PY_createInteger(423)));
+
+
+    PyObjectContainer* assert_target_12 = PY_STD_operator_equals(PY_STD_operator_len (obj_1), PY_createInteger(0));
+    assert(PY_getTruthValueOf(assert_target_12));
+
+    PyObjectContainer* temporary_13 = PY_getObjectAttributeByNameOrStatic(obj_1, "append");
+    PyObjectContainer* args_14[1];
+    args_14[0] = PY_createInteger(10);
+    PY_invokeBoxedMethod(temporary_13, NULL, 1, args_14, NULL);
+
+    PyObjectContainer* assert_target_15 = PY_STD_operator_equals(PY_STD_operator_len (obj_1), PY_createInteger(1));
+    assert(PY_getTruthValueOf(assert_target_15));
 }
 
 PyObjectContainer* test_0_safeWrap(PyObjectContainer* self , uint8_t argc , PyObjectContainer** args , CallStructureInfo* info) {

@@ -893,14 +893,19 @@ class CallExpression(AbstractASTNodeExpression):
         elif isinstance(obj, ClassDefinitionNode):
             self.emit_c_code_constructor(base, context)
             return
+        elif isinstance(obj, StandardLibraryBoundOperator):
+            func_name = obj.exposed_operator
         else:
             raise NotImplementedError(obj)
 
         context.add_code(f"{func_name} (")
 
-        for arg in self.args:
+        for arg in self.args[:-1]:
             arg.emit_c_code(base, context)
             context.add_code(" , ")
+
+        if self.args:
+            self.args[-1].emit_c_code(base, context)
 
         context.add_code(")")
 
@@ -1305,6 +1310,12 @@ class StandardLibraryClass(ClassDefinitionNode):
         super().__init__(TokenType.IDENTIFIER(name), [], [], [])
         self.normal_name = exposed_name
 
+    def __eq__(self, other):
+        return self is other
+
+    def __repr__(self):
+        return f"STANDARD_LIBRARY_CLASS({self.name.text})"
+
     def emit_c_code(
         self,
         base: CCodeEmitter,
@@ -1321,11 +1332,33 @@ class StandardLibraryClass(ClassDefinitionNode):
     ) -> bool:
         raise RuntimeError
 
+
+class StandardLibraryBoundOperator(AbstractASTNode):
+    def __init__(self, name: str, exposed_operator: str):
+        super().__init__()
+        self.name = name
+        self.exposed_operator = exposed_operator
+
     def __eq__(self, other):
-        return self is other
+        return (
+            type(other) == StandardLibraryBoundOperator
+            and self.name == other.name
+            and self.exposed_operator == other.exposed_operator
+        )
 
     def __repr__(self):
-        return f"STANDARD_LIBRARY({self.name.text})"
+        return f"STANDRAD_LIBRARY_OPERATOR({self.name}, {self.exposed_operator})"
+
+    def emit_c_code(
+        self,
+        base: CCodeEmitter,
+        context: CCodeEmitter.CExpressionBuilder,
+        is_target=False,
+    ):
+        if is_target:
+            raise SyntaxError("cannot write into name 'len'")
+
+        context.add_code(self.exposed_operator)
 
 
 class WhileStatement(AbstractASTNode):
@@ -1794,6 +1827,9 @@ class SyntaxTreeVisitor:
 
 Scope.STANDARD_LIBRARY_VALUES["list"] = StandardLibraryClass("list", "PY_TYPE_LIST")
 Scope.STANDARD_LIBRARY_VALUES["tuple"] = StandardLibraryClass("tuple", "PY_TYPE_TUPLE")
+Scope.STANDARD_LIBRARY_VALUES["len"] = StandardLibraryBoundOperator(
+    "len", "PY_STD_operator_len"
+)
 
 
 class Parser:

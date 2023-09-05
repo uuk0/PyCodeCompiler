@@ -21,4 +21,6 @@ PyObjectContainer* PY_STD_operator_bin_xor(PyObjectContainer* lhs, PyObjectConta
 PyObjectContainer* PY_STD_operator_equals(PyObjectContainer* lhs, PyObjectContainer* rhs);
 PyObjectContainer* PY_STD_operator_not_equals(PyObjectContainer* lhs, PyObjectContainer* rhs);
 
+PyObjectContainer* PY_STD_operator_len(PyObjectContainer* value);
+
 #endif //TEMPLATES_OPERATORS_H
