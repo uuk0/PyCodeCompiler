@@ -16,7 +16,13 @@ PyObjectContainer* PY_STD_list_append(PyObjectContainer* self, uint8_t argc, PyO
 PyObjectContainer* PY_STD_list_append_fast(PyObjectContainer* self, PyObjectContainer* param);
 
 PyObjectContainer* PY_STD_list_insert(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info);
+PyObjectContainer* PY_STD_list_insert_fast(PyObjectContainer* self, PyObjectContainer* index, PyObjectContainer* value);
+PyObjectContainer* PY_STD_list_insert_fast_with_int(PyObjectContainer* self, int64_t index, PyObjectContainer* value);
+
 PyObjectContainer* PY_STD_list_index(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info);
+PyObjectContainer* PY_STD_list_index_fast(PyObjectContainer* self, PyObjectContainer* value);
+int64_t PY_STD_list_index_fast_list(PyObjectContainer* self, PyObjectContainer* value);
+
 PyObjectContainer* PY_STD_list_remove(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info);
 
 PyObjectContainer* PY_STD_list_setAtIndex(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info);
@@ -38,6 +44,8 @@ PyObjectContainer* PY_STD_list_len(PyObjectContainer* self, uint8_t argc, PyObje
 PyObjectContainer* PY_STD_list_len_fast(PyObjectContainer* self);
 
 PyObjectContainer* PY_STD_list_toBool(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info);
+PyObjectContainer* PY_STD_list_toBool_fast(PyObjectContainer* self);
+
 PyObjectContainer* PY_STD_list_sort(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info);
 
 void PY_STD_initListType(void);

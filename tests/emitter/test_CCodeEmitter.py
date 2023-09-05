@@ -55,6 +55,7 @@ class TestCCodeEmitter(TestCase):
                 .replace(" ", "")
                 .replace(",NEWLINE", "")
                 .replace("NEWLINE,", ""),
+                "ast nodes",
             )
 
         c_compare = parser.emit_c_code(expr=ast_nodes)
@@ -64,7 +65,7 @@ class TestCCodeEmitter(TestCase):
 
         if os.path.exists(f"{folder}/source.c"):
             c = pathlib.Path(f"{folder}/source.c").read_text()
-            self.assertEqual(c, c_compare)
+            self.assertEqual(c, c_compare, "c source")
 
         if os.path.exists(f"{folder}/test.c"):
             self.compile_and_run(folder, compiler)
@@ -85,10 +86,10 @@ class TestCCodeEmitter(TestCase):
 
         print(" ".join(command))
         exit_code = subprocess.call(command)
-        self.assertEqual(exit_code, 0)
+        self.assertEqual(exit_code, 0, "compile")
 
         exit_code = subprocess.call([f"{folder}/test.exe"])
-        self.assertEqual(exit_code, 0)
+        self.assertEqual(exit_code, 0, "tests")
 
     def compile_only(self, folder, compiler):
         command = [
@@ -101,7 +102,7 @@ class TestCCodeEmitter(TestCase):
 
         print(" ".join(command))
         exit_code = subprocess.call(command)
-        self.assertEqual(exit_code, 0)
+        self.assertEqual(exit_code, 0, "compile")
 
     def test_simple_assignment(self):
         self.run_named_folder_test("simple_assignment")

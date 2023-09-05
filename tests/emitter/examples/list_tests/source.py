@@ -2,9 +2,12 @@ def test():
     obj = list()
     obj.append(10)
     obj.append(20)
-    obj.index(10)
+
+    assert obj.index(10) == 0
+
     obj.remove(10)
     obj.append(30)
+    obj.insert(0, 20)
     obj[0] = 25
     obj[1] = obj[1]
     obj.clear()

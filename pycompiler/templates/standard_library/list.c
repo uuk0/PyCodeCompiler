@@ -164,14 +164,23 @@ PyObjectContainer* PY_STD_list_append_fast(PyObjectContainer* self, PyObjectCont
 // <list>.insert(<index>, <item>)
 PyObjectContainer* PY_STD_list_insert(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
 {
+    assert(argc == 2);
+    return PY_STD_list_insert_fast_with_int(self, PY_unpackInteger(args[0]), args[1]);
+}
+
+PyObjectContainer* PY_STD_list_insert_fast(PyObjectContainer* self, PyObjectContainer* raw_index, PyObjectContainer* value)
+{
+    return PY_STD_list_insert_fast_with_int(self, PY_unpackInteger(raw_index), value);
+}
+
+PyObjectContainer* PY_STD_list_insert_fast_with_int(PyObjectContainer* self, int64_t index, PyObjectContainer* value)
+{
     assert(self != NULL);
     assert(self->type == PY_TYPE_PY_IMPL);
     assert(self->py_type == PY_TYPE_LIST);
-    assert(argc == 2);
 
     PY_STD_list_container* list = (PY_STD_list_container*)self->raw_value;
 
-    int64_t index = PY_unpackInteger(args[0]);
     if (index < 0)
     {
         index = list->curr_size + index;
@@ -189,11 +198,12 @@ PyObjectContainer* PY_STD_list_insert(PyObjectContainer* self, uint8_t argc, PyO
         list->rem_size = list->curr_size;
     }
 
-    // TODO: are all indices correct?
-    // Copy over all data one pointer over, so we have space for the one to insert
-    memcpy(list->array[index + 1], list->array[index], (list->curr_size - index) * sizeof(PyObjectContainer*));
+    for (int64_t i = index + 1; i < list->curr_size; i++)
+    {
+        list->array[i-1] = list->array[i];
+    }
 
-    list->array[index] = args[1];
+    list->array[index] = value;
     list->curr_size++;
     list->rem_size--;
 
@@ -223,6 +233,54 @@ PyObjectContainer* PY_STD_list_index(PyObjectContainer* self, uint8_t argc, PyOb
     }
 
     return PY_NONE;  // TODO: raise exception?
+}
+
+PyObjectContainer* PY_STD_list_index_fast(PyObjectContainer* self, PyObjectContainer* value)
+{
+    assert(self != NULL);
+    assert(self->type == PY_TYPE_PY_IMPL);
+    assert(self->py_type == PY_TYPE_LIST);
+
+    PyObjectContainer* cmp = PY_getObjectAttributeByNameOrStatic(value, "__eq__");
+    assert(cmp != NULL);
+
+    PY_STD_list_container* list = (PY_STD_list_container*)self->raw_value;
+
+    for (int i = 0; i < list->curr_size; i++)
+    {
+        PyObjectContainer* obj = list->array[i];
+        PyObjectContainer* is_eq = PY_invokeBoxedMethod(cmp, value, 1, &obj, NULL);
+        if (is_eq == PY_TRUE)
+        {
+            return PY_createInteger(i);
+        }
+    }
+
+    return PY_NONE;  // TODO: raise exception?
+}
+
+int64_t PY_STD_list_index_fast_list(PyObjectContainer* self, PyObjectContainer* value)
+{
+    assert(self != NULL);
+    assert(self->type == PY_TYPE_PY_IMPL);
+    assert(self->py_type == PY_TYPE_LIST);
+
+    PyObjectContainer* cmp = PY_getObjectAttributeByNameOrStatic(value, "__eq__");
+    assert(cmp != NULL);
+
+    PY_STD_list_container* list = (PY_STD_list_container*)self->raw_value;
+
+    for (int i = 0; i < list->curr_size; i++)
+    {
+        PyObjectContainer* obj = list->array[i];
+        PyObjectContainer* is_eq = PY_invokeBoxedMethod(cmp, value, 1, &obj, NULL);
+        if (is_eq == PY_TRUE)
+        {
+            return i;
+        }
+    }
+
+    assert(false && "item not found");
 }
 
 void PY_STD_list_removeIndex(PY_STD_list_container* list, uint16_t index);
@@ -442,6 +500,21 @@ PyObjectContainer* PY_STD_list_toBool(PyObjectContainer* self, uint8_t argc, PyO
     assert(self->type == PY_TYPE_PY_IMPL);
     assert(self->py_type == PY_TYPE_LIST);
     assert(argc == 0);
+
+    PY_STD_list_container* list = (PY_STD_list_container*)self->raw_value;
+
+    if (list->curr_size == 0)
+    {
+        return PY_FALSE;
+    }
+    return PY_TRUE;
+}
+
+PyObjectContainer* PY_STD_list_toBool_fast(PyObjectContainer* self)
+{
+    assert(self != NULL);
+    assert(self->type == PY_TYPE_PY_IMPL);
+    assert(self->py_type == PY_TYPE_LIST);
 
     PY_STD_list_container* list = (PY_STD_list_container*)self->raw_value;
 

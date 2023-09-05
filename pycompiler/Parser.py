@@ -1881,10 +1881,13 @@ Scope.STANDARD_LIBRARY_VALUES["list"] = PY_TYPE_LIST = StandardLibraryClass(
 PY_TYPE_LIST.function_table.update(
     {
         "append": GlobalCNameAccessExpression("PY_STD_list_append_fast"),
+        "insert": GlobalCNameAccessExpression("PY_STD_list_insert_fast"),
         "clear": GlobalCNameAccessExpression("PY_STD_list_clear_fast"),
+        "index": GlobalCNameAccessExpression("PY_STD_list_index_fast"),
         "__setitem__": GlobalCNameAccessExpression("PY_STD_list_setAtIndex_fast"),
         "__getitem__": GlobalCNameAccessExpression("PY_STD_list_getAtIndex_fast"),
         "__len__": GlobalCNameAccessExpression("PY_STD_list_len_fast"),
+        "__bool__": GlobalCNameAccessExpression("PY_STD_list_toBool_fast"),
     }
 )
 Scope.STANDARD_LIBRARY_VALUES["tuple"] = PY_TYPE_TUPLE = StandardLibraryClass(
