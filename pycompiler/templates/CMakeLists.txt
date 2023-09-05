@@ -22,6 +22,8 @@ add_library(templates
         standard_library/importhelper.c
         standard_library/helpers/hashmap.c
         standard_library/helpers/hashmap.h
+        standard_library/dict.c
+        standard_library/dict.h
 )
 
 add_executable(test

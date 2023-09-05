@@ -125,6 +125,9 @@ class TestCCodeEmitter(TestCase):
     def test_tuple(self):
         self.run_named_folder_test("tuple_tests")
 
+    def test_dict(self):
+        self.run_named_folder_test("dict_tests")
+
     def test_integer_operations(self):
         self.run_named_folder_test("integer_operations")
 

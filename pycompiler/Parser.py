@@ -1917,6 +1917,13 @@ PY_TYPE_LIST.function_table.update(
 Scope.STANDARD_LIBRARY_VALUES["tuple"] = PY_TYPE_TUPLE = StandardLibraryClass(
     "tuple", "PY_TYPE_TUPLE"
 )
+Scope.STANDARD_LIBRARY_VALUES["dict"] = PY_TYPE_DICT = StandardLibraryClass(
+    "dict", "PY_TYPE_DICT"
+)
+PY_TYPE_DICT.function_table.update(
+    {"__setitem__": GlobalCNameAccessExpression("PY_STD_dict_setitem_fast")}
+)
+
 Scope.STANDARD_LIBRARY_VALUES["len"] = PY_FUNC_LEN = StandardLibraryBoundOperator(
     "len", "PY_STD_operator_len"
 )

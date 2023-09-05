@@ -25,6 +25,7 @@ void PY_STD_INIT()
 
     PY_STD_initListType();
     PY_STD_initTupleType();
+    PY_STD_initDictType();
 
     PY_STD_init_import_helper();
 }

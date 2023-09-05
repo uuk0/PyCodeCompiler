@@ -13,6 +13,7 @@
 
 #include "list.h"
 #include "tuple.h"
+#include "dict.h"
 
 #include "importhelper.h"
 
