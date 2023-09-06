@@ -2,6 +2,7 @@
 
 #include "pyinclude.h"
 #include "standard_library/init.h"
+#include "standard_library/exceptions.h"
 
 // code compiled from python to c via PyCodeCompiler
 
@@ -25,7 +26,7 @@ int _initialise() {
     PY_STD_INIT();
     PY_CLASS_INIT_PY_CLASS_test_2();
     PyObjectContainer* obj_instance_0 = PY_createClassInstance(PY_CLASS_test_2);
-    init_1(obj_instance_0);
+    PY_CHECK_EXCEPTION(init_1(obj_instance_0));
 
     obj = obj_instance_0;
 }
@@ -46,6 +47,10 @@ PyObjectContainer* init_1(PyObjectContainer* self_0) {
     PyObjectContainer* value_3;
 
     value_3 = PY_createInteger(0);
+
+
+
+    return PY_NONE;
 }
 
 PyObjectContainer* init_1_safeWrap(PyObjectContainer* self , uint8_t argc , PyObjectContainer** args , CallStructureInfo* info) {

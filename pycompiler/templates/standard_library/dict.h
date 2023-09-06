@@ -14,6 +14,9 @@ PyObjectContainer* PY_STD_dict_init(PyObjectContainer* self, uint8_t argc, PyObj
 PyObjectContainer* PY_STD_dict_setitem(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info);
 PyObjectContainer* PY_STD_dict_setitem_fast(PyObjectContainer* self, PyObjectContainer* key, PyObjectContainer* value);
 
+PyObjectContainer* PY_STD_dict_getitem(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info);
+PyObjectContainer* PY_STD_dict_getitem_fast(PyObjectContainer* self, PyObjectContainer* key);
+
 void PY_STD_initDictType(void);
 
 #endif //PYCCOMPILER_DICT_H

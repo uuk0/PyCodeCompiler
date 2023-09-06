@@ -119,11 +119,6 @@ void* HASHMAP_lookup(HashMapContainer* container, void* key)
     {
         current_key = container->key_memory[partial_hash];
 
-        if (current_key == NULL || partial_hash == original_hash)
-        {
-            return NULL;
-        }
-
         if (current_key == &HASHMAP_MARKER_UNSET)
         {
             continue;
@@ -135,6 +130,11 @@ void* HASHMAP_lookup(HashMapContainer* container, void* key)
         }
 
         partial_hash = HASHMAP_generateNewKey(partial_hash, container->alloc_size);
+
+        if (current_key == NULL || partial_hash == original_hash)
+        {
+            return NULL;
+        }
     }
 }
 

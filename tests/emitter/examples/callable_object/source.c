@@ -2,6 +2,7 @@
 
 #include "pyinclude.h"
 #include "standard_library/init.h"
+#include "standard_library/exceptions.h"
 
 // code compiled from python to c via PyCodeCompiler
 
@@ -44,6 +45,8 @@ void PY_CLASS_INIT_PY_CLASS_Test_4() {
 
 PyObjectContainer* init_1(PyObjectContainer* self_0) {
     return PY_NONE;
+
+    return PY_NONE;
 }
 
 PyObjectContainer* init_1_safeWrap(PyObjectContainer* self , uint8_t argc , PyObjectContainer** args , CallStructureInfo* info) {
@@ -61,6 +64,10 @@ PyObjectContainer* init_1_safeWrap(PyObjectContainer* self , uint8_t argc , PyOb
 
 PyObjectContainer* call_3(PyObjectContainer* self_2) {
     return PY_createInteger(10);
+
+
+
+    return PY_NONE;
 }
 
 PyObjectContainer* call_3_safeWrap(PyObjectContainer* self , uint8_t argc , PyObjectContainer** args , CallStructureInfo* info) {
@@ -80,11 +87,11 @@ PyObjectContainer* test_5() {
     PyObjectContainer* obj_6;
 
     PyObjectContainer* obj_instance_0 = PY_createClassInstance(PY_CLASS_Test_4);
-    init_1(obj_instance_0);
+    PY_CHECK_EXCEPTION(init_1(obj_instance_0));
 
     obj_6 = obj_instance_0;
 
-    return PY_invokeBoxedMethod(obj_6, NULL, 0, NULL, NULL);
+    return PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(obj_6, NULL, 0, NULL, NULL));
 }
 
 PyObjectContainer* test_5_safeWrap(PyObjectContainer* self , uint8_t argc , PyObjectContainer** args , CallStructureInfo* info) {

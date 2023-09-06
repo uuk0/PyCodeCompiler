@@ -6,6 +6,7 @@
 #include "dict.h"
 #include "helpers/hashmap.h"
 #include "operators.h"
+#include "exceptions.h"
 
 PyClassContainer* PY_TYPE_DICT;
 
@@ -20,7 +21,8 @@ int64_t HASH_py_object(void* raw_obj)
     }
 
     // Cast the object pointer to an int, so it can be used as a hash
-    return (int64_t)obj;
+    // Uses a cast to an int64_t* to circumvent the narrowcast
+    return *((int64_t*)&obj);
 }
 
 bool HASH_compare_py_object(void* lhs, void* rhs)
@@ -49,6 +51,26 @@ PyObjectContainer* PY_STD_dict_setitem_fast(PyObjectContainer* self, PyObjectCon
     HASHMAP_insert(self->raw_value, key, value);
 
     return PY_NONE;
+}
+
+PyObjectContainer* PY_STD_dict_getitem(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
+{
+    assert(argc == 1);
+    return PY_STD_dict_getitem_fast(self, args[0]);
+}
+
+PyObjectContainer* PY_STD_dict_getitem_fast(PyObjectContainer* self, PyObjectContainer* key)
+{
+    assert(self->type == PY_TYPE_PY_IMPL);
+    assert(self->py_type == PY_TYPE_DICT);
+    assert(self->raw_value != NULL);
+
+    PyObjectContainer* obj = HASHMAP_lookup(self->raw_value, key);
+    if (obj == NULL)
+    {
+        PY_THROW_EXCEPTION_WITH_MESSAGE(NULL, "key not found");
+    }
+    return obj;
 }
 
 void PY_STD_initDictType(void)

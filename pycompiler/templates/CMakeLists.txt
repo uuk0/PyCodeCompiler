@@ -26,6 +26,8 @@ add_library(templates
         standard_library/dict.h
         standard_library/string.c
         standard_library/string.h
+        standard_library/exceptions.h
+        standard_library/exceptions.c
 )
 
 add_executable(test

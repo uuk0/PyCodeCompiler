@@ -951,7 +951,7 @@ class CallExpression(AbstractASTNodeExpression):
         else:
             raise NotImplementedError(obj)
 
-        context.add_code(f"{func_name} (")
+        context.add_code(f"PY_CHECK_EXCEPTION({func_name} (")
 
         for arg in self.args[:-1]:
             arg.emit_c_code(base, context)
@@ -960,7 +960,7 @@ class CallExpression(AbstractASTNodeExpression):
         if self.args:
             self.args[-1].emit_c_code(base, context)
 
-        context.add_code(")")
+        context.add_code("))")
 
     def emit_c_code_constructor(
         self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder
@@ -977,17 +977,22 @@ class CallExpression(AbstractASTNodeExpression):
             context.parent.add_code(
                 f"PyObjectContainer* {temporary} = PY_createClassInstance({'' if isinstance(cls, StandardLibraryClass) else 'PY_CLASS_'}{cls.normal_name});\n"
             )
-            context.parent.add_code(f"{func_decl}({temporary}")
+            context.parent.add_code(f"PY_CHECK_EXCEPTION({func_decl}({temporary}")
 
             if self.args:
                 for arg in self.args:
                     context.parent.add_code(" , ")
                     arg.emit_c_code(base, context.parent)
 
-            context.parent.add_code(");\n\n")
+            context.parent.add_code("));\n\n")
         else:
             args = ""
-            if self.args:
+            if len(self.args) == 1:
+                temp = base.get_fresh_name("temp_arg")
+                context.parent.add_code(f"PyObjectContainer* {temp} = ")
+                self.args[0].emit_c_code(base, context.parent)
+                context.parent.add_code(f";\nPyObjectContainer** {args} = &{temp};")
+            elif self.args:
                 args = base.get_fresh_name("args")
 
                 context.parent.add_code(f"PyObjectContainer* {args}[{len(self.args)}];")
@@ -996,13 +1001,14 @@ class CallExpression(AbstractASTNodeExpression):
                     arg.emit_c_code(base, context.parent)
                     context.parent.add_code(";\n")
 
+            # todo: set exception type for attribute error
             context.parent.add_code(
                 f"""
 PyObjectContainer* {temporary} = PY_createClassInstance({'' if isinstance(cls, StandardLibraryClass) else 'PY_CLASS_'}{cls.normal_name});
 PyObjectContainer* {constructor} = PY_getObjectAttributeByNameOrStatic({temporary}, "__init__");
 
-assert({constructor} != NULL);
-PY_invokeBoxedMethod({constructor}, NULL, {len(self.args)}, {args if self.args else 'NULL'}, NULL);
+PY_THROW_EXCEPTION_IF({constructor} == NULL, NULL);
+PY_CHECK_EXCEPTION(PY_invokeBoxedMethod({constructor}, NULL, {len(self.args)}, {args if self.args else 'NULL'}, NULL));
 DECREF({constructor});
 """
             )
@@ -1019,12 +1025,12 @@ DECREF({constructor});
                 args = self._emit_c_code_any_call_args_resolver(intro, temporary, base)
 
             context.add_code(
-                f"PY_invokeBoxedMethod({temporary}, NULL, {len(self.args)}, {args}, NULL)"
+                f"PY_CHECK_EXCEPTION(PY_invokeBoxedMethod({temporary}, NULL, {len(self.args)}, {args}, NULL))"
             )
         else:
-            context.add_code("PY_invokeBoxedMethod(")
+            context.add_code("PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(")
             self.base.emit_c_code(base, context)
-            context.add_code(", NULL, 0, NULL, NULL)")
+            context.add_code(", NULL, 0, NULL, NULL))")
 
     # TODO Rename this here and in `emit_c_code_any_call`
     def _emit_c_code_any_call_args_resolver(self, intro, temporary, base):
@@ -1207,6 +1213,9 @@ class FunctionDefinitionNode(AbstractASTNode):
                 inner_section.add_code("\n")
 
             func.add_code(inner_section.get_result() + "\n")
+
+        if not func.snippets[-1].startswith("return"):
+            func.add_code("return PY_NONE;")
 
         # todo: when bound object method, forward 'self' as first argument!
         base.add_include("<assert.h>")
@@ -1921,12 +1930,19 @@ Scope.STANDARD_LIBRARY_VALUES["dict"] = PY_TYPE_DICT = StandardLibraryClass(
     "dict", "PY_TYPE_DICT"
 )
 PY_TYPE_DICT.function_table.update(
-    {"__setitem__": GlobalCNameAccessExpression("PY_STD_dict_setitem_fast")}
+    {
+        "__setitem__": GlobalCNameAccessExpression("PY_STD_dict_setitem_fast"),
+        "__getitem__": GlobalCNameAccessExpression("PY_STD_dict_getitem_fast"),
+    }
 )
 
 Scope.STANDARD_LIBRARY_VALUES["len"] = PY_FUNC_LEN = StandardLibraryBoundOperator(
     "len", "PY_STD_operator_len"
 )
+
+Scope.STANDARD_LIBRARY_VALUES["None"] = GlobalCNameAccessExpression("PY_NONE")
+Scope.STANDARD_LIBRARY_VALUES["False"] = GlobalCNameAccessExpression("PY_FALSE")
+Scope.STANDARD_LIBRARY_VALUES["True"] = GlobalCNameAccessExpression("PY_TRUE")
 
 
 class Parser:
@@ -2062,6 +2078,7 @@ class Parser:
 
 #include "pyinclude.h"
 #include "standard_library/init.h"
+#include "standard_library/exceptions.h"
 
 // code compiled from python to c via PyCodeCompiler
 

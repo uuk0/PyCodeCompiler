@@ -2,6 +2,7 @@
 
 #include "pyinclude.h"
 #include "standard_library/init.h"
+#include "standard_library/exceptions.h"
 
 // code compiled from python to c via PyCodeCompiler
 
@@ -42,6 +43,7 @@ void PY_CLASS_INIT_PY_CLASS_test_2() {
 }
 
 PyObjectContainer* test_1(PyObjectContainer* self_0) {
+    return PY_NONE;
 }
 
 PyObjectContainer* test_1_safeWrap(PyObjectContainer* self , uint8_t argc , PyObjectContainer** args , CallStructureInfo* info) {

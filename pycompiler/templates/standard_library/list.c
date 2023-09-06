@@ -4,6 +4,7 @@
 #include <stdarg.h>
 #include "list.h"
 #include "operators.h"
+#include "exceptions.h"
 
 PyClassContainer* PY_TYPE_LIST;
 
@@ -30,7 +31,7 @@ PyObjectContainer* PY_STD_list_init(PyObjectContainer* self, uint8_t argc, PyObj
 
         if (list == NULL)
         {
-            perror("malloc PY_STD_list_init A");
+            perror("malloc PY_STD_list_init container");
             exit(EXIT_FAILURE);
         }
 
@@ -41,7 +42,7 @@ PyObjectContainer* PY_STD_list_init(PyObjectContainer* self, uint8_t argc, PyObj
 
         if (list->array == NULL)
         {
-            perror("malloc PY_STD_list_init B");
+            perror("malloc PY_STD_list_init array");
             exit(EXIT_FAILURE);
         }
     }
@@ -50,7 +51,7 @@ PyObjectContainer* PY_STD_list_init(PyObjectContainer* self, uint8_t argc, PyObj
         assert(false);  // not implemented todo: implement
     }
 
-    return NULL;
+    return PY_NONE;
 }
 
 PyObjectContainer* PY_STD_list_CONSTRUCT(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
@@ -80,7 +81,7 @@ PyObjectContainer* PY_STD_list_CONSTRUCT(PyObjectContainer* self, uint8_t argc, 
 
 PyObjectContainer* PY_STD_list_CREATE(uint8_t argc, ...)
 {
-    PyObjectContainer* tuple = PY_createClassInstance(PY_TYPE_LIST);
+    PyObjectContainer* list = PY_createClassInstance(PY_TYPE_LIST);
 
     va_list ap;
     PyObjectContainer* args[argc];
@@ -92,9 +93,9 @@ PyObjectContainer* PY_STD_list_CREATE(uint8_t argc, ...)
     }
     va_end(ap);
 
-    PY_STD_list_CONSTRUCT(tuple, argc, args, NULL);
+    PY_STD_list_CONSTRUCT(list, argc, args, NULL);
 
-    return tuple;
+    return list;
 }
 
 // <list>.append(<item>)
@@ -286,16 +287,15 @@ int64_t PY_STD_list_index_fast_list(PyObjectContainer* self, PyObjectContainer* 
 void PY_STD_list_removeIndex(PY_STD_list_container* list, uint16_t index);
 PyObjectContainer* PY_STD_list_remove(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
 {
-    assert(self != NULL);
-    assert(self->type == PY_TYPE_PY_IMPL);
-    assert(self->py_type == PY_TYPE_LIST);
-    assert(argc == 1);
+    PY_THROW_EXCEPTION_IF_WITH_MESSAGE(self == NULL, NULL, "'self' must not be NULL");
+    PY_THROW_EXCEPTION_IF_WITH_MESSAGE(self->type != PY_TYPE_PY_IMPL && self->py_type == PY_TYPE_LIST, NULL, "must be of type 'list'");
+    PY_THROW_EXCEPTION_IF_WITH_MESSAGE(argc != 1, NULL, "expected exactly one argument to <list>.__delitem__");
 
     PyObjectContainer* cmp = PY_getObjectAttributeByNameOrStatic(args[0], "__eq__");
-    assert(cmp != NULL);
+    PY_THROW_EXCEPTION_IF_WITH_MESSAGE(cmp == NULL, NULL, "expected <supports __eq__> to be removed from a list");
 
     PY_STD_list_container* list = (PY_STD_list_container*)self->raw_value;
-    assert(list != NULL);
+    assert(list != NULL);  // Can only happen when something internally goes wrong
 
     for (int i = 0; i < list->curr_size; i++)
     {
@@ -308,7 +308,7 @@ PyObjectContainer* PY_STD_list_remove(PyObjectContainer* self, uint8_t argc, PyO
         }
     }
 
-    assert(false);  // IndexError
+    PY_THROW_EXCEPTION_WITH_MESSAGE(NULL, "item not found");
 }
 
 PyObjectContainer* PY_STD_list_setAtIndex(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)

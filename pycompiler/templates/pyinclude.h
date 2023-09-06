@@ -128,7 +128,7 @@ void PY_setClassAttributeByNameOrCreate(PyClassContainer* cls, char* name, PyObj
 PyObjectContainer* PY_invokeBoxedMethod(PyObjectContainer* method, PyObjectContainer* self, uint8_t param_count, PyObjectContainer** args, CallStructureInfo* info);
 
 PyObjectContainer* PY_GetSubscriptionValue(PyObjectContainer* obj, PyObjectContainer* index);
-void PY_SetSubscriptionValue(PyObjectContainer* obj, PyObjectContainer* index, PyObjectContainer* value);
+PyObjectContainer* PY_SetSubscriptionValue(PyObjectContainer* obj, PyObjectContainer* index, PyObjectContainer* value);
 
 // Primitive Data Objects
 

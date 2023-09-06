@@ -2,6 +2,7 @@
 
 #include "pyinclude.h"
 #include "standard_library/init.h"
+#include "standard_library/exceptions.h"
 
 // code compiled from python to c via PyCodeCompiler
 
@@ -27,6 +28,10 @@ int _initialise() {
 
 PyObjectContainer* testone_0() {
     return PY_STD_operator_add(PY_createInteger(10), PY_STD_operator_mul(PY_createInteger(20), PY_createInteger(30)));
+
+
+
+    return PY_NONE;
 }
 
 PyObjectContainer* testone_0_safeWrap(PyObjectContainer* self , uint8_t argc , PyObjectContainer** args , CallStructureInfo* info) {
@@ -37,6 +42,10 @@ PyObjectContainer* testone_0_safeWrap(PyObjectContainer* self , uint8_t argc , P
 
 PyObjectContainer* testtwo_1() {
     return PY_STD_operator_sub(PY_STD_operator_mul(PY_createInteger(20), PY_createInteger(30)), PY_createInteger(10));
+
+
+
+    return PY_NONE;
 }
 
 PyObjectContainer* testtwo_1_safeWrap(PyObjectContainer* self , uint8_t argc , PyObjectContainer** args , CallStructureInfo* info) {
@@ -47,6 +56,10 @@ PyObjectContainer* testtwo_1_safeWrap(PyObjectContainer* self , uint8_t argc , P
 
 PyObjectContainer* testthree_2() {
     return PY_STD_operator_floordiv(PY_createInteger(10), PY_createInteger(2));
+
+
+
+    return PY_NONE;
 }
 
 PyObjectContainer* testthree_2_safeWrap(PyObjectContainer* self , uint8_t argc , PyObjectContainer** args , CallStructureInfo* info) {

@@ -3,3 +3,5 @@
 /compiler.txt
 **/build
 /pycompiler/CMakeCache.txt
+**/test.exe
+**/result.c

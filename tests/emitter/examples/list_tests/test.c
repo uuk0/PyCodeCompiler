@@ -9,5 +9,5 @@ PyObjectContainer* test_0();
 int main()
 {
     _initialise();
-    test_0();
+    assert(test_0() == PY_NONE);
 }

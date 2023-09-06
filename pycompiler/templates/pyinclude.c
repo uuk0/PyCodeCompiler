@@ -7,7 +7,9 @@
 #include <assert.h>
 #include "pyinclude.h"
 #include "standard_library/string.h"
+#include "standard_library/exceptions.h"
 #include <string.h>
+#include <stdio.h>
 
 
 static bool initialized = false;
@@ -178,11 +180,11 @@ static PyObjectContainer* PY_getObjectAttributeByNameOrStatic_primitive(PyObject
         {
             return PY_builtin_int_compare_container;
         }
-        assert(false);
+        PY_THROW_EXCEPTION(NULL);
     }
     if (obj->type == PY_TYPE_FLOAT)
     {
-        assert(false);
+        PY_THROW_EXCEPTION(NULL);
     }
     else if (obj->type == PY_TYPE_STRING)
     {
@@ -190,10 +192,19 @@ static PyObjectContainer* PY_getObjectAttributeByNameOrStatic_primitive(PyObject
         {
             return PY_STD_string_hash_CONTAINER;
         }
-        assert(false);
+        if (strcmp(name, "__eq__") == 0)
+        {
+            return PY_STD_string_eq_CONTAINER;
+        }
+        PY_THROW_EXCEPTION(NULL);
+    }
+    else if (obj->type == PY_EXCEPTION)
+    {
+        return obj;  // rethrow the exception
     }
 
-    assert(false == "no special attribute found!");
+    printf("%s\n", name);
+    PY_THROW_EXCEPTION(NULL);
 }
 
 PyObjectContainer* PY_getObjectAttributeByNameOrStatic(PyObjectContainer* obj, char* name)
@@ -246,7 +257,7 @@ void PY_setObjectAttributeByName(PyObjectContainer* obj, char* name, PyObjectCon
         }
     }
 
-    assert(0 == "Attribute not found; Are you missing a declaration somewhere?");
+    assert(0 && "Attribute not found; Are you missing a declaration somewhere?");
 }
 
 void PY_setClassAttributeByName(PyClassContainer* cls, char* name, PyObjectContainer* value)
@@ -262,7 +273,7 @@ void PY_setClassAttributeByName(PyClassContainer* cls, char* name, PyObjectConta
         i++;
     }
 
-    assert(0 == "Failed to set attribute; attribute does not exist (did you not use PY_setClassAttributeByNameOrCreate?)");
+    assert(0 && "Failed to set attribute; attribute does not exist (did you not use PY_setClassAttributeByNameOrCreate?)");
 }
 
 void PY_setClassAttributeByNameOrCreate(PyClassContainer* cls, char* name, PyObjectContainer* value)
@@ -281,14 +292,14 @@ void PY_setClassAttributeByNameOrCreate(PyClassContainer* cls, char* name, PyObj
     cls->static_attribute_names = realloc(cls->static_attribute_names, (i + 2) * sizeof(char*));
     if (cls->static_attribute_names == NULL)
     {
-        perror("malloc PY_setClassAttributeByNameOrCreate A");
+        perror("malloc PY_setClassAttributeByNameOrCreate names");
         exit(EXIT_FAILURE);
     }
 
     cls->static_attribute_values = realloc(cls->static_attribute_values, (i + 2) * sizeof(PyObjectContainer*));
     if (cls->static_attribute_values == NULL)
     {
-        perror("malloc PY_setClassAttributeByNameOrCreate B");
+        perror("malloc PY_setClassAttributeByNameOrCreate values");
         exit(EXIT_FAILURE);
     }
 
@@ -311,13 +322,19 @@ PyObjectContainer* PY_invokeBoxedMethod(PyObjectContainer* method, PyObjectConta
             PyObjectContainer* new_obj = PY_getObjectAttributeByNameOrStatic(method, "__call__");
             DECREF(method);
             method = new_obj;
-            assert(method != NULL);
+            if (method == NULL)
+            {
+                PY_THROW_EXCEPTION(NULL);
+            }
         }
 
         decref_after = true;
     }
 
-    assert(method->type == PY_TYPE_FUNC_POINTER);
+    if (method->type != PY_TYPE_FUNC_POINTER)
+    {
+        PY_THROW_EXCEPTION(NULL);
+    }
 
     PY_FUNC_UNBOXED* function = (PY_FUNC_UNBOXED*)method->raw_value;
 
@@ -327,6 +344,7 @@ PyObjectContainer* PY_invokeBoxedMethod(PyObjectContainer* method, PyObjectConta
     }
 
     PyObjectContainer* result = function(self, param_count, args, info);
+    PY_CHECK_EXCEPTION(result);
 
     if (decref_after)
     {
@@ -341,23 +359,33 @@ PyObjectContainer* PY_GetSubscriptionValue(PyObjectContainer* obj, PyObjectConta
     assert(obj->type == PY_TYPE_PY_IMPL);
 
     PyObjectContainer* method = PY_getObjectAttributeByNameOrStatic(obj, "__getitem__");
-    assert(method != NULL);
+    if (method == NULL)
+    {
+        PY_THROW_EXCEPTION(NULL);
+    }
 
     return PY_invokeBoxedMethod(method, NULL, 1, &index, NULL);
 }
 
-void PY_SetSubscriptionValue(PyObjectContainer* obj, PyObjectContainer* index, PyObjectContainer* value)
+PyObjectContainer* PY_SetSubscriptionValue(PyObjectContainer* obj, PyObjectContainer* index, PyObjectContainer* value)
 {
-    assert(obj->type == PY_TYPE_PY_IMPL);
+    if (obj->type != PY_TYPE_PY_IMPL)
+    {
+        PY_THROW_EXCEPTION(NULL);
+    }
 
     PyObjectContainer* method = PY_getObjectAttributeByNameOrStatic(obj, "__setitem__");
-    assert(method != NULL);
+    if (method == NULL)
+    {
+        PY_THROW_EXCEPTION(NULL);
+    }
 
     PyObjectContainer* mem[2];
     mem[0] = index;
     mem[1] = value;
 
-    PY_invokeBoxedMethod(method, NULL, 2, mem, NULL);
+    PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(method, NULL, 2, mem, NULL));
+    return PY_NONE;
 }
 
 PyObjectContainer* PY_createString(char* string)
@@ -467,6 +495,8 @@ bool PY_getTruthValueOf(PyObjectContainer* obj)
             return false;
         case PY_TYPE_FUNC_POINTER:
             return true;
+        case PY_EXCEPTION:
+            assert(0 && "tried to check exception for truth value; aborting");
         case PY_TYPE_PY_IMPL:
             return PY_getTruthValueOfPyObj(obj);
     }

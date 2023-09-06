@@ -8,6 +8,7 @@
 #include "pyinclude.h"
 
 #include "operators.h"
+#include "exceptions.h"
 
 #include "int.h"
 
