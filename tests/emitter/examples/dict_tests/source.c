@@ -36,6 +36,18 @@ PyObjectContainer* test_0() {
 
     PyObjectContainer* assert_target_2 = PY_STD_operator_equals(PY_CHECK_EXCEPTION(PY_STD_dict_getitem_fast (obj_1 , PY_createString("test"))), PY_createInteger(10));
     assert(PY_getTruthValueOf(assert_target_2));
+
+
+    PY_CHECK_EXCEPTION(PY_STD_dict_setitem_fast (obj_1 , PY_createString("test") , PY_createInteger(20)));
+
+    PyObjectContainer* assert_target_3 = PY_STD_operator_equals(PY_CHECK_EXCEPTION(PY_STD_dict_getitem_fast (obj_1 , PY_createString("test"))), PY_createInteger(20));
+    assert(PY_getTruthValueOf(assert_target_3));
+
+
+    PY_CHECK_EXCEPTION(PY_STD_dict_setitem_fast (obj_1 , PY_createString("other") , PY_createInteger(5)));
+
+    PyObjectContainer* assert_target_4 = PY_STD_operator_equals(PY_CHECK_EXCEPTION(PY_STD_dict_getitem_fast (obj_1 , PY_createString("other"))), PY_createInteger(5));
+    assert(PY_getTruthValueOf(assert_target_4));
     return PY_NONE;
 }
 

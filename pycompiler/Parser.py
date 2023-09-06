@@ -602,6 +602,9 @@ class ConstantAccessExpression(AbstractASTNodeExpression):
             norm = self.value.replace('"', '\\"')
             context.add_code(f'PY_createString("{norm}")')
 
+        elif isinstance(self.value, GlobalCNameAccessExpression):
+            context.add_code(self.value.name)
+
         else:
             raise NotImplementedError(self.value)
 
