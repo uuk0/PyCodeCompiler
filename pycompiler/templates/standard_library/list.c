@@ -20,35 +20,40 @@ typedef struct PY_STD_list_container PY_STD_list_container;
 
 PyObjectContainer* PY_STD_list_init(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
 {
-    assert(self != NULL);
-    assert(self->type == PY_TYPE_PY_IMPL);
-    assert(self->py_type == PY_TYPE_LIST);
-    assert(self->raw_value == NULL);  // only one init!
-
     if (argc == 0)
     {
-        PY_STD_list_container* list = malloc(sizeof(PY_STD_list_container));
-
-        if (list == NULL)
-        {
-            perror("malloc PY_STD_list_init container");
-            exit(EXIT_FAILURE);
-        }
-
-        self->raw_value = list;
-        list->curr_size = 0;
-        list->rem_size = PY_STD_LIST_START_SIZE;
-        list->array = malloc(PY_STD_LIST_START_SIZE * sizeof(PyObjectContainer*));
-
-        if (list->array == NULL)
-        {
-            perror("malloc PY_STD_list_init array");
-            exit(EXIT_FAILURE);
-        }
+        return PY_STD_list_init_fast_arg_0(self);
     }
     else
     {
         assert(false);  // not implemented todo: implement
+    }
+}
+
+PyObjectContainer* PY_STD_list_init_fast_arg_0(PyObjectContainer* self)
+{
+    assert(self != NULL);
+    assert(self->type == PY_TYPE_PY_IMPL);
+    assert(self->py_type == PY_TYPE_LIST);
+    assert(self->raw_value == NULL);
+
+    PY_STD_list_container* list = malloc(sizeof(PY_STD_list_container));
+
+    if (list == NULL)
+    {
+        perror("malloc PY_STD_list_init container");
+        exit(EXIT_FAILURE);
+    }
+
+    self->raw_value = list;
+    list->curr_size = 0;
+    list->rem_size = PY_STD_LIST_START_SIZE;
+    list->array = malloc(PY_STD_LIST_START_SIZE * sizeof(PyObjectContainer*));
+
+    if (list->array == NULL)
+    {
+        perror("malloc PY_STD_list_init array");
+        exit(EXIT_FAILURE);
     }
 
     return PY_NONE;

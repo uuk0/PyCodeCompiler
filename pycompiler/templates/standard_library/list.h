@@ -9,6 +9,7 @@
 
 extern PyClassContainer* PY_TYPE_LIST;
 PyObjectContainer* PY_STD_list_init(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info);
+PyObjectContainer* PY_STD_list_init_fast_arg_0(PyObjectContainer* self);
 PyObjectContainer* PY_STD_list_CONSTRUCT(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info);
 PyObjectContainer* PY_STD_list_CREATE(uint8_t argc, ...);
 

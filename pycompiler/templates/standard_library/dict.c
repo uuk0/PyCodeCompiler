@@ -36,6 +36,12 @@ PyObjectContainer* PY_STD_dict_init(PyObjectContainer* self, uint8_t argc, PyObj
     return PY_NONE;
 }
 
+PyObjectContainer* PY_STD_dict_init_fast_arg_zero(PyObjectContainer* self)
+{
+    self->raw_value = HASHMAP_create(HASH_py_object, HASH_compare_py_object);
+    return PY_NONE;
+}
+
 PyObjectContainer* PY_STD_dict_setitem(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
 {
     assert(argc == 2);
@@ -73,10 +79,48 @@ PyObjectContainer* PY_STD_dict_getitem_fast(PyObjectContainer* self, PyObjectCon
     return obj;
 }
 
+PyObjectContainer* PY_STD_dict_delitem(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
+{
+    assert(argc == 1);
+    return PY_STD_dict_delitem_fast(self, args[0]);
+}
+
+PyObjectContainer* PY_STD_dict_delitem_fast(PyObjectContainer* self, PyObjectContainer* key)
+{
+    assert(self->type == PY_TYPE_PY_IMPL);
+    assert(self->py_type == PY_TYPE_DICT);
+    assert(self->raw_value != NULL);
+
+    if (HASHMAP_remove(self->raw_value, key) == NULL)
+    {
+        PY_THROW_EXCEPTION_WITH_MESSAGE(NULL, "key not in dict");
+    }
+
+    return PY_NONE;
+}
+
+PyObjectContainer* PY_STD_dict_contains(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
+{
+    assert(argc == 1);
+    return PY_STD_dict_contains_fast(self, args[0]);
+}
+
+PyObjectContainer* PY_STD_dict_contains_fast(PyObjectContainer* self, PyObjectContainer* key)
+{
+    assert(self->type == PY_TYPE_PY_IMPL);
+    assert(self->py_type == PY_TYPE_DICT);
+    assert(self->raw_value != NULL);
+
+    return HASHMAP_has_key(self->raw_value, key) ? PY_TRUE : PY_FALSE;
+}
+
 void PY_STD_initDictType(void)
 {
     PY_TYPE_DICT = PY_createClassContainer("dict");
     PY_setClassAttributeByNameOrCreate(PY_TYPE_DICT, "__init__", PY_createBoxForFunction(PY_STD_dict_init));
     PY_setClassAttributeByNameOrCreate(PY_TYPE_DICT, "__setitem__", PY_createBoxForFunction(PY_STD_dict_setitem));
+    PY_setClassAttributeByNameOrCreate(PY_TYPE_DICT, "__getitem__", PY_createBoxForFunction(PY_STD_dict_getitem));
+    PY_setClassAttributeByNameOrCreate(PY_TYPE_DICT, "__delitem__", PY_createBoxForFunction(PY_STD_dict_delitem));
+    PY_setClassAttributeByNameOrCreate(PY_TYPE_DICT, "__contains__", PY_createBoxForFunction(PY_STD_dict_contains));
 }
 

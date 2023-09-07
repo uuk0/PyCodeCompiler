@@ -404,15 +404,25 @@ class ResolveClassFunctionNode(SyntaxTreeVisitor):
             and isinstance(expression.parent[0], CallExpression)
         ):
             data_type = expression.base.static_value_type.ref
+            target = None
 
             if expression.attribute.text in data_type.function_table:
+                target = data_type.function_table[expression.attribute.text]
+            elif (
+                expression.attribute.text,
+                len(expression.parent[0].args),
+            ) in data_type.function_table:
+                target = data_type.function_table[
+                    expression.attribute.text, len(expression.parent[0].args)
+                ]
+
+            if target:
                 expression.parent[0].args.insert(
                     0,
                     CallExpression.CallExpressionArgument(
                         expression.base, CallExpression.ParameterType.NORMAL
                     ),
                 )
-                target = data_type.function_table[expression.attribute.text]
                 expression.parent[0].try_replace_child(
                     expression,
                     target,

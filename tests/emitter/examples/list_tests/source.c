@@ -23,13 +23,9 @@ int _initialise() {
 PyObjectContainer* test_0() {
     PyObjectContainer* obj_1;
 
-
     PyObjectContainer* obj_instance_0 = PY_createClassInstance(PY_TYPE_LIST);
-    PyObjectContainer* constructor_1 = PY_getObjectAttributeByNameOrStatic(obj_instance_0, "__init__");
+    PY_CHECK_EXCEPTION(PY_STD_list_init_fast_arg_0(obj_instance_0));
 
-    PY_THROW_EXCEPTION_IF(constructor_1 == NULL, NULL);
-    PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(constructor_1, NULL, 0, NULL, NULL));
-    DECREF(constructor_1);
     obj_1 = obj_instance_0;
 
     PY_CHECK_EXCEPTION(PY_STD_list_append_fast (obj_1 , PY_createInteger(10)));

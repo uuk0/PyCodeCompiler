@@ -974,20 +974,15 @@ class CallExpression(AbstractASTNodeExpression):
             ClassDefinitionNode, typing.cast(ConstantAccessExpression, self.base).value
         )
 
+        is_direct_ref = False
+        func_decl = None
+
         if "__init__" in cls.function_table:
             func_decl = cls.function_table["__init__"].normal_name
-
-            context.parent.add_code(
-                f"PyObjectContainer* {temporary} = PY_createClassInstance({'' if isinstance(cls, StandardLibraryClass) else 'PY_CLASS_'}{cls.normal_name});\n"
-            )
-            context.parent.add_code(f"PY_CHECK_EXCEPTION({func_decl}({temporary}")
-
-            if self.args:
-                for arg in self.args:
-                    context.parent.add_code(" , ")
-                    arg.emit_c_code(base, context.parent)
-
-            context.parent.add_code("));\n\n")
+            is_direct_ref = True
+        elif ("__init__", len(self.args)) in cls.function_table:
+            func_decl = cls.function_table["__init__", len(self.args)].normal_name
+            is_direct_ref = True
         else:
             args = ""
             if len(self.args) == 1:
@@ -1015,6 +1010,19 @@ PY_CHECK_EXCEPTION(PY_invokeBoxedMethod({constructor}, NULL, {len(self.args)}, {
 DECREF({constructor});
 """
             )
+
+        if is_direct_ref:
+            context.parent.add_code(
+                f"PyObjectContainer* {temporary} = PY_createClassInstance({'' if isinstance(cls, StandardLibraryClass) else 'PY_CLASS_'}{cls.normal_name});\n"
+            )
+            context.parent.add_code(f"PY_CHECK_EXCEPTION({func_decl}({temporary}")
+
+            if self.args:
+                for arg in self.args:
+                    context.parent.add_code(" , ")
+                    arg.emit_c_code(base, context.parent)
+
+            context.parent.add_code("));\n\n")
 
         context.add_code(temporary)
 
@@ -1285,7 +1293,9 @@ class ClassDefinitionNode(AbstractASTNode):
         self.parents = parents
         self.body = body
         self.normal_name = name.text
-        self.function_table: typing.Dict[str, AbstractASTNode] = {}
+        self.function_table: typing.Dict[
+            str | typing.Tuple[str, int], AbstractASTNode
+        ] = {}
 
     def __eq__(self, other):
         return (
@@ -1916,10 +1926,11 @@ Scope.STANDARD_LIBRARY_VALUES["list"] = PY_TYPE_LIST = StandardLibraryClass(
 )
 PY_TYPE_LIST.function_table.update(
     {
-        "append": GlobalCNameAccessExpression("PY_STD_list_append_fast"),
-        "insert": GlobalCNameAccessExpression("PY_STD_list_insert_fast"),
-        "clear": GlobalCNameAccessExpression("PY_STD_list_clear_fast"),
-        "index": GlobalCNameAccessExpression("PY_STD_list_index_fast"),
+        ("__init__", 0): GlobalCNameAccessExpression("PY_STD_list_init_fast_arg_0"),
+        ("append", 1): GlobalCNameAccessExpression("PY_STD_list_append_fast"),
+        ("insert", 2): GlobalCNameAccessExpression("PY_STD_list_insert_fast"),
+        ("clear", 0): GlobalCNameAccessExpression("PY_STD_list_clear_fast"),
+        ("index", 1): GlobalCNameAccessExpression("PY_STD_list_index_fast"),
         "__setitem__": GlobalCNameAccessExpression("PY_STD_list_setAtIndex_fast"),
         "__getitem__": GlobalCNameAccessExpression("PY_STD_list_getAtIndex_fast"),
         "__len__": GlobalCNameAccessExpression("PY_STD_list_len_fast"),
@@ -1934,8 +1945,11 @@ Scope.STANDARD_LIBRARY_VALUES["dict"] = PY_TYPE_DICT = StandardLibraryClass(
 )
 PY_TYPE_DICT.function_table.update(
     {
+        ("__init__", 0): GlobalCNameAccessExpression("PY_STD_dict_init_fast_arg_zero"),
         "__setitem__": GlobalCNameAccessExpression("PY_STD_dict_setitem_fast"),
         "__getitem__": GlobalCNameAccessExpression("PY_STD_dict_getitem_fast"),
+        "__delitem__": GlobalCNameAccessExpression("PY_STD_dict_delitem_fast"),
+        "__contains__": GlobalCNameAccessExpression("PY_STD_dict_contains_fast"),
     }
 )
 
