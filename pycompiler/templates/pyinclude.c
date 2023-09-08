@@ -40,8 +40,11 @@ PyObjectContainer* createEmptyContainer(PyObjectType type)
     container->source = NULL;
     container->refcount = 1;
     container->dynamic_attr_count = 0;
+
+#ifdef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE
     container->dynamic_attr_keys = NULL;
     container->dynamic_attr_values = NULL;
+#endif
     return container;
 }
 
@@ -167,6 +170,7 @@ PyObjectContainer* PY_getObjectAttributeByName(PyObjectContainer* obj, char* nam
         }
     }
 
+#ifdef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE
     for (int i = 0; i < obj->dynamic_attr_count; i++)
     {
         if (strcmp(obj->dynamic_attr_keys[i], name) == 0)
@@ -174,6 +178,7 @@ PyObjectContainer* PY_getObjectAttributeByName(PyObjectContainer* obj, char* nam
             return obj->dynamic_attr_values[i];
         }
     }
+#endif
 
     return NULL;
 }
@@ -251,6 +256,7 @@ PyObjectContainer* PY_getObjectAttributeByNameOrStatic(PyObjectContainer* obj, c
         }
     }
 
+#ifdef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE
     for (int i = 0; i < obj->dynamic_attr_count; i++)
     {
         if (strcmp(obj->dynamic_attr_keys[i], name) == 0)
@@ -258,6 +264,7 @@ PyObjectContainer* PY_getObjectAttributeByNameOrStatic(PyObjectContainer* obj, c
             return obj->dynamic_attr_values[i];
         }
     }
+#endif
 
     if (cls->static_attribute_names == NULL) return NULL;
 
@@ -291,7 +298,13 @@ void PY_setObjectAttributeByName(PyObjectContainer* obj, char* name, PyObjectCon
         }
     }
 
+#ifdef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE
+
+#ifndef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTES_FOR_ALL
     if (cls->flags & PY_CLASS_ALLOW_DYNAMIC_ATTRIBUTES)
+#else
+    if (1)
+#endif
     {
         obj->dynamic_attr_count++;
         obj->dynamic_attr_keys = realloc(obj->dynamic_attr_keys, obj->dynamic_attr_count * sizeof(char*));
@@ -310,6 +323,7 @@ void PY_setObjectAttributeByName(PyObjectContainer* obj, char* name, PyObjectCon
         obj->dynamic_attr_values[obj->dynamic_attr_count-1] = value;
         return;
     }
+#endif
 
     assert(0 && "Attribute not found; Are you missing a declaration somewhere?");
 }

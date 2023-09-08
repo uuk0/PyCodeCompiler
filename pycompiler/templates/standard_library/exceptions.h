@@ -7,6 +7,7 @@
 
 #include "pyinclude.h"
 #include <stdio.h>
+#include "config.h"
 
 extern PyClassContainer* PY_TYPE_EXCEPTION;
 
@@ -14,7 +15,6 @@ PyObjectContainer* PY_STD_createException(char* exc_name, char* message);
 PyObjectContainer* PY_STD_wrapException(PyObjectContainer* exception);
 
 
-#define PY_INTERNAL_THROW_EXCEPTIONS_INPLACE
 #ifndef PY_INTERNAL_THROW_EXCEPTIONS_INPLACE
 
 #define PY_THROW_EXCEPTION(exception) return PY_STD_wrapException(exception)

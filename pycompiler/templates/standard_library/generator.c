@@ -5,11 +5,16 @@
 #include <assert.h>
 #include "generator.h"
 #include "exceptions.h"
+#include "config.h"
 
 PyClassContainer* PY_TYPE_GENERATOR;
 
 PyObjectContainer* PY_STD_GENERATOR_create(uint16_t local_count)
 {
+#ifndef PY_ENABLE_GENERATORS
+    assert(0 && "generators are not enabled!");
+#endif
+
     PyObjectContainer* container = PY_createClassInstance(PY_TYPE_GENERATOR);
     PyGeneratorContainer* generator = malloc(sizeof(PyGeneratorContainer));
     if (generator == NULL)
@@ -31,6 +36,10 @@ PyObjectContainer* PY_STD_GENERATOR_create(uint16_t local_count)
 
 PyObjectContainer* PY_STD_GENERATOR_next(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
 {
+#ifndef PY_ENABLE_GENERATORS
+    assert(0 && "generators are not enabled!");
+#endif
+
     if (argc == 0)
     {
         return PY_STD_GENERATOR_next_fast_arg_0(self);
@@ -42,6 +51,10 @@ PyObjectContainer* PY_STD_GENERATOR_next(PyObjectContainer* self, uint8_t argc, 
 
 PyObjectContainer* PY_STD_GENERATOR_next_fast_arg_0(PyObjectContainer* self)
 {
+#ifndef PY_ENABLE_GENERATORS
+    assert(0 && "generators are not enabled!");
+#endif
+
     assert(self != NULL);
     assert(self->type == PY_TYPE_PY_IMPL && self->py_type == PY_TYPE_GENERATOR);
 
@@ -57,6 +70,10 @@ PyObjectContainer* PY_STD_GENERATOR_next_fast_arg_0(PyObjectContainer* self)
 
 PyObjectContainer* PY_STD_GENERATOR_next_fast_arg_1(PyObjectContainer* self, PyObjectContainer* default_value)
 {
+#ifndef PY_ENABLE_GENERATORS
+    assert(0 && "generators are not enabled!");
+#endif
+
     assert(self != NULL);
     assert(self->type == PY_TYPE_PY_IMPL && self->py_type == PY_TYPE_GENERATOR);
 

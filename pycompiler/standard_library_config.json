@@ -117,7 +117,8 @@
       {
         "name": "next",
         "type": "operator wrapper",
-        "c name": "PY_STD_operator_next"
+        "c name": "PY_STD_operator_next",
+        "arguments": 1
       },
       {
         "name": "True",
@@ -133,6 +134,25 @@
         "name": "None",
         "type": "constant",
         "c name": "PY_NONE"
+      },
+      {
+        "name": "<generator>",
+        "type": "class",
+        "type variable": "PY_TYPE_GENERATOR",
+        "static attributes": [
+          {
+            "name": "__next__",
+            "type": "method",
+            "arguments": 1,
+            "c name": "PY_STD_GENERATOR_next_fast_arg_0"
+          },
+          {
+            "name": "__next__",
+            "type": "method",
+            "arguments": 2,
+            "c name": "PY_STD_GENERATOR_next_fast_arg_1"
+          }
+        ]
       }
     ]
   },

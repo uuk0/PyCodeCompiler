@@ -64,6 +64,11 @@ class GetHeaderRelatedInfo(SyntaxTreeVisitor):
             f"{', '.join(f'PyObjectContainer* {e.normal_name}' for e in node.parameters)})"
         )
 
+        if node.is_generator:
+            self.function_signatures.append(
+                f"PyObjectContainer* {node.normal_name}_ENTRY(PyGeneratorContainer* generator)"
+            )
+
     def visit_class_definition(self, node: ClassDefinitionNode):
         super().visit_class_definition(node)
 
@@ -421,12 +426,20 @@ class ResolveKnownDataTypes(SyntaxTreeVisitor):
         super().visit_call_expression(node)
 
         if isinstance(node.base, ConstantAccessExpression):
-            if isinstance(node.base.value, ClassDefinitionNode):
+            if (
+                isinstance(node.base.value, FunctionDefinitionNode)
+                and node.base.value.is_generator
+            ):
+                node.static_value_type = node.base.value.static_value_type
+            elif isinstance(node.base.value, ClassDefinitionNode):
                 node.static_value_type = ClassExactDataType(node.base.value)
             elif node.base.value == Scope.STANDARD_LIBRARY_VALUES["len"]:
                 self.check_for_overload_on_type(node, "__len__", "len")
             elif node.base.value == Scope.STANDARD_LIBRARY_VALUES["next"]:
-                self.check_for_overload_on_type(node, "__next__", "next")
+                if len(node.args) == 1:
+                    self.check_for_overload_on_type(node, "__next__", "next")
+                else:
+                    self.check_for_overload_on_type_double(node, "__next__", "next")
 
     def check_for_overload_on_type(self, node, bound_name, normal_name):
         if len(node.args) != 1:
@@ -440,8 +453,23 @@ class ResolveKnownDataTypes(SyntaxTreeVisitor):
             and isinstance(arg.static_value_type, ClassExactDataType)
             and bound_name in arg.static_value_type.ref.function_table
         ):
-            len_func = arg.static_value_type.ref.function_table[bound_name]
-            node.base = len_func
+            func = arg.static_value_type.ref.function_table[(bound_name, 1)]
+            node.base = func
+
+    def check_for_overload_on_type_double(self, node, bound_name, normal_name):
+        if len(node.args) != 2:
+            raise ValueError(
+                f"{normal_name}(...) expected one or two args, got {len(node.args)}"
+            )
+
+        arg = node.args[0].value
+        if (
+            arg.static_value_type
+            and isinstance(arg.static_value_type, ClassExactDataType)
+            and bound_name in arg.static_value_type.ref.function_table
+        ):
+            func = arg.static_value_type.ref.function_table[(bound_name, 2)]
+            node.base = func
 
 
 class ResolveLocalVariableAccessTypes(SyntaxTreeVisitor):

@@ -185,6 +185,7 @@ class Project:
             header_info.visit_any_list(ast_nodes)
 
             header = f"""#include "pyinclude.h"
+#include "standard_library/generator.h"
             
 // Header for the module {module}
 

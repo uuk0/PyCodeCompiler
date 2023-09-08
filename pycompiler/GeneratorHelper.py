@@ -1,6 +1,6 @@
 import typing
 
-from TypeResolver import SyntaxTreeVisitor
+from pycompiler.TypeResolver import SyntaxTreeVisitor
 from pycompiler.Parser import (
     YieldStatement,
     ClassDefinitionNode,

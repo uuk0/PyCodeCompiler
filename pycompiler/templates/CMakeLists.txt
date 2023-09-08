@@ -34,6 +34,7 @@ add_library(templates
         standard_library/modules/unittest.h
         standard_library/generator.c
         standard_library/generator.h
+        standard_library/config.h
 )
 
 add_executable(test

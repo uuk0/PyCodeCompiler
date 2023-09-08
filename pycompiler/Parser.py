@@ -1253,6 +1253,12 @@ class FunctionDefinitionNode(AbstractASTNode):
         self.normal_name = name.text
         self.is_generator = is_generator
 
+        if self.is_generator:
+            # is guaranteed to return a generator object
+            self.static_value_type = ClassExactDataType(
+                Scope.STANDARD_LIBRARY_VALUES["<generator>"]
+            )
+
     def __eq__(self, other):
         return (
             type(other) == FunctionDefinitionNode
@@ -1352,12 +1358,13 @@ class FunctionDefinitionNode(AbstractASTNode):
             # todo: what is about internal-but-same-frame locals?
             local_count += len(self.body[0].scope.variable_name_stack)
 
-        base.add_include('"generator.h"')
+        base.add_include('"standard_library/generator.h"')
 
         func.add_code(
             f"""PyObjectContainer* generator = PY_STD_GENERATOR_create({local_count});
 PyGeneratorContainer* container = generator->raw_value;
-container->next_section = {func_name}_ENTRY;"""
+container->next_section = {func_name}_ENTRY;
+"""
         )
 
         for i, param in enumerate(self.parameters):
@@ -1373,22 +1380,23 @@ container->next_section = {func_name}_ENTRY;"""
         )
         base.add_function(inner_func)
 
-        inner_func.add_code("switch (generator->section_id){")
+        inner_func.add_code("switch (generator->section_id){\n")
+        inner_func.add_code("    case 0: goto gen_0;\n")
 
         yield_finder = GetValidYieldStatements()
         yield_finder.visit_any_list(self.body)
 
         for i, statement in enumerate(yield_finder.statements):
-            inner_func.add_code(f"    case {i}: goto gen_{i};\n")
-            statement.yield_label_id = i
+            inner_func.add_code(f"    case {i+1}: goto gen_{i+1};\n")
+            statement.yield_label_id = i + 1
 
-        inner_func.add_code("};\n\n")
+        inner_func.add_code("};\n\ngen_0:;\n")
 
         RewriteReturnToGeneratorExit().visit_any_list(self.body)
         LocalNameAccessRewriter().visit_any_list(self.body)
 
         for line in self.body:
-            inner_section = func.get_statement_builder(indent=False)
+            inner_section = inner_func.get_statement_builder(indent=False)
 
             line.emit_c_code(base, inner_section)
 
@@ -1397,10 +1405,10 @@ container->next_section = {func_name}_ENTRY;"""
             else:
                 inner_section.add_code("\n")
 
-            func.add_code(inner_section.get_result() + "\n")
+            inner_func.add_code(inner_section.get_result() + "\n")
 
-        if not func.snippets[-1].startswith("return"):
-            func.add_code("return PY_NONE;")
+        if not inner_func.snippets[-1].startswith("return"):
+            inner_func.add_code("return NULL;")
 
         self.generate_safe_wrapper(base, func_name)
 
@@ -2069,6 +2077,8 @@ class SyntaxTreeVisitor:
             return self.visit_function_definition_parameter(obj)
         elif obj_type == ReturnStatement:
             return self.visit_return_statement(obj)
+        elif obj_type == GeneratorExitReturnStatement:
+            return self.visit_return_statement(obj)
         elif obj_type == ClassDefinitionNode:
             return self.visit_class_definition(obj)
         elif obj_type == ConstantAccessExpression:
@@ -2209,7 +2219,7 @@ def _parse_std_lib_decl_entry(entry: dict) -> AbstractASTNode:
         cls = StandardLibraryClass(entry["name"], entry["type variable"])
 
         for attr in entry.get("static attributes", []):
-            if attr["type"] == "method" and "arguments" in attr:
+            if "arguments" in attr:
                 cls.function_table[
                     (attr["name"], attr["arguments"])
                 ] = _parse_std_lib_decl_entry(attr)

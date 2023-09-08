@@ -6,6 +6,8 @@
 #ifndef PYINCLUDE
 #define PYINCLUDE
 
+#include "standard_library/config.h"
+
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -64,8 +66,11 @@ struct PyObjectContainer
     struct PyObjectContainer** attr_array;
     struct PyObjectContainer* source;
     uint16_t dynamic_attr_count;
+
+#ifdef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE
     char** dynamic_attr_keys;
     struct PyObjectContainer** dynamic_attr_values;
+#endif
 };
 typedef struct PyObjectContainer PyObjectContainer;
 

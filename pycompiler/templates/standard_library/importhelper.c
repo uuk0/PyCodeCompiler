@@ -7,6 +7,7 @@
 
 #include "importhelper.h"
 #include "helpers/hashmap.h"
+#include "config.h"
 
 
 PyClassContainer* PY_TYPE_MODULE;
@@ -29,6 +30,9 @@ PyObjectContainer* PY_exposeModuleObject(PyObjectContainer* module)
 
 PyObjectContainer* PY_createModuleObject(char* module_name)
 {
+#ifndef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE
+    assert(0 && "modules require dynamic object attributes!");
+#endif
     PyObjectContainer* module = PY_createClassInstance(PY_TYPE_MODULE);
     PY_setObjectAttributeByName(module, "__name__", PY_createString(module_name));
     return module;
