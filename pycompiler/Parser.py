@@ -546,6 +546,30 @@ class NameAccessExpression(AbstractASTNodeExpression):
         context.add_code(self.scope.get_remapped_name(self.name.text))
 
 
+class GeneratorNameAccessExpression(NameAccessExpression):
+    def __init__(self, name: Lexer.Token, index: int):
+        super().__init__(name)
+        self.index = index
+
+    def __eq__(self, other):
+        return (
+            type(other) == GeneratorNameAccessExpression
+            and self.name == other.name
+            and self.index == other.index
+        )
+
+    def __repr__(self):
+        return f"GENERATOR-VARIABLE({self.name})"
+
+    def emit_c_code(
+        self,
+        base: CCodeEmitter,
+        context: CCodeEmitter.CExpressionBuilder,
+        is_target=False,
+    ):
+        context.add_code(f"generator->locals[{self.index}]")
+
+
 class GlobalCNameAccessExpression(AbstractASTNodeExpression):
     def __init__(self, name: str):
         super().__init__()
@@ -1084,8 +1108,7 @@ class ReturnStatement(AbstractASTNode):
 
     def __eq__(self, other):
         return (
-            type(other) == ReturnStatement
-            and self.return_value == other.yield_expression
+            type(other) == ReturnStatement and self.return_value == other.return_value
         )
 
     def __repr__(self):
@@ -1304,6 +1327,7 @@ class FunctionDefinitionNode(AbstractASTNode):
         from pycompiler.GeneratorHelper import (
             GetValidYieldStatements,
             RewriteReturnToGeneratorExit,
+            LocalNameAccessRewriter,
         )
 
         func_name = self.normal_name
@@ -1355,6 +1379,7 @@ container->next_section = {func_name}_ENTRY;"""
         inner_func.add_code("};\n\n")
 
         RewriteReturnToGeneratorExit().visit_any_list(self.body)
+        LocalNameAccessRewriter().visit_any_list(self.body)
 
         for line in self.body:
             inner_section = func.get_statement_builder(indent=False)
