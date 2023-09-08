@@ -2251,6 +2251,9 @@ class Parser:
         if assert_statement := self.try_parse_assert_statement():
             return assert_statement
 
+        if import_statement := self.try_parse_import_statement():
+            return import_statement
+
         if self.is_in_function and (
             return_statement := self.try_parse_return_statement()
         ):
@@ -3166,3 +3169,37 @@ class Parser:
                 raise SyntaxError
 
         return AssertStatement(expression, message)
+
+    def try_parse_import_statement(self) -> ImportStatement | None:
+        import_token = self.lexer.get_chars(len("import "))
+
+        if import_token != "import ":
+            self.lexer.give_back(import_token)
+            return
+
+        self.lexer.try_parse_whitespaces()
+        name = [identifier := self.lexer.try_parse_token(TokenType.IDENTIFIER)]
+        if identifier is None:
+            raise SyntaxError("expected <identifier> after 'import'")
+        self.lexer.try_parse_whitespaces()
+
+        while self.lexer.inspect_chars(1) == ".":
+            self.lexer.get_chars(1)
+            name.append(identifier := self.lexer.try_parse_token(TokenType.IDENTIFIER))
+            if identifier is None:
+                raise SyntaxError("expected <identifier> after '.'")
+            self.lexer.try_parse_whitespaces()
+
+        if self.lexer.inspect_chars(3) == "as ":
+            self.lexer.get_chars(2)
+            self.lexer.try_parse_whitespaces()
+            as_name = self.lexer.try_parse_token(TokenType.IDENTIFIER)
+            if as_name is None:
+                raise SyntaxError("expected <identifier> after 'as'")
+        else:
+            as_name = None
+
+        return ImportStatement(
+            ".".join(e.text for e in name),
+            as_name.text if as_name else None,
+        )
