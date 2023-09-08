@@ -5,6 +5,8 @@
 #include "standard_library/exceptions.h"
 #include "standard_library/importhelper.h"
 
+PyObjectContainer* PY_MODULE_INSTANCE_source;
+
 // code compiled from python to c via PyCodeCompiler
 
 #include <assert.h>
@@ -26,7 +28,9 @@ PyObjectContainer* obj;
 void PY_MODULE_source_init(void) {
     INVOKE_SINGLE();
     PY_STD_INIT();
-    PyObjectContainer* obj;PyObjectContainer* test;PY_CLASS_INIT_PY_CLASS_test_2();
+    PyObjectContainer* obj;
+    PyObjectContainer* test;
+    PY_CLASS_INIT_PY_CLASS_test_2();
     PyObjectContainer* obj_instance_0 = PY_createClassInstance(PY_CLASS_test_2);
     PY_CHECK_EXCEPTION(init_1(obj_instance_0));
 

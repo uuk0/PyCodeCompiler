@@ -5,6 +5,8 @@
 #include "standard_library/exceptions.h"
 #include "standard_library/importhelper.h"
 
+PyObjectContainer* PY_MODULE_INSTANCE_source;
+
 // code compiled from python to c via PyCodeCompiler
 
 #include <assert.h>

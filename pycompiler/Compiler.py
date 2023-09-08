@@ -4,7 +4,7 @@ import shutil
 import subprocess
 import typing
 
-from pycompiler.Parser import Parser, AbstractASTNode
+from pycompiler.Parser import Parser, AbstractASTNode, Scope
 from pycompiler.TypeResolver import GetModuleImports, GetHeaderRelatedInfo
 
 _local = os.path.dirname(os.path.dirname(__file__))
@@ -35,7 +35,7 @@ class Project:
         self.compile_only = compile_only
         self.compiler_output = (
             compiler_output
-            or f"{build_folder}/result." + (".o" if compile_only else ".exe")
+            or f"{build_folder}/result" + (".o" if compile_only else ".exe")
             if build_folder
             else None
         )
@@ -104,6 +104,9 @@ class Project:
             resolver.visit_any_list(ast_nodes)
 
             for module in resolver.modules:
+                if module in Scope.STANDARD_LIBRARY_MODULES:
+                    continue
+
                 for f in self.path:
                     p = pathlib.Path(f)
 
@@ -113,16 +116,29 @@ class Project:
                         and p.name.removesuffix(".py") == module
                     ):
                         pending_compilation_files.append((str(p.absolute()), module))
+                        break
+
                     elif p.is_dir():
                         for file in p.glob("**/*.py"):
-                            if (
-                                file.is_file()
-                                and "." not in module
-                                and file.name.removesuffix(".py") == module
-                            ):
-                                pending_compilation_files.append(
-                                    (str(file.absolute()), module)
-                                )
+                            if file.is_file() and str(file).endswith(".py"):
+                                if (
+                                    str(file.relative_to(p))
+                                    .removesuffix(".py")
+                                    .replace("/", ".")
+                                    .replace("\\", ".")
+                                    == module
+                                ):
+                                    pending_compilation_files.append(
+                                        (str(file.absolute()), module)
+                                    )
+                                    break
+                        else:
+                            continue
+                        break
+
+                else:
+                    print(self.path)
+                    raise ModuleNotFoundError(module)
 
         for file, ast_nodes, parser, module in prepared_module_files:
             c_source = parser.emit_c_code(expr=ast_nodes, module_name=module)
@@ -147,7 +163,7 @@ void PY_MODULE_{module.replace('.', '___')}_init(void);
             for signature in header_info.function_signatures:
                 header += f"{signature};\n"
 
-            header += "\n// Variables\n"
+            header += f"\n// Variables\nextern PyObjectContainer* PY_MODULE_INSTANCE_{module.replace('.', '___')};\n"
 
             for variable in header_info.global_variables:
                 header += f"extern {variable};\n"

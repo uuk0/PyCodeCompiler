@@ -1,3 +1,7 @@
 import typing
+import test_module
 
-assert typing.TYPE_CHECKING == False
+
+def test():
+    assert typing.TYPE_CHECKING == False
+    assert test_module.test_target() == 10

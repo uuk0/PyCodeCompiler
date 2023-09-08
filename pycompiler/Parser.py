@@ -1824,13 +1824,13 @@ class ImportStatement(AbstractASTNode):
         for i in range(self.module.count(".") - 1):
             partial_module = "___".join(self.module.split(".")[: i + 1])
 
-            base.add_include(f'"pymodule_{partial_module}.h"')
+            base.add_include(f'"{partial_module}.h"')
             context.add_code(f"PY_CHECK_EXCEPTION(PY_MODULE_{partial_module}_init());")
 
         name = self.module.replace(".", "___")
 
         if self.module not in Scope.STANDARD_LIBRARY_MODULES:
-            base.add_include(f'"pymodule_{name}.h"')
+            base.add_include(f'"{name}.h"')
         else:
             base.add_include(
                 f'"{Scope.STANDARD_LIBRARY_MODULES[self.module].header_name}"'
@@ -2177,7 +2177,7 @@ class Parser:
         main.add_code("PY_STD_INIT();\n")
 
         for var in sorted(list(vars)):
-            main.add_code(f"PyObjectContainer* {var};")
+            main.add_code(f"PyObjectContainer* {var};\n")
 
         for line in expr:
             inner_block = main.get_statement_builder(indent=False)
@@ -2191,12 +2191,14 @@ class Parser:
 
             main.add_code(inner_block.get_result() + "\n")
 
-        code = """#include <stdlib.h>
+        code = f"""#include <stdlib.h>
 
 #include "pyinclude.h"
 #include "standard_library/init.h"
 #include "standard_library/exceptions.h"
 #include "standard_library/importhelper.h"
+
+PyObjectContainer* PY_MODULE_INSTANCE_{module_name.replace(".", "___")};
 
 // code compiled from python to c via PyCodeCompiler
 

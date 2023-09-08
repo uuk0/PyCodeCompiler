@@ -10,7 +10,7 @@ for ordering the AST nodes in the correct way.
 
 
 Each module is generating their own .c file and .h file.
-The file naming scheme is 'pymodule_[module name replacing '.' with three '_'].c' / '[...].h'
+The file naming scheme is '[module name replacing '.' with three '_'].c' / '[...].h'
 Each module exposes an global variable called 'PY_MODULE_INSTANCE_[the above normalized name]',
 which holds the associated module object, and a method 'void PY_MODULE_[the above normalized name]_init(void)'
 for initialising that module.
