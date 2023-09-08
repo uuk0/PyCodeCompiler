@@ -21,6 +21,7 @@ from pycompiler.Parser import (
     CallExpression,
     AssignmentExpression,
     ImportStatement,
+    ModuleReference,
 )
 
 if typing.TYPE_CHECKING:
@@ -69,6 +70,17 @@ class GetHeaderRelatedInfo(SyntaxTreeVisitor):
             f"void PY_CLASS_INIT_PY_CLASS_{node.normal_name}(void)"
         )
         self.global_variables.append(f"PyClassContainer* PY_CLASS_{node.normal_name}")
+
+
+class ModuleReferencesResolver(SyntaxTreeVisitor):
+    def __init__(self, modules: typing.Dict):
+        self.modules = modules
+
+    def visit_module_reference(self, module: ModuleReference):
+        super().visit_module_reference(module)
+
+        if module.name in self.modules:
+            module.base_scope = self.modules[module.name]
 
 
 class ResolveParentAttribute(SyntaxTreeVisitor):
@@ -328,12 +340,8 @@ class ScopeGeneratorVisitor(SyntaxTreeVisitor):
 
         self.scope.export_variable_name(
             (node.as_name or node.module).split(".")[0],
-            strong_value=GlobalCNameAccessExpression(
-                f"PY_MODULE_INSTANCE_{node.module.replace('.', '___')}"
-            ),
+            strong_value=ModuleReference(node.module),
         )
-
-        print(self.scope.variable_name_stack)
 
 
 class NameNormalizer(SyntaxTreeVisitor):
@@ -475,6 +483,17 @@ class ResolveClassFunctionNode(SyntaxTreeVisitor):
                     target,
                     expression.parent[1],
                 )
+
+        elif (
+            isinstance(expression.base, ConstantAccessExpression)
+            and isinstance(expression.base.value, ModuleReference)
+            and expression.attribute.text in expression.base.value.base_scope
+        ):
+            expression.parent[0].try_replace_child(
+                expression,
+                expression.base.value.base_scope[expression.attribute.text],
+                expression.parent[1],
+            )
 
     def visit_subscription_expression(self, expression: SubscriptionExpression):
         if not expression.base.static_value_type or not isinstance(

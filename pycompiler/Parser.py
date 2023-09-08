@@ -590,6 +590,9 @@ class ConstantAccessExpression(AbstractASTNodeExpression):
         context: CCodeEmitter.CExpressionBuilder,
         is_target=False,
     ):
+        if is_target:
+            raise SyntaxError("cannot write to constant")
+
         if isinstance(self.value, int):
             context.add_code(f"PY_createInteger({self.value})")
 
@@ -608,6 +611,11 @@ class ConstantAccessExpression(AbstractASTNodeExpression):
 
         elif isinstance(self.value, GlobalCNameAccessExpression):
             context.add_code(self.value.name)
+
+        elif isinstance(self.value, ModuleReference):
+            context.add_code(
+                f"PY_MODULE_INSTANCE_{self.value.name.replace('.', '___')}"
+            )
 
         else:
             raise NotImplementedError(self.value)
@@ -1842,9 +1850,34 @@ class ImportStatement(AbstractASTNode):
         )
 
 
-class StandardLibraryModuleReference:
-    def __init__(self, name: str, header_name: str):
+class ModuleReference(AbstractASTNode):
+    def __init__(self, name: str):
+        super().__init__()
         self.name = name
+        self.base_scope = {}
+
+    def __repr__(self):
+        return f"MODULE-REF({self.name})"
+
+    def __eq__(self, other):
+        return (
+            type(other) == ModuleReference
+            and self.name == other.name
+            and self.base_scope == other.base_scope
+        )
+
+    def emit_c_code(
+        self,
+        base: CCodeEmitter,
+        context: CCodeEmitter.CExpressionBuilder,
+        is_target=False,
+    ):
+        return f"PY_MODULE_INSTANCE_{self.name.replace('.', '___')}"
+
+
+class StandardLibraryModuleReference(ModuleReference):
+    def __init__(self, name: str, header_name: str):
+        super().__init__(name)
         self.header_name = header_name
         self.function_table = {}
 
@@ -1895,8 +1928,14 @@ class SyntaxTreeVisitor:
             return self.visit_binary_operator(obj)
         elif obj_type == AssertStatement:
             return self.visit_assert_statement(obj)
+        elif obj_type == ModuleReference:
+            return self.visit_module_reference(obj)
         elif obj_type == ImportStatement:
             return self.visit_import_statement(obj)
+        elif obj_type == StandardLibraryClass:
+            return self.visit_standard_library_class(obj)
+        elif obj_type == StandardLibraryBoundOperator:
+            return self.visit_standard_library_operator(obj)
         else:
             print(type(obj))
             raise RuntimeError(obj)
@@ -1954,7 +1993,8 @@ class SyntaxTreeVisitor:
         return self.visit_any_list(node.parents), self.visit_any_list(node.body)
 
     def visit_constant(self, constant: ConstantAccessExpression):
-        pass
+        if isinstance(constant.value, AbstractASTNode):
+            self.visit_any(constant.value)
 
     def visit_return_statement(self, return_statement: ReturnStatement):
         return (self.visit_any(return_statement.return_value),)
@@ -1987,7 +2027,16 @@ class SyntaxTreeVisitor:
             self.visit_any(node.message) if node.message else None
         )
 
+    def visit_module_reference(self, module: ModuleReference):
+        pass
+
     def visit_import_statement(self, node: ImportStatement):
+        pass
+
+    def visit_standard_library_class(self, cls: StandardLibraryClass):
+        pass
+
+    def visit_standard_library_operator(self, instance: StandardLibraryBoundOperator):
         pass
 
 
@@ -2103,11 +2152,9 @@ class Parser:
 
         return ast_stream
 
-    def emit_c_code(
+    def emit_pure_c_code(
         self, expr: typing.List[AbstractASTNode] = None, module_name: str = None
     ) -> str:
-        normal_module_name = module_name.replace(".", "___")
-
         from pycompiler.TypeResolver import (
             ResolveParentAttribute,
             ScopeGeneratorVisitor,
@@ -2142,6 +2189,21 @@ class Parser:
             ResolveLocalVariableAccessTypes().visit_any_list(expr)
 
         ResolveGlobalNames().visit_any_list(expr)
+
+        return self.emit_c_code(expr, module_name, scope=scope)
+
+    def emit_c_code(
+        self,
+        expr: typing.List[AbstractASTNode] = None,
+        module_name: str = None,
+        scope: Scope = None,
+    ) -> str:
+        normal_module_name = module_name.replace(".", "___")
+
+        scope = scope or Scope()
+
+        if expr is None:
+            expr = self.parse()
 
         builder = CCodeEmitter(scope)
         main = builder.CFunctionBuilder(
@@ -3266,3 +3328,16 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
             ".".join(e.text for e in name),
             as_name.text if as_name else None,
         )
+
+    def get_module_content(self, ast_nodes: typing.List[AbstractASTNode]) -> dict:
+        result = {}
+
+        for node in ast_nodes:
+            if isinstance(node, ClassDefinitionNode):
+                result[node.name.text] = GlobalCNameAccessExpression(
+                    "PY_TYPE_" + node.normal_name
+                )
+            elif isinstance(node, FunctionDefinitionNode):
+                result[node.name.text] = GlobalCNameAccessExpression(node.normal_name)
+
+        return result

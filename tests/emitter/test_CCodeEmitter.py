@@ -21,6 +21,7 @@ class TestCCodeEmitter(TestCase):
 
         folder = f"{example_folder}/{name}"
         self.assertTrue(os.path.isdir(folder))
+        os.makedirs(f"{folder}/build", exist_ok=True)
 
         self.assertTrue(os.path.exists(f"{folder}/source.py"))
 
@@ -42,7 +43,7 @@ class TestCCodeEmitter(TestCase):
                 "ast nodes",
             )
 
-        c_compare = parser.emit_c_code(expr=ast_nodes, module_name="source")
+        c_compare = parser.emit_pure_c_code(expr=ast_nodes, module_name="source")
 
         if os.path.exists(f"{folder}/source.c"):
             c = pathlib.Path(f"{folder}/source.c").read_text()

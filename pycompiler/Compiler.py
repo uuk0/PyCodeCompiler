@@ -5,7 +5,23 @@ import subprocess
 import typing
 
 from pycompiler.Parser import Parser, AbstractASTNode, Scope
-from pycompiler.TypeResolver import GetModuleImports, GetHeaderRelatedInfo
+from pycompiler.TypeResolver import (
+    GetModuleImports,
+    GetHeaderRelatedInfo,
+    ModuleReferencesResolver,
+)
+from pycompiler.TypeResolver import (
+    ResolveParentAttribute,
+    ScopeGeneratorVisitor,
+    LocalNameValidator,
+    ResolveKnownDataTypes,
+    ResolveLocalVariableAccessTypes,
+    ResolveClassFunctionNode,
+    ResolveStaticNames,
+    ResolveGlobalNames,
+    NameNormalizer,
+    BinaryOperatorPriorityRewriter,
+)
 
 _local = os.path.dirname(os.path.dirname(__file__))
 
@@ -68,7 +84,7 @@ class Project:
         pending_compilation_files: typing.List[typing.Tuple[str, str]] = []
         compiled_files = set()
         prepared_module_files: typing.List[
-            typing.Tuple[str, typing.List[AbstractASTNode], Parser, str]
+            typing.Tuple[str, typing.List[AbstractASTNode], Parser, str, Scope]
         ] = []
 
         for entry_point in self.entry_points:
@@ -98,7 +114,7 @@ class Project:
             parser = Parser(py)
             ast_nodes = parser.parse()
 
-            prepared_module_files.append((file, ast_nodes, parser, module))
+            prepared_module_files.append((file, ast_nodes, parser, module, Scope()))
 
             resolver = GetModuleImports()
             resolver.visit_any_list(ast_nodes)
@@ -140,8 +156,24 @@ class Project:
                     print(self.path)
                     raise ModuleNotFoundError(module)
 
-        for file, ast_nodes, parser, module in prepared_module_files:
-            c_source = parser.emit_c_code(expr=ast_nodes, module_name=module)
+        for file, ast_nodes, parser, module, scope in prepared_module_files:
+            self.apply_prep_optimisation_on_module(scope, ast_nodes)
+
+        module_table: typing.Dict[str, dict] = {
+            module: parser.get_module_content(ast_nodes)
+            for _, ast_nodes, parser, module, __ in prepared_module_files
+        }
+
+        for file, ast_nodes, parser, module, scope in prepared_module_files:
+            ModuleReferencesResolver(module_table).visit_any_list(ast_nodes)
+
+        for file, ast_nodes, parser, module, scope in prepared_module_files:
+            self.apply_big_optimisation_on_module(ast_nodes)
+
+        for file, ast_nodes, parser, module, scope in prepared_module_files:
+            c_source = parser.emit_c_code(
+                expr=ast_nodes, module_name=module, scope=scope
+            )
 
             out_file = file.split("/")[-1].split("\\")[-1].removesuffix(".py") + ".c"
             with open(f"{build}/{out_file}", mode="w") as f:
@@ -207,3 +239,22 @@ void PY_MODULE_{module.replace('.', '___')}_init(void);
             raise RuntimeError(
                 f"exit code {exit_code} of compiler {self.compiler} != 0"
             )
+
+    def apply_big_optimisation_on_module(self, ast_nodes):
+        ResolveLocalVariableAccessTypes.DIRTY = True
+        while ResolveLocalVariableAccessTypes.DIRTY:
+            ResolveKnownDataTypes().visit_any_list(ast_nodes)
+            ResolveClassFunctionNode().visit_any_list(ast_nodes)
+
+            ResolveLocalVariableAccessTypes.DIRTY = False
+            ResolveLocalVariableAccessTypes().visit_any_list(ast_nodes)
+        ResolveGlobalNames().visit_any_list(ast_nodes)
+
+    def apply_prep_optimisation_on_module(self, scope, ast_nodes):
+        assert scope is not None
+        ResolveParentAttribute().visit_any_list(ast_nodes)
+        BinaryOperatorPriorityRewriter().visit_any_list(ast_nodes)
+        ScopeGeneratorVisitor(scope).visit_any_list(ast_nodes)
+        NameNormalizer().visit_any_list(ast_nodes)
+        LocalNameValidator().visit_any_list(ast_nodes)
+        ResolveStaticNames().visit_any_list(ast_nodes)
