@@ -71,6 +71,9 @@ class TestCCodeEmitter(TestCase):
         p.add_folder(folder)  # include the folder in the analysis
         p.build()
 
+        exit_code = subprocess.call([f"{folder}/test.exe"])
+        self.assertEqual(exit_code, 0, "tests")
+
     def compile_only(self, folder, compiler):
         p = Project(
             build_folder=f"{folder}/build",
