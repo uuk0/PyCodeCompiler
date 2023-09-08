@@ -1243,6 +1243,7 @@ class FunctionDefinitionNode(AbstractASTNode):
         generics: typing.List[Lexer.Token],
         parameters: typing.List[FunctionDefinitionNode.FunctionDefinitionParameter],
         body: typing.List[AbstractASTNode],
+        is_generator=False,
     ):
         super().__init__()
         self.name = name
@@ -1250,6 +1251,7 @@ class FunctionDefinitionNode(AbstractASTNode):
         self.parameters = parameters
         self.body = body
         self.normal_name = name.text
+        self.is_generator = is_generator
 
     def __eq__(self, other):
         return (
@@ -1258,10 +1260,11 @@ class FunctionDefinitionNode(AbstractASTNode):
             and self.generics == other.generics
             and self.parameters == other.parameters
             and self.body == other.body
+            and self.is_generator == other.is_generator
         )
 
     def __repr__(self):
-        return f"FUNCTION({self.name}|{self.generics}|{self.parameters}|{self.body})"
+        return f"FUNCTION({self.name}|{self.generics}|{self.parameters}|{self.is_generator}|{self.body})"
 
     def try_replace_child(
         self,
@@ -1282,6 +1285,9 @@ class FunctionDefinitionNode(AbstractASTNode):
         context: CCodeEmitter.CExpressionBuilder,
         is_target=False,
     ):
+        if self.is_generator:
+            return self.emit_c_code_for_generator(base, context, is_target)
+
         func_name = self.normal_name
 
         func = base.CFunctionBuilder(
@@ -2256,7 +2262,9 @@ class Parser:
         self.is_in_function = False
         self.skip_end_check = False
 
-    def parse(self, stop_on_indention_exit=False) -> typing.List[AbstractASTNode]:
+    def parse(
+        self, stop_on_indention_exit=False, mention_on_yield=None
+    ) -> typing.List[AbstractASTNode]:
         ast_stream: typing.List[AbstractASTNode] = []
 
         require_indent = True
@@ -2269,7 +2277,9 @@ class Parser:
                 break
 
             try:
-                node = self.parse_line(require_indent=require_indent)
+                node = self.parse_line(
+                    require_indent=require_indent, mention_on_yield=mention_on_yield
+                )
             except IndentationError:
                 if stop_on_indention_exit:
                     self.skip_end_check = True
@@ -2506,7 +2516,7 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
         return empty
 
     def parse_line(
-        self, require_indent=True, include_comment=True
+        self, require_indent=True, include_comment=True, mention_on_yield=None
     ) -> AbstractASTNode | None:
         if include_comment and (comment := self.try_parse_comment()):
             return comment
@@ -2539,6 +2549,14 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
             return_statement := self.try_parse_return_statement()
         ):
             return return_statement
+
+        if self.is_in_function and (
+            yield_statement := self.try_parse_yield_statement()
+        ):
+            if mention_on_yield:
+                mention_on_yield()
+
+            return yield_statement
 
         if assignment := self.try_parse_assignment():
             return assignment
@@ -2917,7 +2935,7 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
 
                 white = self.lexer.try_parse_whitespaces()
 
-                if keyword[-1] == "\n":
+                if self.lexer.inspect_chars(1) == "\n":
                     return ReturnStatement(ConstantAccessExpression(None))
 
                 self.lexer.give_back(white)
@@ -2932,6 +2950,20 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
             return_value = ConstantAccessExpression(None)
 
         return ReturnStatement(return_value)
+
+    def try_parse_yield_statement(self) -> YieldStatement | None:
+        keyword = self.lexer.get_chars(len("yield "))
+
+        if keyword != "yield ":
+            self.lexer.give_back(keyword)
+            return
+
+        yield_expression = self.try_parse_expression()
+
+        if yield_expression is None:
+            raise SyntaxError
+
+        return YieldStatement(yield_expression)
 
     def parse_quoted_string(self, quote_type: str) -> ConstantAccessExpression:
         self.lexer.get_chars(1)
@@ -3144,11 +3176,17 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
         prev_in_function = self.is_in_function
         self.is_in_function = True
 
+        is_generator = False
+
+        def feedback():
+            nonlocal is_generator
+            is_generator = True
+
         if self.lexer.inspect_chars(1) != "\n":
-            body = [self.parse_line(include_comment=False)]
+            body = [self.parse_line(include_comment=False, mention_on_yield=feedback)]
         else:
             self.indent_level += 1
-            body = self.parse(stop_on_indention_exit=True)
+            body = self.parse(stop_on_indention_exit=True, mention_on_yield=feedback)
 
             if len(body) == 0:
                 raise SyntaxError("expected <body>")
@@ -3162,6 +3200,7 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
             generic_names,
             parameters,
             body,
+            is_generator=is_generator,
         )
 
     def try_parse_generic_parameters(

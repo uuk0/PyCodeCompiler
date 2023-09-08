@@ -1,6 +1,6 @@
 [
     CLASS(IDENTIFIER('test')|[]|[]|[
-        FUNCTION(IDENTIFIER('__init__')|[]|[PARAMETER(IDENTIFIER('self')|ParameterType.NORMAL|None|None)]|[
+        FUNCTION(IDENTIFIER('__init__')|[]|[PARAMETER(IDENTIFIER('self')|ParameterType.NORMAL|None|None)]|False|[
             ASSIGNMENT([VARIABLE(IDENTIFIER('value'))]|EQUAL_SIGN('=')|CONSTANT(0))
         ])
     ]),
