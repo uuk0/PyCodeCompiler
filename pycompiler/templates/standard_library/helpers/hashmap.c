@@ -119,6 +119,11 @@ void* HASHMAP_lookup(HashMapContainer* container, void* key)
     {
         current_key = container->key_memory[partial_hash];
 
+        if (current_key == NULL)
+        {
+            return NULL;
+        }
+
         if (current_key == &HASHMAP_MARKER_UNSET)
         {
             continue;
@@ -131,7 +136,7 @@ void* HASHMAP_lookup(HashMapContainer* container, void* key)
 
         partial_hash = HASHMAP_generateNewKey(partial_hash, container->alloc_size);
 
-        if (current_key == NULL || partial_hash == original_hash)
+        if (partial_hash == original_hash)
         {
             return NULL;
         }
@@ -149,6 +154,11 @@ bool HASHMAP_has_key(HashMapContainer* container, void* key)
     {
         current_key = container->key_memory[partial_hash];
 
+        if (current_key == NULL)
+        {
+            return false;
+        }
+
         if (current_key == &HASHMAP_MARKER_UNSET)
         {
             continue;
@@ -161,7 +171,7 @@ bool HASHMAP_has_key(HashMapContainer* container, void* key)
 
         partial_hash = HASHMAP_generateNewKey(partial_hash, container->alloc_size);
 
-        if (current_key == NULL || partial_hash == original_hash)
+        if (partial_hash == original_hash)
         {
             return false;
         }
@@ -179,6 +189,11 @@ void* HASHMAP_remove(HashMapContainer* container, void* key)
     {
         current_key = container->key_memory[partial_hash];
 
+        if (current_key == NULL)
+        {
+            return NULL;
+        }
+
         if (current_key == &HASHMAP_MARKER_UNSET)
         {
             continue;
@@ -194,7 +209,7 @@ void* HASHMAP_remove(HashMapContainer* container, void* key)
 
         partial_hash = HASHMAP_generateNewKey(partial_hash, container->alloc_size);
 
-        if (current_key == NULL || partial_hash == original_hash)
+        if (partial_hash == original_hash)
         {
             return NULL;
         }

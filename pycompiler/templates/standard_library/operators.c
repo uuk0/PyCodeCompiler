@@ -26,6 +26,30 @@ static inline PyObjectContainer* PY_STD_operator_apply(PyObjectContainer* lhs, P
     return PY_invokeBoxedMethod(lop, lhs, 1, &rhs, NULL);
 }
 
+static inline PyObjectContainer* PY_STD_operator_apply_or_default(PyObjectContainer* lhs, PyObjectContainer* rhs, char* lopname, char* ropname, PyObjectContainer* default_value)
+{
+    PyObjectContainer* lop = PY_getObjectAttributeByNameOrStatic(lhs, lopname);
+
+    if (lop == NULL)
+    {
+        if (ropname == NULL)
+        {
+            return default_value;
+        }
+
+        PyObjectContainer* rop = PY_getObjectAttributeByNameOrStatic(lhs, ropname);
+
+        if (rop == NULL)
+        {
+            return default_value;
+        }
+
+        return PY_invokeBoxedMethod(rop, rhs, 1, &lhs, NULL);
+    }
+
+    return PY_invokeBoxedMethod(lop, lhs, 1, &rhs, NULL);
+}
+
 PyObjectContainer* PY_STD_operator_add(PyObjectContainer* lhs, PyObjectContainer* rhs)
 {
     if (lhs->type == PY_TYPE_INT)
@@ -311,7 +335,8 @@ PyObjectContainer* PY_STD_operator_equals(PyObjectContainer* lhs, PyObjectContai
         return PY_STD_string_eq_fast(lhs, rhs);
     }
 
-    return PY_STD_operator_apply(lhs, rhs, "__eq__", "__eq__");
+    // when both do not provide __eq__, the value should be PY_FALSE, as they cannot be compared
+    return PY_STD_operator_apply_or_default(lhs, rhs, "__eq__", "__eq__", PY_FALSE);
 }
 
 PyObjectContainer* PY_STD_operator_not_equals(PyObjectContainer* lhs, PyObjectContainer* rhs)

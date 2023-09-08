@@ -76,6 +76,18 @@
             "c name": "PY_STD_dict_init_fast_arg_zero"
           },
           {
+            "name": "get",
+            "type": "method",
+            "arguments": 1,
+            "c name": "PY_STD_dict_getitem_fast"
+          },
+          {
+            "name": "get",
+            "type": "method",
+            "arguments": 2,
+            "c name": "PY_STD_dict_get_fast_arg_2"
+          },
+          {
             "name": "__setitem__",
             "type": "method",
             "c name": "PY_STD_dict_setitem_fast"

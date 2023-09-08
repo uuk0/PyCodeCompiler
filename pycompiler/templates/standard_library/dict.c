@@ -42,6 +42,38 @@ PyObjectContainer* PY_STD_dict_init_fast_arg_zero(PyObjectContainer* self)
     return PY_NONE;
 }
 
+PyObjectContainer* PY_STD_dict_get(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
+{
+    if (argc == 1)
+    {
+        return PY_STD_dict_getitem_fast(self, args[0]);
+    }
+    else if (argc == 2)
+    {
+        return PY_STD_dict_get_fast_arg_2(self, args[0], args[1]);
+    }
+
+    PY_THROW_EXCEPTION_WITH_MESSAGE(NULL, "expected 1 or 2 arguments");
+}
+
+PyObjectContainer* PY_STD_dict_get_fast_arg_2(PyObjectContainer* self, PyObjectContainer* key, PyObjectContainer* default_value)
+{
+    assert(self->type == PY_TYPE_PY_IMPL);
+    assert(self->py_type == PY_TYPE_DICT);
+    assert(self->raw_value != NULL);
+    assert(key != NULL);
+    assert(default_value != NULL);
+    PY_CHECK_EXCEPTION(key);
+    PY_CHECK_EXCEPTION(default_value);
+
+    PyObjectContainer* obj = HASHMAP_lookup(self->raw_value, key);
+    if (obj == NULL)
+    {
+        return default_value;
+    }
+    return obj;
+}
+
 PyObjectContainer* PY_STD_dict_setitem(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
 {
     assert(argc == 2);
@@ -53,6 +85,7 @@ PyObjectContainer* PY_STD_dict_setitem_fast(PyObjectContainer* self, PyObjectCon
     assert(self->type == PY_TYPE_PY_IMPL);
     assert(self->py_type == PY_TYPE_DICT);
     assert(self->raw_value != NULL);
+    assert(key != NULL);
 
     HASHMAP_insert(self->raw_value, key, value);
 
@@ -70,6 +103,7 @@ PyObjectContainer* PY_STD_dict_getitem_fast(PyObjectContainer* self, PyObjectCon
     assert(self->type == PY_TYPE_PY_IMPL);
     assert(self->py_type == PY_TYPE_DICT);
     assert(self->raw_value != NULL);
+    assert(key != NULL);
 
     PyObjectContainer* obj = HASHMAP_lookup(self->raw_value, key);
     if (obj == NULL)
@@ -117,6 +151,7 @@ PyObjectContainer* PY_STD_dict_contains_fast(PyObjectContainer* self, PyObjectCo
 void PY_STD_initDictType(void)
 {
     PY_TYPE_DICT = PY_createClassContainer("dict");
+    PY_setClassAttributeByNameOrCreate(PY_TYPE_DICT, "get", PY_createBoxForFunction(PY_STD_dict_get));
     PY_setClassAttributeByNameOrCreate(PY_TYPE_DICT, "__init__", PY_createBoxForFunction(PY_STD_dict_init));
     PY_setClassAttributeByNameOrCreate(PY_TYPE_DICT, "__setitem__", PY_createBoxForFunction(PY_STD_dict_setitem));
     PY_setClassAttributeByNameOrCreate(PY_TYPE_DICT, "__getitem__", PY_createBoxForFunction(PY_STD_dict_getitem));
