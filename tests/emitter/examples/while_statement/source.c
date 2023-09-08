@@ -5,11 +5,12 @@
 #include "standard_library/exceptions.h"
 #include "standard_library/importhelper.h"
 
+#include "source.h"
+
 PyObjectContainer* PY_MODULE_INSTANCE_source;
 
 // code compiled from python to c via PyCodeCompiler
 
-void PY_MODULE_source_init();
 
 // Global Variables
 PyObjectContainer* test;
@@ -21,6 +22,7 @@ PyObjectContainer* test;
 void PY_MODULE_source_init(void) {
     INVOKE_SINGLE();
     PY_STD_INIT();
+    PY_MODULE_INSTANCE_source = PY_createModuleObject("source");
     PyObjectContainer* test;
     test = PY_createInteger(10);
 
@@ -34,5 +36,6 @@ void PY_MODULE_source_init(void) {
     test = PY_createInteger(20);
     while_exit_label_0:
     "marker";
+    PY_exposeModuleObject(PY_MODULE_INSTANCE_source);
 }
 

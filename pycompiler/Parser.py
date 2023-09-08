@@ -2106,6 +2106,8 @@ class Parser:
     def emit_c_code(
         self, expr: typing.List[AbstractASTNode] = None, module_name: str = None
     ) -> str:
+        normal_module_name = module_name.replace(".", "___")
+
         from pycompiler.TypeResolver import (
             ResolveParentAttribute,
             ScopeGeneratorVisitor,
@@ -2175,6 +2177,9 @@ class Parser:
 
         main.add_code("INVOKE_SINGLE();\n")
         main.add_code("PY_STD_INIT();\n")
+        main.add_code(
+            f'PY_MODULE_INSTANCE_{normal_module_name} = PY_createModuleObject("{module_name}");\n'
+        )
 
         for var in sorted(list(vars)):
             main.add_code(f"PyObjectContainer* {var};\n")
@@ -2191,6 +2196,21 @@ class Parser:
 
             main.add_code(inner_block.get_result() + "\n")
 
+        # for var in sorted(list(vars)):
+        #     main.add_code(
+        #         f"PY_setObjectAttributeByName(PY_MODULE_INSTANCE_{normal_module_name}, \"{main.scope.get_unmapped_name(var)}\", {var});\n"
+        #     )
+
+        for line in expr:
+            if isinstance(line, FunctionDefinitionNode):
+                main.add_code(
+                    f'PY_setObjectAttributeByName(PY_MODULE_INSTANCE_{normal_module_name}, "{line.name.text}", PY_createBoxForFunction({line.normal_name}_safeWrap));\n'
+                )
+
+        main.add_code(
+            f"PY_exposeModuleObject(PY_MODULE_INSTANCE_{normal_module_name});\n"
+        )
+
         code = f"""#include <stdlib.h>
 
 #include "pyinclude.h"
@@ -2198,7 +2218,9 @@ class Parser:
 #include "standard_library/exceptions.h"
 #include "standard_library/importhelper.h"
 
-PyObjectContainer* PY_MODULE_INSTANCE_{module_name.replace(".", "___")};
+#include "{normal_module_name}.h"
+
+PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
 
 // code compiled from python to c via PyCodeCompiler
 
@@ -2209,10 +2231,6 @@ PyObjectContainer* PY_MODULE_INSTANCE_{module_name.replace(".", "___")};
 
         if builder.includes:
             code += "\n\n"
-
-        for func in builder.functions:
-            code += func.get_declaration()
-            code += "\n"
 
         if builder.global_variables:
             code += "\n// Global Variables\n"

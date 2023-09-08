@@ -5,6 +5,8 @@
 #include "standard_library/exceptions.h"
 #include "standard_library/importhelper.h"
 
+#include "source.h"
+
 PyObjectContainer* PY_MODULE_INSTANCE_source;
 
 // code compiled from python to c via PyCodeCompiler
@@ -12,14 +14,6 @@ PyObjectContainer* PY_MODULE_INSTANCE_source;
 #include <assert.h>
 
 
-void PY_MODULE_source_init();
-void PY_CLASS_INIT_PY_CLASS_Test_4();
-PyObjectContainer* init_1(PyObjectContainer* self_0);
-PyObjectContainer* init_1_safeWrap(PyObjectContainer* self , uint8_t argc , PyObjectContainer** args , CallStructureInfo* info);
-PyObjectContainer* call_3(PyObjectContainer* self_2);
-PyObjectContainer* call_3_safeWrap(PyObjectContainer* self , uint8_t argc , PyObjectContainer** args , CallStructureInfo* info);
-PyObjectContainer* test_5();
-PyObjectContainer* test_5_safeWrap(PyObjectContainer* self , uint8_t argc , PyObjectContainer** args , CallStructureInfo* info);
 
 // Global Variables
 PyClassContainer* PY_CLASS_Test_4;
@@ -31,7 +25,11 @@ PyClassContainer* PY_CLASS_Test_4;
 void PY_MODULE_source_init(void) {
     INVOKE_SINGLE();
     PY_STD_INIT();
+    PY_MODULE_INSTANCE_source = PY_createModuleObject("source");
     PY_CLASS_INIT_PY_CLASS_Test_4();
+
+    PY_setObjectAttributeByName(PY_MODULE_INSTANCE_source, "test", PY_createBoxForFunction(test_5_safeWrap));
+    PY_exposeModuleObject(PY_MODULE_INSTANCE_source);
 }
 
 void PY_CLASS_INIT_PY_CLASS_Test_4(void) {

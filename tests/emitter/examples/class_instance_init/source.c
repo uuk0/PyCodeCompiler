@@ -5,6 +5,8 @@
 #include "standard_library/exceptions.h"
 #include "standard_library/importhelper.h"
 
+#include "source.h"
+
 PyObjectContainer* PY_MODULE_INSTANCE_source;
 
 // code compiled from python to c via PyCodeCompiler
@@ -12,10 +14,6 @@ PyObjectContainer* PY_MODULE_INSTANCE_source;
 #include <assert.h>
 
 
-void PY_MODULE_source_init();
-void PY_CLASS_INIT_PY_CLASS_test_2();
-PyObjectContainer* init_1(PyObjectContainer* self_0);
-PyObjectContainer* init_1_safeWrap(PyObjectContainer* self , uint8_t argc , PyObjectContainer** args , CallStructureInfo* info);
 
 // Global Variables
 PyClassContainer* PY_CLASS_test_2;
@@ -28,6 +26,7 @@ PyObjectContainer* obj;
 void PY_MODULE_source_init(void) {
     INVOKE_SINGLE();
     PY_STD_INIT();
+    PY_MODULE_INSTANCE_source = PY_createModuleObject("source");
     PyObjectContainer* obj;
     PyObjectContainer* test;
     PY_CLASS_INIT_PY_CLASS_test_2();
@@ -35,6 +34,7 @@ void PY_MODULE_source_init(void) {
     PY_CHECK_EXCEPTION(init_1(obj_instance_0));
 
     obj = obj_instance_0;
+    PY_exposeModuleObject(PY_MODULE_INSTANCE_source);
 }
 
 void PY_CLASS_INIT_PY_CLASS_test_2(void) {
