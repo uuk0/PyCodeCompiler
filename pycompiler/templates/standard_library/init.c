@@ -7,6 +7,7 @@
 #include "list.h"
 #include "operators.h"
 #include "exceptions.h"
+#include "generator.h"
 
 
 static bool STD_IS_INITIALISED = false;
@@ -29,6 +30,7 @@ void PY_STD_INIT()
     PY_STD_initDictType();
     PY_STD_initStringType();
     PY_STD_initExceptionType();
+    PY_STD_initGeneratorType();
 
     PY_STD_init_import_helper();
 }

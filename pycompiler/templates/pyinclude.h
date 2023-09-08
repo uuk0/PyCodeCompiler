@@ -28,8 +28,7 @@ enum PyObjectType
     PY_TYPE_PY_IMPL,        // a class implemented in python
     PY_TYPE_PY_TYPE,        // a type reference to a PyClassContainer
     PY_TYPE_FUNC_POINTER,   // a c function pointer (boxed)
-    PY_GENERATOR,           // a generator
-    PY_EXCEPTION,           // an exception to throw
+    PY_EXCEPTION,           // an exception thrown
 };
 typedef enum PyObjectType PyObjectType;
 
@@ -86,7 +85,6 @@ typedef struct CallStructureInfo CallStructureInfo;
 
 
 typedef PyObjectContainer* PY_FUNC_UNBOXED(PyObjectContainer* self, uint8_t param_count, PyObjectContainer** args, CallStructureInfo* info);
-typedef PyObjectContainer* PY_GEN_FUNC_UNBOXED(struct PyGeneratorContainer* generator, PyObjectContainer* self, uint8_t param_count, PyObjectContainer** args);
 
 
 struct PyFunctionContext
@@ -95,15 +93,6 @@ struct PyFunctionContext
     char** local_names;
     PyObjectContainer** locals;
 };
-
-
-struct PyGeneratorContainer
-{
-    PY_FUNC_UNBOXED* next_entry;
-    struct PyGeneratorContainer* remaining_yield_from;
-    struct PyFunctionContext* context;
-};
-
 
 
 extern PyObjectContainer* PY_NONE;

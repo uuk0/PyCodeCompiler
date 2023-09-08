@@ -115,6 +115,11 @@
         "c name": "PY_STD_operator_len"
       },
       {
+        "name": "next",
+        "type": "operator wrapper",
+        "c name": "PY_STD_operator_next"
+      },
+      {
         "name": "True",
         "type": "constant",
         "c name": "PY_TRUE"
@@ -140,6 +145,13 @@
         "type": "constant",
         "c name": "PY_FALSE"
       }
+    ]
+  },
+  {
+    "module": "unittest",
+    "header": "standard_library/modules/unittest.h",
+    "items": [
+
     ]
   }
 ]

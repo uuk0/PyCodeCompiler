@@ -22,6 +22,7 @@ from pycompiler.Parser import (
     AssignmentExpression,
     ImportStatement,
     ModuleReference,
+    StandardLibraryModuleReference,
 )
 
 if typing.TYPE_CHECKING:
@@ -423,19 +424,24 @@ class ResolveKnownDataTypes(SyntaxTreeVisitor):
             if isinstance(node.base.value, ClassDefinitionNode):
                 node.static_value_type = ClassExactDataType(node.base.value)
             elif node.base.value == Scope.STANDARD_LIBRARY_VALUES["len"]:
-                if len(node.args) != 1:
-                    raise ValueError(
-                        f"len(...) expected exactly 1 arg, got {len(node.args)}"
-                    )
+                self.check_for_overload_on_type(node, "__len__", "len")
+            elif node.base.value == Scope.STANDARD_LIBRARY_VALUES["next"]:
+                self.check_for_overload_on_type(node, "__next__", "next")
 
-                arg = node.args[0].value
-                if (
-                    arg.static_value_type
-                    and isinstance(arg.static_value_type, ClassExactDataType)
-                    and "__len__" in arg.static_value_type.ref.function_table
-                ):
-                    len_func = arg.static_value_type.ref.function_table["__len__"]
-                    node.base = len_func
+    def check_for_overload_on_type(self, node, bound_name, normal_name):
+        if len(node.args) != 1:
+            raise ValueError(
+                f"{normal_name}(...) expected exactly 1 arg, got {len(node.args)}"
+            )
+
+        arg = node.args[0].value
+        if (
+            arg.static_value_type
+            and isinstance(arg.static_value_type, ClassExactDataType)
+            and bound_name in arg.static_value_type.ref.function_table
+        ):
+            len_func = arg.static_value_type.ref.function_table[bound_name]
+            node.base = len_func
 
 
 class ResolveLocalVariableAccessTypes(SyntaxTreeVisitor):
@@ -486,7 +492,9 @@ class ResolveClassFunctionNode(SyntaxTreeVisitor):
 
         elif (
             isinstance(expression.base, ConstantAccessExpression)
-            and isinstance(expression.base.value, ModuleReference)
+            and isinstance(
+                expression.base.value, (ModuleReference, StandardLibraryModuleReference)
+            )
             and expression.attribute.text in expression.base.value.base_scope
         ):
             expression.parent[0].try_replace_child(
@@ -529,6 +537,7 @@ class ResolveClassFunctionNode(SyntaxTreeVisitor):
                     ),
                     expression.parent[0].parent[1],
                 )
+
         elif "__getitem__" in data_type.function_table:
             expression.parent[0].try_replace_child(
                 expression,

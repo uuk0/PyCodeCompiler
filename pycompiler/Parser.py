@@ -1468,7 +1468,7 @@ class StandardLibraryBoundOperator(AbstractASTNode):
         is_target=False,
     ):
         if is_target:
-            raise SyntaxError("cannot write into name 'len'")
+            raise SyntaxError(f"cannot write into name '{self.name}'")
 
         context.add_code(self.exposed_operator)
 
@@ -1879,7 +1879,6 @@ class StandardLibraryModuleReference(ModuleReference):
     def __init__(self, name: str, header_name: str):
         super().__init__(name)
         self.header_name = header_name
-        self.function_table = {}
 
 
 class SyntaxTreeVisitor:
@@ -2083,9 +2082,7 @@ def load_std_data():
             Scope.STANDARD_LIBRARY_MODULES[module["module"]] = module_obj
 
             for entry in module["items"]:
-                module_obj.function_table[entry["name"]] = _parse_std_lib_decl_entry(
-                    entry
-                )
+                module_obj.base_scope[entry["name"]] = _parse_std_lib_decl_entry(entry)
 
 
 load_std_data()

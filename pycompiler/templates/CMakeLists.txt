@@ -30,6 +30,10 @@ add_library(templates
         standard_library/exceptions.c
         standard_library/modules/typing.c
         standard_library/modules/typing.h
+        standard_library/modules/unittest.c
+        standard_library/modules/unittest.h
+        standard_library/generator.c
+        standard_library/generator.h
 )
 
 add_executable(test

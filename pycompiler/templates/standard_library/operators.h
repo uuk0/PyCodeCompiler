@@ -23,5 +23,7 @@ PyObjectContainer* PY_STD_operator_not_equals(PyObjectContainer* lhs, PyObjectCo
 PyObjectContainer* PY_STD_operator_contains(PyObjectContainer* lhs, PyObjectContainer* rhs);
 
 PyObjectContainer* PY_STD_operator_len(PyObjectContainer* value);
+PyObjectContainer* PY_STD_operator_next(PyObjectContainer* value);
+PyObjectContainer* PY_STD_operator_next_with_default(PyObjectContainer* value, PyObjectContainer* default_value);
 
 #endif //TEMPLATES_OPERATORS_H

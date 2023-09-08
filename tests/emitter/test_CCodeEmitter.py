@@ -13,11 +13,13 @@ example_folder = f"{os.path.dirname(__file__)}/examples"
 
 class TestCCodeEmitter(TestCase):
     def run_named_folder_test(self, name: str):
-        if not os.path.exists(f"{root}/compiler.txt"):
-            compiler = "gcc"
-        else:
+        if "PY_CODE_COMPILER_BACKEND_COMPILER" in os.environ:
+            compiler = os.environ["PY_CODE_COMPILER_BACKEND_COMPILER"]
+        elif os.path.exists(f"{root}/compiler.txt"):
             with open(f"{root}/compiler.txt", mode="r") as f:
                 compiler = f.read().strip()
+        else:
+            compiler = "gcc"
 
         folder = f"{example_folder}/{name}"
         self.assertTrue(os.path.isdir(folder))
