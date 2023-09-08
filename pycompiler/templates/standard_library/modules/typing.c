@@ -6,10 +6,12 @@
 #include "pyinclude.h"
 #include "standard_library/importhelper.h"
 
+PyObjectContainer* PY_MODULE_INSTANCE_typing;
+
 void PY_STD_initModuleTyping(void)
 {
-    PyObjectContainer* module = PY_createModuleObject("typing");
-    PY_setObjectAttributeByName(module, "TYPE_CHECKING", PY_FALSE);
+    PY_MODULE_INSTANCE_typing = PY_createModuleObject("typing");
+    PY_setObjectAttributeByName(PY_MODULE_INSTANCE_typing, "TYPE_CHECKING", PY_FALSE);
 
-    PY_exposeModuleObject(module);
+    PY_exposeModuleObject(PY_MODULE_INSTANCE_typing);
 }

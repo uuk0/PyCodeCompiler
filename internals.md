@@ -6,6 +6,24 @@ It uses a special rewriter class (`BinaryOperatorPriorityRewriter`)
 for ordering the AST nodes in the correct way.
 
 
+# Modules
+
+
+Each module is generating their own .c file and .h file.
+The file naming scheme is 'pymodule_[module name replacing '.' with three '_'].c' / '[...].h'
+Each module exposes an global variable called 'PY_MODULE_INSTANCE_[the above normalized name]',
+which holds the associated module object, and a method 'void PY_MODULE_[the above normalized name]_init(void)'
+for initialising that module.
+
+The init function is invoked in places where the 'import' statement would generating other code into.
+As such, the init method might be invoked multiple times, and should ignore all but the first call.
+
+During optimisation, the module reference will most likely be inlined, and later hard-referenced
+(so static function references are resolved).
+
+TODO: prefix all generated functions / constants in a module with the normalised name!
+
+
 # Runtime evaluation vs. Static Evaluation
 
 The default model of python is "creation on import" for modules and everything which is not in a function,

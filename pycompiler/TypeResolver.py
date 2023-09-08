@@ -20,6 +20,7 @@ from pycompiler.Parser import (
     ClassDefinitionNode,
     CallExpression,
     AssignmentExpression,
+    ImportStatement,
 )
 
 if typing.TYPE_CHECKING:
@@ -286,6 +287,16 @@ class ScopeGeneratorVisitor(SyntaxTreeVisitor):
 
         if isinstance(operator.target, NameAccessExpression):
             self.scope.export_variable_name(operator.target.name.text)
+
+    def visit_import_statement(self, node: ImportStatement):
+        super().visit_import_statement(node)
+
+        self.scope.export_variable_name(
+            (node.as_name or node.module).split(".")[0],
+            strong_value=GlobalCNameAccessExpression(
+                f"PY_MODULE_INSTANCE_{node.module.replace('.', '___')}"
+            ),
+        )
 
 
 class NameNormalizer(SyntaxTreeVisitor):

@@ -288,6 +288,7 @@ class CCodeEmitter:
         self.add_top_init = []
         self.init_function: CCodeEmitter.CFunction | None = None
         self.scope: Scope = scope
+        self.scheduled_modules = []
 
     def get_fresh_name(self, base_name: str) -> str:
         name = f"{base_name}_{self._fresh_name_counter}"
@@ -1796,6 +1797,43 @@ class AssertStatement(AbstractASTNode):
             context.add_code(");\n")
 
 
+class ImportStatement(AbstractASTNode):
+    def __init__(self, module: str, as_name: str = None):
+        super().__init__()
+        self.module = module
+        self.as_name = as_name
+
+    def __repr__(self):
+        return f"MODULE_IMPORT({self.module}{'' if self.as_name is None else f', {self.as_name}'})"
+
+    def __eq__(self, other):
+        return (
+            type(other) == ImportStatement
+            and self.module == other.module
+            and self.as_name == other.as_name
+        )
+
+    def emit_c_code(
+        self,
+        base: CCodeEmitter,
+        context: CCodeEmitter.CExpressionBuilder,
+        is_target=False,
+    ):
+        # initialise all modules in the path to our module
+        for i in range(self.module.count(".") - 1):
+            partial_module = "___".join(self.module.split(".")[: i + 1])
+
+            base.add_include(f'"pymodule_{partial_module}.h"')
+            context.add_code(f"PY_CHECK_EXCEPTION(PY_MODULE_{partial_module}_init());")
+
+        name = self.module.replace(".", "___")
+        base.add_include(f'"pymodule_{name}.h"')
+        context.add_code(f"PY_CHECK_EXCEPTION(PY_MODULE_{name}_init());")
+        context.add_code(
+            f"{self.as_name or self.module.split('.'[0])} = PY_MODULE_INSTANCE_{name};"
+        )
+
+
 class SyntaxTreeVisitor:
     def visit_any(self, obj: AbstractASTNode):
         obj_type = type(obj)
@@ -1842,6 +1880,8 @@ class SyntaxTreeVisitor:
             return self.visit_binary_operator(obj)
         elif obj_type == AssertStatement:
             return self.visit_assert_statement(obj)
+        elif obj_type == ImportStatement:
+            return self.visit_import_statement(obj)
         else:
             print(type(obj))
             raise RuntimeError(obj)
@@ -1931,6 +1971,9 @@ class SyntaxTreeVisitor:
         return self.visit_any(node.statement), (
             self.visit_any(node.message) if node.message else None
         )
+
+    def visit_import_statement(self, node: ImportStatement):
+        pass
 
 
 def _parse_std_lib_decl_entry(entry: dict) -> AbstractASTNode:
