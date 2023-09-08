@@ -37,6 +37,7 @@ PyObjectContainer* PY_createModuleObject(char* module_name)
 void PY_STD_init_import_helper(void)
 {
     PY_TYPE_MODULE = PY_createClassContainer("<module>");
+    PY_TYPE_MODULE->flags |= PY_CLASS_ALLOW_DYNAMIC_ATTRIBUTES;  // allow dynamic attributes
     PY_ClassContainer_DeclareObjectAttribute(PY_TYPE_MODULE, "__name__");
     KNOWN_MODULE_MAP = HASHMAP_create(HASH_string, HASH_COMPARE_string);
 }

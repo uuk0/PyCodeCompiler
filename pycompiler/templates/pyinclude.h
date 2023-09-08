@@ -36,6 +36,7 @@ typedef enum PyObjectType PyObjectType;
 
 #define PY_CLASS_HAS_CUSTOM_GETATTR 1
 #define PY_CLASS_IS_STD_IMPLEMENTED 2
+#define PY_CLASS_ALLOW_DYNAMIC_ATTRIBUTES 4
 
 struct PyClassContainer
 {
@@ -63,6 +64,9 @@ struct PyObjectContainer
     PyClassContainer* py_type;
     struct PyObjectContainer** attr_array;
     struct PyObjectContainer* source;
+    uint16_t dynamic_attr_count;
+    char** dynamic_attr_keys;
+    struct PyObjectContainer** dynamic_attr_values;
 };
 typedef struct PyObjectContainer PyObjectContainer;
 

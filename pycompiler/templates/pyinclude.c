@@ -39,6 +39,9 @@ PyObjectContainer* createEmptyContainer(PyObjectType type)
     container->attr_array = NULL;
     container->source = NULL;
     container->refcount = 1;
+    container->dynamic_attr_count = 0;
+    container->dynamic_attr_keys = NULL;
+    container->dynamic_attr_values = NULL;
     return container;
 }
 
@@ -164,6 +167,14 @@ PyObjectContainer* PY_getObjectAttributeByName(PyObjectContainer* obj, char* nam
         }
     }
 
+    for (int i = 0; i < obj->dynamic_attr_count; i++)
+    {
+        if (strcmp(obj->dynamic_attr_keys[i], name) == 0)
+        {
+            return obj->dynamic_attr_values[i];
+        }
+    }
+
     return NULL;
 }
 
@@ -240,6 +251,14 @@ PyObjectContainer* PY_getObjectAttributeByNameOrStatic(PyObjectContainer* obj, c
         }
     }
 
+    for (int i = 0; i < obj->dynamic_attr_count; i++)
+    {
+        if (strcmp(obj->dynamic_attr_keys[i], name) == 0)
+        {
+            return obj->dynamic_attr_values[i];
+        }
+    }
+
     if (cls->static_attribute_names == NULL) return NULL;
 
     int i = 0;
@@ -270,6 +289,26 @@ void PY_setObjectAttributeByName(PyObjectContainer* obj, char* name, PyObjectCon
             obj->attr_array[i] = value;
             return;
         }
+    }
+
+    if (cls->flags & PY_CLASS_ALLOW_DYNAMIC_ATTRIBUTES)
+    {
+        obj->dynamic_attr_count++;
+        obj->dynamic_attr_keys = realloc(obj->dynamic_attr_keys, obj->dynamic_attr_count * sizeof(char*));
+        if (obj->dynamic_attr_keys == NULL)
+        {
+            perror("PY_setObjectAttributeByName dynamic keys");
+            exit(EXIT_FAILURE);
+        }
+        obj->dynamic_attr_values = realloc(obj->dynamic_attr_values, obj->dynamic_attr_count * sizeof(PyObjectContainer*));
+        if (obj->dynamic_attr_values == NULL)
+        {
+            perror("PY_setObjectAttributeByName dynamic values");
+            exit(EXIT_FAILURE);
+        }
+        obj->dynamic_attr_keys[obj->dynamic_attr_count-1] = name;
+        obj->dynamic_attr_values[obj->dynamic_attr_count-1] = value;
+        return;
     }
 
     assert(0 && "Attribute not found; Are you missing a declaration somewhere?");
