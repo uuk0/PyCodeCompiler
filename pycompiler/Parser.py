@@ -1967,6 +1967,8 @@ def load_std_data():
 
         if module["module"] == "builtins":
             target = Scope.STANDARD_LIBRARY_VALUES
+        else:
+            continue  # todo: implement
 
         for entry in module["items"]:
             target[entry["name"]] = _parse_std_lib_decl_entry(entry)

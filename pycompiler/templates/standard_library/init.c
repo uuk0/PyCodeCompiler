@@ -7,6 +7,7 @@
 #include "list.h"
 #include "operators.h"
 #include "exceptions.h"
+#include "modules/typing.h"
 
 
 static bool STD_IS_INITIALISED = false;
@@ -31,4 +32,5 @@ void PY_STD_INIT()
     PY_STD_initExceptionType();
 
     PY_STD_init_import_helper();
+    PY_STD_initModuleTyping();
 }

@@ -28,6 +28,8 @@ add_library(templates
         standard_library/string.h
         standard_library/exceptions.h
         standard_library/exceptions.c
+        standard_library/modules/typing.c
+        standard_library/modules/typing.h
 )
 
 add_executable(test

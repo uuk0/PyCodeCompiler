@@ -130,5 +130,15 @@
         "c name": "PY_NONE"
       }
     ]
+  },
+  {
+    "module": "typing",
+    "items": [
+      {
+        "name": "TYPE_CHECKING",
+        "type": "constant",
+        "c name": "PY_FALSE"
+      }
+    ]
   }
 ]
