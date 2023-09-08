@@ -1,13 +1,20 @@
 #include <stdlib.h>
 
 #include "pyinclude.h"
+#include "standard_library/config.h"
+
 #include "standard_library/init.h"
 #include "standard_library/exceptions.h"
+
+#ifdef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE
 #include "standard_library/importhelper.h"
+#endif
 
 #include "source.h"
 
+#ifdef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE
 PyObjectContainer* PY_MODULE_INSTANCE_source;
+#endif
 
 // code compiled from python to c via PyCodeCompiler
 
@@ -26,7 +33,9 @@ PyObjectContainer* obj;
 void PY_MODULE_source_init(void) {
     INVOKE_SINGLE();
     PY_STD_INIT();
+    #ifdef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE
     PY_MODULE_INSTANCE_source = PY_createModuleObject("source");
+    #endif
     PyObjectContainer* obj;
     PyObjectContainer* test;
     PY_CLASS_INIT_PY_CLASS_test_2();
@@ -34,7 +43,9 @@ void PY_MODULE_source_init(void) {
     PY_CHECK_EXCEPTION(init_1(obj_instance_0));
 
     obj = obj_instance_0;
+    #ifdef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE
     PY_exposeModuleObject(PY_MODULE_INSTANCE_source);
+    #endif
 }
 
 void PY_CLASS_INIT_PY_CLASS_test_2(void) {

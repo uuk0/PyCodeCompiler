@@ -112,7 +112,8 @@
       {
         "name": "len",
         "type": "operator wrapper",
-        "c name": "PY_STD_operator_len"
+        "c name": "PY_STD_operator_len",
+        "arguments": 1
       },
       {
         "name": "next",

@@ -453,7 +453,7 @@ class ResolveKnownDataTypes(SyntaxTreeVisitor):
             and isinstance(arg.static_value_type, ClassExactDataType)
             and bound_name in arg.static_value_type.ref.function_table
         ):
-            func = arg.static_value_type.ref.function_table[(bound_name, 1)]
+            func = arg.static_value_type.ref.function_table[bound_name]
             node.base = func
 
     def check_for_overload_on_type_double(self, node, bound_name, normal_name):
@@ -468,7 +468,7 @@ class ResolveKnownDataTypes(SyntaxTreeVisitor):
             and isinstance(arg.static_value_type, ClassExactDataType)
             and bound_name in arg.static_value_type.ref.function_table
         ):
-            func = arg.static_value_type.ref.function_table[(bound_name, 2)]
+            func = arg.static_value_type.ref.function_table[bound_name]
             node.base = func
 
 

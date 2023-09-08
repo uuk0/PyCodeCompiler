@@ -2415,9 +2415,11 @@ class Parser:
 
         main.add_code("INVOKE_SINGLE();\n")
         main.add_code("PY_STD_INIT();\n")
+        main.add_code("#ifdef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE\n")
         main.add_code(
             f'PY_MODULE_INSTANCE_{normal_module_name} = PY_createModuleObject("{module_name}");\n'
         )
+        main.add_code("#endif\n")
 
         for var in sorted(list(vars)):
             main.add_code(f"PyObjectContainer* {var};\n")
@@ -2439,6 +2441,7 @@ class Parser:
         #         f"PY_setObjectAttributeByName(PY_MODULE_INSTANCE_{normal_module_name}, \"{main.scope.get_unmapped_name(var)}\", {var});\n"
         #     )
 
+        main.add_code("#ifdef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE\n")
         for line in expr:
             if isinstance(line, FunctionDefinitionNode):
                 main.add_code(
@@ -2448,17 +2451,25 @@ class Parser:
         main.add_code(
             f"PY_exposeModuleObject(PY_MODULE_INSTANCE_{normal_module_name});\n"
         )
+        main.add_code("#endif\n")
 
         code = f"""#include <stdlib.h>
 
 #include "pyinclude.h"
+#include "standard_library/config.h"
+
 #include "standard_library/init.h"
 #include "standard_library/exceptions.h"
+
+#ifdef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE
 #include "standard_library/importhelper.h"
+#endif
 
 #include "{normal_module_name}.h"
 
+#ifdef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE
 PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
+#endif
 
 // code compiled from python to c via PyCodeCompiler
 

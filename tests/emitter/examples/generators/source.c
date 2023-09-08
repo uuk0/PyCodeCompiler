@@ -1,13 +1,20 @@
 #include <stdlib.h>
 
 #include "pyinclude.h"
+#include "standard_library/config.h"
+
 #include "standard_library/init.h"
 #include "standard_library/exceptions.h"
+
+#ifdef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE
 #include "standard_library/importhelper.h"
+#endif
 
 #include "source.h"
 
+#ifdef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE
 PyObjectContainer* PY_MODULE_INSTANCE_source;
+#endif
 
 // code compiled from python to c via PyCodeCompiler
 
@@ -22,16 +29,20 @@ PyObjectContainer* PY_MODULE_INSTANCE_source;
 void PY_MODULE_source_init(void) {
     INVOKE_SINGLE();
     PY_STD_INIT();
+    #ifdef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE
     PY_MODULE_INSTANCE_source = PY_createModuleObject("source");
+    #endif
 
 
 
 
+    #ifdef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE
     PY_setObjectAttributeByName(PY_MODULE_INSTANCE_source, "test", PY_createBoxForFunction(test_0_safeWrap));
     PY_setObjectAttributeByName(PY_MODULE_INSTANCE_source, "generator_1", PY_createBoxForFunction(generator1_1_safeWrap));
     PY_setObjectAttributeByName(PY_MODULE_INSTANCE_source, "generator_2", PY_createBoxForFunction(generator2_2_safeWrap));
     PY_setObjectAttributeByName(PY_MODULE_INSTANCE_source, "generator_3", PY_createBoxForFunction(generator3_3_safeWrap));
     PY_exposeModuleObject(PY_MODULE_INSTANCE_source);
+    #endif
 }
 
 PyObjectContainer* test_0(void) {
