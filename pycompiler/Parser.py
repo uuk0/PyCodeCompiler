@@ -1084,7 +1084,8 @@ class ReturnStatement(AbstractASTNode):
 
     def __eq__(self, other):
         return (
-            type(other) == ReturnStatement and self.return_value == other.return_value
+            type(other) == ReturnStatement
+            and self.return_value == other.yield_expression
         )
 
     def __repr__(self):
@@ -1110,6 +1111,54 @@ class ReturnStatement(AbstractASTNode):
         context.add_code("return ")
         self.return_value.emit_c_code(base, context)
         context.add_code(";")
+
+
+class GeneratorExitReturnStatement(ReturnStatement):
+    def emit_c_code(
+        self,
+        base: CCodeEmitter,
+        context: CCodeEmitter.CExpressionBuilder,
+        is_target=False,
+    ):
+        context.add_code("generator->next_section = NULL;\n")
+        super().emit_c_code(base, context)
+
+
+class YieldStatement(AbstractASTNode):
+    def __init__(self, yield_expression: AbstractASTNode):
+        super().__init__()
+        self.yield_expression = yield_expression
+        self.yield_label_id: int = -1
+
+    def __eq__(self, other):
+        return (
+            type(other) == ReturnStatement
+            and self.yield_expression == other.yield_expression
+        )
+
+    def __repr__(self):
+        return f"YIELD({self.yield_expression})"
+
+    def try_replace_child(
+        self,
+        original: AbstractASTNode | None,
+        replacement: AbstractASTNode,
+        position: ParentAttributeSection,
+    ) -> bool:
+        if position == ParentAttributeSection.RHS:
+            self.yield_expression = replacement
+            return True
+        return False
+
+    def emit_c_code(
+        self,
+        base: CCodeEmitter,
+        context: CCodeEmitter.CExpressionBuilder,
+        is_target=False,
+    ):
+        context.add_code(f"generator->section_id = {self.yield_label_id};\nreturn ")
+        self.yield_expression.emit_c_code(base, context)
+        context.add_code(f";\ngen_{self.yield_label_id}:;\n")
 
 
 class FunctionDefinitionNode(AbstractASTNode):
@@ -1244,9 +1293,89 @@ class FunctionDefinitionNode(AbstractASTNode):
         if not func.snippets[-1].startswith("return"):
             func.add_code("return PY_NONE;")
 
+        self.generate_safe_wrapper(base, func_name)
+
+    def emit_c_code_for_generator(
+        self,
+        base: CCodeEmitter,
+        context: CCodeEmitter.CExpressionBuilder,
+        is_target=False,
+    ):
+        from pycompiler.GeneratorHelper import (
+            GetValidYieldStatements,
+            RewriteReturnToGeneratorExit,
+        )
+
+        func_name = self.normal_name
+
+        func = base.CFunctionBuilder(
+            func_name,
+            [f"PyObjectContainer* {param.normal_name}" for param in self.parameters],
+            "PyObjectContainer*",
+            base.scope,
+        )
+        base.add_function(func)
+
+        local_count = len(self.parameters)
+
+        if self.body:
+            # todo: what is about internal-but-same-frame locals?
+            local_count += len(self.body[0].scope.variable_name_stack)
+
+        base.add_include('"generator.h"')
+
+        func.add_code(
+            f"""PyObjectContainer* generator = PY_STD_GENERATOR_create({local_count});
+PyGeneratorContainer* container = generator->raw_value;
+container->next_section = {func_name}_ENTRY;"""
+        )
+
+        for i, param in enumerate(self.parameters):
+            func.add_code(f"container->locals[{i}] = {param.normal_name};\n")
+
+        func.add_code("return generator;")
+
+        inner_func = base.CFunctionBuilder(
+            func_name + "_ENTRY",
+            ["PyGeneratorContainer* generator"],
+            "PyObjectContainer*",
+            base.scope,
+        )
+        base.add_function(inner_func)
+
+        inner_func.add_code("switch (generator->section_id){")
+
+        yield_finder = GetValidYieldStatements()
+        yield_finder.visit_any_list(self.body)
+
+        for i, statement in enumerate(yield_finder.statements):
+            inner_func.add_code(f"    case {i}: goto gen_{i};\n")
+            statement.yield_label_id = i
+
+        inner_func.add_code("};\n\n")
+
+        RewriteReturnToGeneratorExit().visit_any_list(self.body)
+
+        for line in self.body:
+            inner_section = func.get_statement_builder(indent=False)
+
+            line.emit_c_code(base, inner_section)
+
+            if isinstance(line, AbstractASTNodeExpression):
+                inner_section.add_code(";\n")
+            else:
+                inner_section.add_code("\n")
+
+            func.add_code(inner_section.get_result() + "\n")
+
+        if not func.snippets[-1].startswith("return"):
+            func.add_code("return PY_NONE;")
+
+        self.generate_safe_wrapper(base, func_name)
+
+    def generate_safe_wrapper(self, base, func_name):
         # todo: when bound object method, forward 'self' as first argument!
         base.add_include("<assert.h>")
-
         safe_name = f"{func_name}_safeWrap"
         safe_func = base.CFunctionBuilder(
             safe_name,
@@ -1935,6 +2064,8 @@ class SyntaxTreeVisitor:
             return self.visit_standard_library_class(obj)
         elif obj_type == StandardLibraryBoundOperator:
             return self.visit_standard_library_operator(obj)
+        elif obj_type == YieldStatement:
+            return self.visit_yield_statement(obj)
         else:
             print(type(obj))
             raise RuntimeError(obj)
@@ -1997,6 +2128,9 @@ class SyntaxTreeVisitor:
 
     def visit_return_statement(self, return_statement: ReturnStatement):
         return (self.visit_any(return_statement.return_value),)
+
+    def visit_yield_statement(self, yield_statement: YieldStatement):
+        return (self.visit_any(yield_statement.yield_expression),)
 
     def visit_while_statement(self, while_statement: WhileStatement):
         return self.visit_any(while_statement.condition), self.visit_any_list(
