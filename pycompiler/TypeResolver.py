@@ -36,6 +36,16 @@ if typing.TYPE_CHECKING:
     )
 
 
+class GetModuleImports(SyntaxTreeVisitor):
+    def __init__(self):
+        self.modules = []
+
+    def visit_import_statement(self, node: ImportStatement):
+        super().visit_import_statement(node)
+
+        self.modules.append(node.module)
+
+
 class ResolveParentAttribute(SyntaxTreeVisitor):
     def visit_assignment(self, assignment: AssignmentExpression):
         super().visit_assignment(assignment)

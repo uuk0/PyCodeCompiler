@@ -8,19 +8,36 @@ from pycompiler.Parser import Parser
 
 _local = os.path.dirname(os.path.dirname(__file__))
 
-STANDARD_LIBRARY_FILES = [
-    f"{_local}/pycompiler/templates/standard_library/{file}"
-    for file in os.listdir(f"{_local}/pycompiler/templates/standard_library")
-    if file.endswith(".c")
-]
+STANDARD_LIBRARY_FILES = []
+
+
+for r, dirs, files in os.walk(f"{_local}/pycompiler/templates/standard_library"):
+    STANDARD_LIBRARY_FILES.extend(
+        os.path.join(r, file).replace("\\", "/")
+        for file in files
+        if file.endswith(".c")
+    )
 
 
 class Project:
-    def __init__(self, build_folder: str = None, compiler="gcc", compile_only=False):
+    def __init__(
+        self,
+        build_folder: str = None,
+        compiler="gcc",
+        compile_only=False,
+        compiler_output=None,
+    ):
         self.path: typing.List[str] = []
         self.entry_points = []
         self.build_folder = build_folder
         self.compiler = compiler
+        self.compile_only = compile_only
+        self.compiler_output = (
+            compiler_output
+            or f"{build_folder}/result." + (".o" if compile_only else ".exe")
+            if build_folder
+            else None
+        )
 
     def add_folder(self, path: str):
         if not os.path.isdir(path):
@@ -37,24 +54,6 @@ class Project:
     def add_entry_point(self, path_or_module: str):
         self.entry_points.append(path_or_module)
 
-    def _ensure_std_build(self):
-        # args = [
-        #     "cmake",
-        #     ".",
-        #     "-S",
-        #     f"{_local}/pycompiler/templates",
-        #     "-B",
-        #     f"{_local}/pycompiler/templates/cmake-build-debug",
-        # ]
-        #
-        # print(" ".join(args))
-        #
-        # subprocess.call(
-        #     args,
-        #     cwd=f"{_local}/pycompiler/templates",
-        # )
-        pass  # todo: can we make this work?
-
     def build(self):
         build = self.build_folder or f"{_local}/build"
 
@@ -62,19 +61,6 @@ class Project:
             shutil.rmtree(build)
 
         os.makedirs(build)
-
-        self._ensure_std_build()
-
-        has_std_build = False
-
-        if os.path.exists(
-            f"{_local}/pycompiler/templates/cmake-build-debug/libtemplates.a"
-        ):
-            shutil.copy(
-                f"{_local}/pycompiler/templates/cmake-build-debug/libtemplates.a",
-                f"{build}/pylib.a",
-            )
-            has_std_build = True
 
         include_files = []
 
@@ -92,46 +78,42 @@ class Project:
             c_compare = parser.emit_c_code(expr=ast_nodes)
 
             out_file = (
-                entry_point.split("/")[0].split("\\")[0].removesuffix(".py") + ".c"
+                entry_point.split("/")[-1].split("\\")[-1].removesuffix(".py") + ".c"
             )
             with open(f"{build}/{out_file}", mode="w") as f:
                 f.write(c_compare)
 
-            include_files.append(out_file)
+            include_files.append(f"{build}/{out_file}")
 
-        if not has_std_build:
-            command = (
-                [
-                    self.compiler,
-                    "-g",
-                ]
-                + include_files
-                + self.path
-                + STANDARD_LIBRARY_FILES
+        command = (
+            [
+                self.compiler,
+                "-g",
+            ]
+            + include_files
+            + [
+                f"-I{_local}/pycompiler/templates",
+                f"-I{build}",
+            ]
+            + (
+                ["-c"]
+                if self.compile_only
+                else STANDARD_LIBRARY_FILES
                 + [
                     f"{_local}/pycompiler/templates/pyinclude.c",
-                    f"-I{_local}/pycompiler/templates",
-                    "-o",
-                    f"{build}/result.exe",
                 ]
             )
-
-        else:
-            command = (
+            + (
                 [
-                    self.compiler,
-                    "-g",
-                ]
-                + include_files
-                + self.path
-                + [
-                    f"{build}/pylib.a",
-                    f"{_local}/pycompiler/templates/pyinclude.c",
-                    f"-I{_local}/pycompiler/templates",
                     "-o",
-                    f"{build}/result.exe",
+                    self.compiler_output,
                 ]
+                if self.compiler_output
+                else []
             )
+        )
+
+        print(command)
 
         exit_code = subprocess.call(command)
 

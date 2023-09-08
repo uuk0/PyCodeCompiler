@@ -1828,9 +1828,9 @@ class ImportStatement(AbstractASTNode):
 
         name = self.module.replace(".", "___")
         base.add_include(f'"pymodule_{name}.h"')
-        context.add_code(f"PY_CHECK_EXCEPTION(PY_MODULE_{name}_init());")
+        context.add_code(f"PY_CHECK_EXCEPTION(PY_MODULE_{name}_init());\n")
         context.add_code(
-            f"{self.as_name or self.module.split('.'[0])} = PY_MODULE_INSTANCE_{name};"
+            f"{self.as_name or self.module.split('.')[0]} = PY_MODULE_INSTANCE_{name};\n"
         )
 
 

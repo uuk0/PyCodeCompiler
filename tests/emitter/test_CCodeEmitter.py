@@ -4,21 +4,11 @@ import subprocess
 
 from unittest import TestCase
 from pycompiler import Parser
+from pycompiler.Compiler import Project
 
 
 root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 example_folder = f"{os.path.dirname(__file__)}/examples"
-
-
-STANDARD_LIBRARY_FILES = []
-
-
-for r, dirs, files in os.walk(f"{root}/pycompiler/templates/standard_library"):
-    STANDARD_LIBRARY_FILES.extend(
-        os.path.join(r, file).replace("\\", "/")
-        for file in files
-        if file.endswith(".c")
-    )
 
 
 class TestCCodeEmitter(TestCase):
@@ -54,9 +44,6 @@ class TestCCodeEmitter(TestCase):
 
         c_compare = parser.emit_c_code(expr=ast_nodes)
 
-        with open(f"{folder}/result.c", mode="w") as f:
-            f.write(c_compare)
-
         if os.path.exists(f"{folder}/source.c"):
             c = pathlib.Path(f"{folder}/source.c").read_text()
             self.assertEqual(c, c_compare, "c source")
@@ -67,36 +54,25 @@ class TestCCodeEmitter(TestCase):
             self.compile_only(folder, compiler)
 
     def compile_and_run(self, folder, compiler):
-        command = [
-            compiler.replace("\\", "/"),
-            "-g",
-            f"{folder}/test.c".replace("\\", "/"),
-            f"{folder}/result.c".replace("\\", "/"),
-            f"{root}/pycompiler/templates/pyinclude.c",
-            f"-I{root}/pycompiler/templates",
-            "-o",
-            f"{folder}/test.exe",
-        ] + STANDARD_LIBRARY_FILES
-
-        print(" ".join(command))
-        exit_code = subprocess.call(command)
-        self.assertEqual(exit_code, 0, "compile")
-
-        exit_code = subprocess.call([f"{folder}/test.exe"])
-        self.assertEqual(exit_code, 0, "tests")
+        p = Project(
+            build_folder=f"{folder}/build",
+            compiler=compiler,
+            compiler_output=f"{folder}/test.exe",
+        )
+        p.add_file(f"{folder}/test.c", is_entry=True)
+        p.add_file(f"{folder}/source.py", is_entry=True)
+        p.add_folder(folder)  # include the folder in the analysis
+        p.build()
 
     def compile_only(self, folder, compiler):
-        command = [
-            compiler.replace("\\", "/"),
-            "-g",
-            "-c",
-            f"{folder}/result.c".replace("\\", "/"),
-            f"-I{root}/pycompiler/templates",
-        ]
-
-        print(" ".join(command))
-        exit_code = subprocess.call(command)
-        self.assertEqual(exit_code, 0, "compile")
+        p = Project(
+            build_folder=f"{folder}/build",
+            compiler=compiler,
+            compile_only=True,
+        )
+        p.add_file(f"{folder}/source.py", is_entry=True)
+        p.add_folder(folder)  # include the folder in the analysis
+        p.build()
 
     def test_simple_assignment(self):
         self.run_named_folder_test("simple_assignment")
@@ -133,3 +109,6 @@ class TestCCodeEmitter(TestCase):
 
     def test_assert_statement(self):
         self.run_named_folder_test("assert_test")
+
+    # def test_import_mechanism(self):
+    #     self.run_named_folder_test("import_mechanism_test")
