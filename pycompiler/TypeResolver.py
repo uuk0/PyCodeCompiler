@@ -20,7 +20,6 @@ from pycompiler.Parser import (
     ClassDefinitionNode,
     CallExpression,
     AssignmentExpression,
-    PY_FUNC_LEN,
 )
 
 if typing.TYPE_CHECKING:
@@ -367,7 +366,7 @@ class ResolveKnownDataTypes(SyntaxTreeVisitor):
         if isinstance(node.base, ConstantAccessExpression):
             if isinstance(node.base.value, ClassDefinitionNode):
                 node.static_value_type = ClassExactDataType(node.base.value)
-            elif node.base.value == PY_FUNC_LEN:
+            elif node.base.value == Scope.STANDARD_LIBRARY_VALUES["len"]:
                 if len(node.args) != 1:
                     raise ValueError(
                         f"len(...) expected exactly 1 arg, got {len(node.args)}"

@@ -1,0 +1,122 @@
+[
+  {
+    "module": "builtins",
+    "items": [
+      {
+        "name": "list",
+        "type": "class",
+        "type variable": "PY_TYPE_LIST",
+        "static attributes": [
+          {
+            "name": "__init__",
+            "type": "method",
+            "arguments": 0,
+            "c name": "PY_STD_list_init_fast_arg_0"
+          },
+          {
+            "name": "append",
+            "type": "method",
+            "arguments": 1,
+            "c name": "PY_STD_list_append_fast"
+          },
+          {
+            "name": "insert",
+            "type": "method",
+            "arguments": 2,
+            "c name": "PY_STD_list_insert_fast"
+          },
+          {
+            "name": "clear",
+            "type": "method",
+            "arguments": 0,
+            "c name": "PY_STD_list_clear_fast"
+          },
+          {
+            "name": "index",
+            "type": "method",
+            "arguments": 1,
+            "c name": "PY_STD_list_index_fast"
+          },
+          {
+            "name": "__setitem__",
+            "type": "method",
+            "c name": "PY_STD_list_setAtIndex_fast"
+          },
+          {
+            "name": "__getitem__",
+            "type": "method",
+            "c name": "PY_STD_list_getAtIndex_fast"
+          },
+          {
+            "name": "__len__",
+            "type": "method",
+            "c name": "PY_STD_list_len_fast"
+          },
+          {
+            "name": "__bool__",
+            "type": "method",
+            "c name": "PY_STD_list_toBool_fast"
+          }
+        ]
+      },
+      {
+        "name": "tuple",
+        "type": "class",
+        "type variable": "PY_TYPE_TUPLE"
+      },
+      {
+        "name": "dict",
+        "type": "class",
+        "type variable": "PY_TYPE_DICT",
+        "static attributes": [
+          {
+            "name": "__init__",
+            "type": "method",
+            "arguments": 0,
+            "c name": "PY_STD_dict_init_fast_arg_zero"
+          },
+          {
+            "name": "__setitem__",
+            "type": "method",
+            "c name": "PY_STD_dict_setitem_fast"
+          },
+          {
+            "name": "__getitem__",
+            "type": "method",
+            "c name": "PY_STD_dict_getitem_fast"
+          },
+          {
+            "name": "__delitem__",
+            "type": "method",
+            "c name": "PY_STD_dict_delitem_fast"
+          },
+          {
+            "name": "__contains__",
+            "type": "method",
+            "c name": "PY_STD_dict_contains_fast"
+          }
+        ]
+      },
+      {
+        "name": "len",
+        "type": "operator wrapper",
+        "c name": "PY_STD_operator_len"
+      },
+      {
+        "name": "True",
+        "type": "constant",
+        "c name": "PY_TRUE"
+      },
+      {
+        "name": "False",
+        "type": "constant",
+        "c name": "PY_FALSE"
+      },
+      {
+        "name": "None",
+        "type": "constant",
+        "c name": "PY_NONE"
+      }
+    ]
+  }
+]

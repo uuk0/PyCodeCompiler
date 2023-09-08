@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import abc
 import enum
+import json
+import os.path
 import string
 import typing
 import io
@@ -642,7 +644,9 @@ class TupleConstructor(AbstractASTNodeExpression):
     def __init__(self, items: typing.List[AbstractASTNode]):
         super().__init__()
         self.items = items
-        self.static_value_type = ClassExactDataType(PY_TYPE_TUPLE)
+        self.static_value_type = ClassExactDataType(
+            Scope.STANDARD_LIBRARY_VALUES["tuple"]
+        )
 
     def __eq__(self, other):
         return type(other) == TupleConstructor and self.items == other.items
@@ -683,7 +687,9 @@ class ListConstructor(AbstractASTNodeExpression):
     def __init__(self, items: typing.List[AbstractASTNode]):
         super().__init__()
         self.items = items
-        self.static_value_type = ClassExactDataType(PY_TYPE_LIST)
+        self.static_value_type = ClassExactDataType(
+            Scope.STANDARD_LIBRARY_VALUES["list"]
+        )
 
     def __eq__(self, other):
         return type(other) == TupleConstructor and self.items == other.items
@@ -1927,45 +1933,46 @@ class SyntaxTreeVisitor:
         )
 
 
-Scope.STANDARD_LIBRARY_VALUES["list"] = PY_TYPE_LIST = StandardLibraryClass(
-    "list", "PY_TYPE_LIST"
-)
-PY_TYPE_LIST.function_table.update(
-    {
-        ("__init__", 0): GlobalCNameAccessExpression("PY_STD_list_init_fast_arg_0"),
-        ("append", 1): GlobalCNameAccessExpression("PY_STD_list_append_fast"),
-        ("insert", 2): GlobalCNameAccessExpression("PY_STD_list_insert_fast"),
-        ("clear", 0): GlobalCNameAccessExpression("PY_STD_list_clear_fast"),
-        ("index", 1): GlobalCNameAccessExpression("PY_STD_list_index_fast"),
-        "__setitem__": GlobalCNameAccessExpression("PY_STD_list_setAtIndex_fast"),
-        "__getitem__": GlobalCNameAccessExpression("PY_STD_list_getAtIndex_fast"),
-        "__len__": GlobalCNameAccessExpression("PY_STD_list_len_fast"),
-        "__bool__": GlobalCNameAccessExpression("PY_STD_list_toBool_fast"),
-    }
-)
-Scope.STANDARD_LIBRARY_VALUES["tuple"] = PY_TYPE_TUPLE = StandardLibraryClass(
-    "tuple", "PY_TYPE_TUPLE"
-)
-Scope.STANDARD_LIBRARY_VALUES["dict"] = PY_TYPE_DICT = StandardLibraryClass(
-    "dict", "PY_TYPE_DICT"
-)
-PY_TYPE_DICT.function_table.update(
-    {
-        ("__init__", 0): GlobalCNameAccessExpression("PY_STD_dict_init_fast_arg_zero"),
-        "__setitem__": GlobalCNameAccessExpression("PY_STD_dict_setitem_fast"),
-        "__getitem__": GlobalCNameAccessExpression("PY_STD_dict_getitem_fast"),
-        "__delitem__": GlobalCNameAccessExpression("PY_STD_dict_delitem_fast"),
-        "__contains__": GlobalCNameAccessExpression("PY_STD_dict_contains_fast"),
-    }
-)
+def _parse_std_lib_decl_entry(entry: dict) -> AbstractASTNode:
+    if entry["type"] == "class":
+        cls = StandardLibraryClass(entry["name"], entry["type variable"])
 
-Scope.STANDARD_LIBRARY_VALUES["len"] = PY_FUNC_LEN = StandardLibraryBoundOperator(
-    "len", "PY_STD_operator_len"
-)
+        for attr in entry.get("static attributes", []):
+            if attr["type"] == "method" and "arguments" in attr:
+                cls.function_table[
+                    (attr["name"], attr["arguments"])
+                ] = _parse_std_lib_decl_entry(attr)
+            else:
+                cls.function_table[attr["name"]] = _parse_std_lib_decl_entry(attr)
 
-Scope.STANDARD_LIBRARY_VALUES["None"] = GlobalCNameAccessExpression("PY_NONE")
-Scope.STANDARD_LIBRARY_VALUES["False"] = GlobalCNameAccessExpression("PY_FALSE")
-Scope.STANDARD_LIBRARY_VALUES["True"] = GlobalCNameAccessExpression("PY_TRUE")
+        return cls
+
+    elif entry["type"] in ("method", "constant"):
+        return GlobalCNameAccessExpression(entry["c name"])
+
+    elif entry["type"] == "operator wrapper":
+        return StandardLibraryBoundOperator(entry["name"], entry["c name"])
+
+    raise NotImplementedError(entry["type"])
+
+
+def load_std_data():
+    with open(
+        os.path.join(os.path.dirname(__file__), "standard_library_config.json")
+    ) as f:
+        std_lib_data = json.load(f)
+
+    for module in std_lib_data:
+        target: dict = None
+
+        if module["module"] == "builtins":
+            target = Scope.STANDARD_LIBRARY_VALUES
+
+        for entry in module["items"]:
+            target[entry["name"]] = _parse_std_lib_decl_entry(entry)
+
+
+load_std_data()
 
 
 class Parser:
