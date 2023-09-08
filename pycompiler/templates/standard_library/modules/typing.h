@@ -9,6 +9,6 @@
 
 extern PyObjectContainer* PY_MODULE_INSTANCE_typing;
 
-void PY_STD_initModuleTyping(void);
+void PY_MODULE_typing_init(void);
 
 #endif //PYCCOMPILER_TYPING_H

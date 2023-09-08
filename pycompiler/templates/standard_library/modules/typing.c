@@ -8,8 +8,10 @@
 
 PyObjectContainer* PY_MODULE_INSTANCE_typing;
 
-void PY_STD_initModuleTyping(void)
+void PY_MODULE_typing_init(void)
 {
+    INVOKE_SINGLE();
+
     PY_MODULE_INSTANCE_typing = PY_createModuleObject("typing");
     PY_setObjectAttributeByName(PY_MODULE_INSTANCE_typing, "TYPE_CHECKING", PY_FALSE);
 

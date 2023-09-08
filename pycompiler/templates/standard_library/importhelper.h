@@ -7,6 +7,11 @@
 
 #include "pyinclude.h"
 
+// Macro to help functions to be invoked only a single time, all following times they are a NOOP
+#define INVOKE_SINGLE() { static char _PY_INVOKED_FUNCTION; \
+if (_PY_INVOKED_FUNCTION == 1) { return; } \
+_PY_INVOKED_FUNCTION = 1;}
+
 extern PyClassContainer* PY_TYPE_MODULE;
 
 PyObjectContainer* PY_getModuleObject(char* name);

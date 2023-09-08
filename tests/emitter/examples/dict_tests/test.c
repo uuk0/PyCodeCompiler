@@ -1,14 +1,11 @@
 #include <assert.h>
 #include "pyinclude.h"
 #include "standard_library/exceptions.h"
-
-
-int _initialise();
-PyObjectContainer* test_0();
+#include "source.h"
 
 
 int main()
 {
-    _initialise();
+    PY_MODULE_source_init();
     PY_CHECK_EXCEPTION_AND_EXIT(test_0());
 }

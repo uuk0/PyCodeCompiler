@@ -14,6 +14,7 @@ from pycompiler.Lexer import TokenType
 
 class Scope:
     STANDARD_LIBRARY_VALUES: typing.Dict[str, object] = {}
+    STANDARD_LIBRARY_MODULES: typing.Dict[str, StandardLibraryModuleReference] = {}
 
     def __init__(self):
         self._fresh_name_counter = 0
@@ -222,10 +223,10 @@ class CCodeEmitter:
                 lines[i] = "" if line.strip() == "" else f"    {lines[i]}"
 
             if inner := "\n".join(lines):
-                return f"""{self.return_type} {self.name}({' , '.join(self.parameter_decl)}) {{
+                return f"""{self.return_type} {self.name}({' , '.join(self.parameter_decl) if self.parameter_decl else 'void'}) {{
 {inner}
 }}"""
-            return f"""{self.return_type} {self.name}({' , '.join(self.parameter_decl)}) {{
+            return f"""{self.return_type} {self.name}({' , '.join(self.parameter_decl) if self.parameter_decl else 'void'}) {{
 }}"""
 
         def get_declaration(self) -> str:
@@ -282,11 +283,11 @@ class CCodeEmitter:
 
     def __init__(self, scope: Scope = None):
         self._fresh_name_counter = 0
-        self.functions: typing.List[CCodeEmitter.CFunction] = []
+        self.functions: typing.List[CCodeEmitter.CFunctionBuilder] = []
         self.includes: typing.List[str] = []
         self.global_variables: typing.List[typing.Tuple[str, str]] = []
         self.add_top_init = []
-        self.init_function: CCodeEmitter.CFunction | None = None
+        self.init_function: CCodeEmitter.CFunctionBuilder | None = None
         self.scope: Scope = scope
         self.scheduled_modules = []
 
@@ -295,7 +296,7 @@ class CCodeEmitter:
         self._fresh_name_counter += 1
         return name
 
-    def add_function(self, function: CCodeEmitter.CFunction):
+    def add_function(self, function: CCodeEmitter.CFunctionBuilder):
         self.functions.append(function)
 
     def add_include(self, target: str):
@@ -1214,7 +1215,7 @@ class FunctionDefinitionNode(AbstractASTNode):
         if len(self.body) > 0:
             args = [arg.name.text for arg in self.parameters]
 
-            for var in self.body[0].scope.variable_name_stack:
+            for var in list(sorted(list(self.body[0].scope.variable_name_stack))):
                 if var not in args:
                     norm_name = self.body[0].scope.get_normalised_name(var)
                     self.body[0].scope.add_remapped_name(var, norm_name)
@@ -1355,7 +1356,7 @@ class ClassDefinitionNode(AbstractASTNode):
                 for line in self.body
                 if isinstance(line, (FunctionDefinitionNode, ClassDefinitionNode))
             ]
-            for var in self.body[0].scope.variable_name_stack:
+            for var in list(sorted(list(self.body[0].scope.variable_name_stack))):
                 if var not in external:
                     init_class.add_code(
                         f"PyObjectContainer* {self.body[0].scope.get_remapped_name(var)};\n"
@@ -1827,11 +1828,25 @@ class ImportStatement(AbstractASTNode):
             context.add_code(f"PY_CHECK_EXCEPTION(PY_MODULE_{partial_module}_init());")
 
         name = self.module.replace(".", "___")
-        base.add_include(f'"pymodule_{name}.h"')
-        context.add_code(f"PY_CHECK_EXCEPTION(PY_MODULE_{name}_init());\n")
+
+        if self.module not in Scope.STANDARD_LIBRARY_MODULES:
+            base.add_include(f'"pymodule_{name}.h"')
+        else:
+            base.add_include(
+                f'"{Scope.STANDARD_LIBRARY_MODULES[self.module].header_name}"'
+            )
+
+        context.add_code(f"PY_MODULE_{name}_init();\n")
         context.add_code(
             f"{self.as_name or self.module.split('.')[0]} = PY_MODULE_INSTANCE_{name};\n"
         )
+
+
+class StandardLibraryModuleReference:
+    def __init__(self, name: str, header_name: str):
+        self.name = name
+        self.header_name = header_name
+        self.function_table = {}
 
 
 class SyntaxTreeVisitor:
@@ -2006,15 +2021,22 @@ def load_std_data():
         std_lib_data = json.load(f)
 
     for module in std_lib_data:
-        target: dict = None
-
         if module["module"] == "builtins":
             target = Scope.STANDARD_LIBRARY_VALUES
-        else:
-            continue  # todo: implement
 
-        for entry in module["items"]:
-            target[entry["name"]] = _parse_std_lib_decl_entry(entry)
+            for entry in module["items"]:
+                target[entry["name"]] = _parse_std_lib_decl_entry(entry)
+
+        else:
+            module_obj = StandardLibraryModuleReference(
+                module["module"], module["header"]
+            )
+            Scope.STANDARD_LIBRARY_MODULES[module["module"]] = module_obj
+
+            for entry in module["items"]:
+                module_obj.function_table[entry["name"]] = _parse_std_lib_decl_entry(
+                    entry
+                )
 
 
 load_std_data()
@@ -2081,7 +2103,9 @@ class Parser:
 
         return ast_stream
 
-    def emit_c_code(self, expr: typing.List[AbstractASTNode] = None) -> str:
+    def emit_c_code(
+        self, expr: typing.List[AbstractASTNode] = None, module_name: str = None
+    ) -> str:
         from pycompiler.TypeResolver import (
             ResolveParentAttribute,
             ScopeGeneratorVisitor,
@@ -2118,11 +2142,18 @@ class Parser:
         ResolveGlobalNames().visit_any_list(expr)
 
         builder = CCodeEmitter(scope)
-        main = builder.CFunctionBuilder("_initialise", [], "int", scope)
+        main = builder.CFunctionBuilder(
+            f"PY_MODULE_{module_name.replace('.', '___') if module_name else 'unknown'}_init",
+            [],
+            "void",
+            scope,
+        )
+
+        if module_name is None:
+            raise RuntimeError
+
         builder.add_function(main)
         builder.init_function = main
-
-        main.add_code("PY_STD_INIT();\n")
 
         if expr:
             skip_names = [
@@ -2136,6 +2167,17 @@ class Parser:
             #         main.add_code(
             #             f"PyObjectContainer* {expr[0].scope.get_remapped_name(var)};\n"
             #         )
+
+        vars = set()
+        for line in expr:
+            if not isinstance(line, (FunctionDefinitionNode, ClassDefinitionNode)):
+                vars |= line.scope.variable_name_stack
+
+        main.add_code("INVOKE_SINGLE();\n")
+        main.add_code("PY_STD_INIT();\n")
+
+        for var in sorted(list(vars)):
+            main.add_code(f"PyObjectContainer* {var};")
 
         for line in expr:
             inner_block = main.get_statement_builder(indent=False)
@@ -2154,6 +2196,7 @@ class Parser:
 #include "pyinclude.h"
 #include "standard_library/init.h"
 #include "standard_library/exceptions.h"
+#include "standard_library/importhelper.h"
 
 // code compiled from python to c via PyCodeCompiler
 

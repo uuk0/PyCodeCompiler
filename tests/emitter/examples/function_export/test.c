@@ -1,11 +1,10 @@
 #include <assert.h>
 #include "pyinclude.h"
-
-
-PyObjectContainer* test_0();
+#include "source.h"
 
 
 int main()
 {
+    PY_MODULE_source_init();
     assert(PY_unpackInteger(test_0()) == 10);
 }

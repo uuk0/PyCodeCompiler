@@ -3,20 +3,22 @@
 #include "pyinclude.h"
 #include "standard_library/init.h"
 #include "standard_library/exceptions.h"
+#include "standard_library/importhelper.h"
 
 // code compiled from python to c via PyCodeCompiler
 
-#include "pymodule_typing.h"
+#include "standard_library/modules/typing.h"
 
 
-int _initialise();
+void PY_MODULE_source_init();
 
 
 // implementations
 
-int _initialise() {
+void PY_MODULE_source_init(void) {
+    INVOKE_SINGLE();
     PY_STD_INIT();
-    PY_CHECK_EXCEPTION(PY_MODULE_typing_init());
+    PyObjectContainer* typing;PY_MODULE_typing_init();
     typing = PY_MODULE_INSTANCE_typing;
 }
 

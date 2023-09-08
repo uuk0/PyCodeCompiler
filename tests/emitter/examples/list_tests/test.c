@@ -1,13 +1,10 @@
 #include <assert.h>
 #include "pyinclude.h"
-
-
-int _initialise();
-PyObjectContainer* test_0();
+#include "source.h"
 
 
 int main()
 {
-    _initialise();
+    PY_MODULE_source_init();
     assert(test_0() == PY_NONE);
 }

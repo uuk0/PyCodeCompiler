@@ -42,10 +42,17 @@ class TestCCodeEmitter(TestCase):
                 "ast nodes",
             )
 
-        c_compare = parser.emit_c_code(expr=ast_nodes)
+        c_compare = parser.emit_c_code(expr=ast_nodes, module_name="source")
 
         if os.path.exists(f"{folder}/source.c"):
             c = pathlib.Path(f"{folder}/source.c").read_text()
+
+            with open(f"{folder}/build/source.c", mode="w") as f:
+                f.write(c_compare)
+
+            # with open(f"{folder}/source.c", mode="w") as f:
+            #     f.write(c_compare)
+
             self.assertEqual(c, c_compare, "c source")
 
         if os.path.exists(f"{folder}/test.c"):
@@ -110,5 +117,5 @@ class TestCCodeEmitter(TestCase):
     def test_assert_statement(self):
         self.run_named_folder_test("assert_test")
 
-    # def test_import_mechanism(self):
-    #     self.run_named_folder_test("import_mechanism_test")
+    def test_import_mechanism(self):
+        self.run_named_folder_test("import_mechanism_test")

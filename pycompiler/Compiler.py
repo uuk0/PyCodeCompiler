@@ -4,7 +4,8 @@ import shutil
 import subprocess
 import typing
 
-from pycompiler.Parser import Parser
+from pycompiler.Parser import Parser, AbstractASTNode
+from pycompiler.TypeResolver import GetModuleImports, GetHeaderRelatedInfo
 
 _local = os.path.dirname(os.path.dirname(__file__))
 
@@ -64,6 +65,12 @@ class Project:
 
         include_files = []
 
+        pending_compilation_files: typing.List[typing.Tuple[str, str]] = []
+        compiled_files = set()
+        prepared_module_files: typing.List[
+            typing.Tuple[str, typing.List[AbstractASTNode], Parser, str]
+        ] = []
+
         for entry_point in self.entry_points:
             if entry_point.endswith(".c"):
                 include_files.append(entry_point)
@@ -72,18 +79,81 @@ class Project:
             if not entry_point.endswith(".py"):
                 raise NotImplementedError
 
-            py = pathlib.Path(entry_point).read_text()
+            pending_compilation_files.append(
+                (
+                    entry_point,
+                    entry_point.split("/")[-1].split("\\")[-1].removesuffix(".py"),
+                )
+            )
+
+        while pending_compilation_files:
+            file, module = pending_compilation_files.pop()
+
+            if file in compiled_files:
+                continue
+
+            compiled_files.add(file)
+
+            py = pathlib.Path(file).read_text()
             parser = Parser(py)
             ast_nodes = parser.parse()
-            c_compare = parser.emit_c_code(expr=ast_nodes)
 
-            out_file = (
-                entry_point.split("/")[-1].split("\\")[-1].removesuffix(".py") + ".c"
-            )
+            prepared_module_files.append((file, ast_nodes, parser, module))
+
+            resolver = GetModuleImports()
+            resolver.visit_any_list(ast_nodes)
+
+            for module in resolver.modules:
+                for f in self.path:
+                    p = pathlib.Path(f)
+
+                    if (
+                        p.is_file()
+                        and "." not in module
+                        and p.name.removesuffix(".py") == module
+                    ):
+                        pending_compilation_files.append((str(p.absolute()), module))
+                    elif p.is_dir():
+                        for file in p.glob("**/*.py"):
+                            if (
+                                file.is_file()
+                                and "." not in module
+                                and file.name.removesuffix(".py") == module
+                            ):
+                                pending_compilation_files.append(
+                                    (str(file.absolute()), module)
+                                )
+
+        for file, ast_nodes, parser, module in prepared_module_files:
+            c_source = parser.emit_c_code(expr=ast_nodes, module_name=module)
+
+            out_file = file.split("/")[-1].split("\\")[-1].removesuffix(".py") + ".c"
             with open(f"{build}/{out_file}", mode="w") as f:
-                f.write(c_compare)
+                f.write(c_source)
 
             include_files.append(f"{build}/{out_file}")
+
+            header_info = GetHeaderRelatedInfo()
+            header_info.visit_any_list(ast_nodes)
+
+            header = f"""#include "pyinclude.h"
+            
+// Header for the module {module}
+
+// Functions
+void PY_MODULE_{module.replace('.', '___')}_init(void);
+"""
+
+            for signature in header_info.function_signatures:
+                header += f"{signature};\n"
+
+            header += "\n// Variables\n"
+
+            for variable in header_info.global_variables:
+                header += f"extern {variable};\n"
+
+            with open(f"{build}/{out_file.removesuffix('.c')}.h", mode="w") as f:
+                f.write(header)
 
         command = (
             [

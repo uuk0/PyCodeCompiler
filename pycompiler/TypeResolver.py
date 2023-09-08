@@ -46,6 +46,28 @@ class GetModuleImports(SyntaxTreeVisitor):
         self.modules.append(node.module)
 
 
+class GetHeaderRelatedInfo(SyntaxTreeVisitor):
+    def __init__(self):
+        self.function_signatures = []
+        self.global_variables = []
+
+    def visit_function_definition(self, node: FunctionDefinitionNode):
+        super().visit_function_definition(node)
+        self.function_signatures.append(
+            f"PyObjectContainer* {node.normal_name}_safeWrap(PyObjectContainer* self, uint8_t argc, "
+            f"PyObjectContainer** args, CallStructureInfo* info)"
+        )
+        self.function_signatures.append(
+            f"PyObjectContainer* {node.normal_name}("
+            f"{', '.join(f'PyObjectContainer* {e.normal_name}' for e in node.parameters)})"
+        )
+
+    def visit_class_definition(self, node: ClassDefinitionNode):
+        super().visit_class_definition(node)
+
+        self.global_variables.append(f"PyClassContainer* PY_CLASS_{node.normal_name}")
+
+
 class ResolveParentAttribute(SyntaxTreeVisitor):
     def visit_assignment(self, assignment: AssignmentExpression):
         super().visit_assignment(assignment)
@@ -307,6 +329,8 @@ class ScopeGeneratorVisitor(SyntaxTreeVisitor):
                 f"PY_MODULE_INSTANCE_{node.module.replace('.', '___')}"
             ),
         )
+
+        print(self.scope.variable_name_stack)
 
 
 class NameNormalizer(SyntaxTreeVisitor):
