@@ -106,6 +106,18 @@ bool PY_isInstanceOf(PyObjectContainer* obj, PyClassContainer* cls)
     return PY_isSubclassOf(obj->py_type, cls);
 }
 
+void PY_ClassContainer_DeclareObjectAttribute(PyClassContainer* cls, char* name)
+{
+    cls->attr_count++;
+    cls->attr_name_array = realloc(cls->attr_name_array, cls->attr_count * sizeof(char*));
+    if (cls->attr_name_array == NULL)
+    {
+        perror("realloc PY_ClassContainer_DeclareObjectAttribute");
+        exit(EXIT_FAILURE);
+    }
+    cls->attr_name_array[cls->attr_count-1] = name;
+}
+
 PyObjectContainer* PY_createClassInstance(PyClassContainer* cls)
 {
     assert(cls != NULL);
@@ -180,11 +192,13 @@ static PyObjectContainer* PY_getObjectAttributeByNameOrStatic_primitive(PyObject
         {
             return PY_builtin_int_compare_container;
         }
-        PY_THROW_EXCEPTION(NULL);
+        printf("%s\n", name);
+        PY_THROW_EXCEPTION_WITH_MESSAGE(NULL, "cannot get attribute on type <int>");
     }
     if (obj->type == PY_TYPE_FLOAT)
     {
-        PY_THROW_EXCEPTION(NULL);
+        printf("%s\n", name);
+        PY_THROW_EXCEPTION_WITH_MESSAGE(NULL, "cannot get attribute on type <float>");
     }
     else if (obj->type == PY_TYPE_STRING)
     {
@@ -196,7 +210,8 @@ static PyObjectContainer* PY_getObjectAttributeByNameOrStatic_primitive(PyObject
         {
             return PY_STD_string_eq_CONTAINER;
         }
-        PY_THROW_EXCEPTION(NULL);
+        printf("%s\n", name);
+        PY_THROW_EXCEPTION_WITH_MESSAGE(NULL, "cannot get attribute on type <string>");
     }
     else if (obj->type == PY_EXCEPTION)
     {

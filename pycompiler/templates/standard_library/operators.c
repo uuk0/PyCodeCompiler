@@ -322,6 +322,11 @@ PyObjectContainer* PY_STD_operator_not_equals(PyObjectContainer* lhs, PyObjectCo
     return equal == PY_FALSE ? PY_TRUE : PY_FALSE;
 }
 
+PyObjectContainer* PY_STD_operator_contains(PyObjectContainer* lhs, PyObjectContainer* rhs)
+{
+    return PY_STD_operator_apply(lhs, rhs, "__contains__", NULL);
+}
+
 PyObjectContainer* PY_STD_operator_len(PyObjectContainer* value)
 {
     PyObjectContainer* len = PY_getObjectAttributeByNameOrStatic(value, "__len__");

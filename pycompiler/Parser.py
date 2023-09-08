@@ -1571,6 +1571,7 @@ class BinaryOperatorExpression(AbstractASTNodeExpression):
         GREATER_EQUAL = enum.auto()  # todo
         SMALLER = enum.auto()  # todo
         SMALLER_EQUAL = enum.auto()  # todo
+        CONTAINS = enum.auto()
 
     String2Type = {
         "+": BinaryOperation.PLUS,
@@ -1590,6 +1591,7 @@ class BinaryOperatorExpression(AbstractASTNodeExpression):
         ">=": BinaryOperation.GREATER_EQUAL,
         "<": BinaryOperation.SMALLER,
         "<=": BinaryOperation.SMALLER_EQUAL,
+        "in": BinaryOperation.CONTAINS,
     }
 
     PRIORITIES: typing.Dict[BinaryOperation, int] = {
@@ -1614,6 +1616,7 @@ class BinaryOperatorExpression(AbstractASTNodeExpression):
         BinaryOperation.MODULO: 10,
         BinaryOperation.MATRIX_MULTIPLY: 10,
         BinaryOperation.POW: 20,
+        BinaryOperation.CONTAINS: 30,  # warn: rhs is holder of __contains__, not lhs!
     }
 
     OPERATOR_CALL_FUNCTIONS = {
@@ -1630,6 +1633,7 @@ class BinaryOperatorExpression(AbstractASTNodeExpression):
         BinaryOperation.BIN_XOR: "PY_STD_operator_bin_xor",
         BinaryOperation.EQUALS: "PY_STD_operator_equals",
         BinaryOperation.NOT_EQUALS: "PY_STD_operator_not_equals",
+        BinaryOperation.CONTAINS: "PY_STD_operator_contains",
     }
 
     def __init__(
@@ -1672,11 +1676,13 @@ class BinaryOperatorExpression(AbstractASTNodeExpression):
         is_target=False,
     ):
         if self.operator in self.OPERATOR_CALL_FUNCTIONS:
+            reverse = self.operator == BinaryOperatorExpression.BinaryOperation.CONTAINS
+
             func_name = self.OPERATOR_CALL_FUNCTIONS[self.operator]
             context.add_code(f"{func_name}(")
-            self.lhs.emit_c_code(base, context)
+            (self.rhs if reverse else self.lhs).emit_c_code(base, context)
             context.add_code(", ")
-            self.rhs.emit_c_code(base, context)
+            (self.lhs if reverse else self.rhs).emit_c_code(base, context)
             context.add_code(")")
         elif self.operator == self.BinaryOperation.LOGIC_OR:
             context.add_code(f"PY_createBoolean(PY_unpackBoolean(")
@@ -1773,9 +1779,9 @@ class AssertStatement(AbstractASTNode):
     ):
         base.add_include("<assert.h>")
         name = base.get_fresh_name("assert_target")
-        context.add_code(f"PyObjectContainer* {name} = ")
+        context.add_code(f"PyObjectContainer* {name} = PY_CHECK_EXCEPTION(")
         self.statement.emit_c_code(base, context)
-        context.add_code(";\n")
+        context.add_code(");\n")
         if self.message is None:
             context.add_code(f"assert(PY_getTruthValueOf({name}));\n")
         else:
@@ -2324,9 +2330,9 @@ class Parser:
 
             elif (
                 self.lexer.inspect_chars(1)
-                and self.lexer.inspect_chars(1) in "+-*%/&|^@"
+                and self.lexer.inspect_chars(1) in "+-*%/&|^@i"
             ):
-                if self.lexer.inspect_chars(2) in ("**", "//"):
+                if self.lexer.inspect_chars(2) in ("**", "//", "in"):
                     operator = self.lexer.get_chars(2)
                 else:
                     operator = self.lexer.get_chars(1)

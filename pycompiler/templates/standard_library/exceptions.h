@@ -8,10 +8,13 @@
 #include "pyinclude.h"
 #include <stdio.h>
 
+extern PyClassContainer* PY_TYPE_EXCEPTION;
+
+PyObjectContainer* PY_STD_createException(char* exc_name, char* message);
 PyObjectContainer* PY_STD_wrapException(PyObjectContainer* exception);
 
 
-// #define PY_INTERNAL_THROW_EXCEPTIONS_INPLACE
+#define PY_INTERNAL_THROW_EXCEPTIONS_INPLACE
 #ifndef PY_INTERNAL_THROW_EXCEPTIONS_INPLACE
 
 #define PY_THROW_EXCEPTION(exception) return PY_STD_wrapException(exception)
@@ -35,5 +38,7 @@ PyObjectContainer* PY_STD_wrapException(PyObjectContainer* exception);
 
 #define PY_CHECK_EXCEPTION_AND_EXIT(value) ({ PyObjectContainer* x = value;  if (x != NULL && x->type == PY_EXCEPTION) { assert(0 && "exception raised"); }; x; })
 #define PY_CHECK_EXCEPTION_AND_EXIT_WITH_MESSAGE(value, message) ({ PyObjectContainer* x = value; if (x != NULL && x->type == PY_EXCEPTION) { printf("%s\n", message); assert(0 && "exception raised"); }; x; })
+
+void PY_STD_initExceptionType(void);
 
 #endif //PYCCOMPILER_EXCEPTIONS_H

@@ -115,6 +115,7 @@ PyClassContainer* PY_createClassContainer(char* name);
 void PY_ClassContainer_AllocateParentArray(PyClassContainer* cls, uint8_t count);
 bool PY_isSubclassOf(PyClassContainer* cls, PyClassContainer* parent);
 bool PY_isInstanceOf(PyObjectContainer* obj, PyClassContainer* cls);
+void PY_ClassContainer_DeclareObjectAttribute(PyClassContainer* cls, char* name);
 
 PyObjectContainer* PY_createClassInstance(PyClassContainer* cls);
 PyObjectContainer* PY_createBoxForFunction(PY_FUNC_UNBOXED* func);
