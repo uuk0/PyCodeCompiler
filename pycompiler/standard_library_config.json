@@ -117,9 +117,15 @@
       },
       {
         "name": "next",
-        "type": "operator wrapper",
-        "c name": "PY_STD_operator_next",
+        "type": "method",
+        "c name": "PY_STD_NEXT_FORWARD_arg_0",
         "arguments": 1
+      },
+      {
+        "name": "next",
+        "type": "method",
+        "c name": "PY_STD_NEXT_FORWARD_arg_1",
+        "arguments": 2
       },
       {
         "name": "True",

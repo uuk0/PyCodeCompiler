@@ -88,6 +88,22 @@ PyObjectContainer* PY_STD_GENERATOR_next_fast_arg_1(PyObjectContainer* self, PyO
     return result != NULL ? result : default_value;
 }
 
+PyObjectContainer* PY_STD_NEXT_FORWARD_arg_0(PyObjectContainer* self)
+{
+    assert(self != NULL);
+    PyObjectContainer* method = PY_getObjectAttributeByNameOrStatic(self, "__next__");
+    assert(method != NULL);
+    return PY_invokeBoxedMethod(method, self, 0, NULL, NULL);
+}
+
+PyObjectContainer* PY_STD_NEXT_FORWARD_arg_1(PyObjectContainer* self, PyObjectContainer* default_value)
+{
+    assert(self != NULL);
+    PyObjectContainer* method = PY_getObjectAttributeByNameOrStatic(self, "__next__");
+    assert(method != NULL);
+    return PY_invokeBoxedMethod(method, self, 1, &default_value, NULL);
+}
+
 void PY_STD_initGeneratorType(void)
 {
     PY_TYPE_GENERATOR = PY_createClassContainer("<generator>");

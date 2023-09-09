@@ -433,33 +433,13 @@ class ResolveKnownDataTypes(SyntaxTreeVisitor):
                 node.static_value_type = node.base.value.static_value_type
             elif isinstance(node.base.value, ClassDefinitionNode):
                 node.static_value_type = ClassExactDataType(node.base.value)
-            elif node.base.value == Scope.STANDARD_LIBRARY_VALUES["len"]:
+            elif node.base.value == Scope.STANDARD_LIBRARY_VALUES["len"][1]:
                 self.check_for_overload_on_type(node, "__len__", "len")
-            elif node.base.value == Scope.STANDARD_LIBRARY_VALUES["next"]:
-                if len(node.args) == 1:
-                    self.check_for_overload_on_type(node, "__next__", "next")
-                else:
-                    self.check_for_overload_on_type_double(node, "__next__", "next")
 
     def check_for_overload_on_type(self, node, bound_name, normal_name):
         if len(node.args) != 1:
             raise ValueError(
                 f"{normal_name}(...) expected exactly 1 arg, got {len(node.args)}"
-            )
-
-        arg = node.args[0].value
-        if (
-            arg.static_value_type
-            and isinstance(arg.static_value_type, ClassExactDataType)
-            and bound_name in arg.static_value_type.ref.function_table
-        ):
-            func = arg.static_value_type.ref.function_table[bound_name]
-            node.base = func
-
-    def check_for_overload_on_type_double(self, node, bound_name, normal_name):
-        if len(node.args) != 2:
-            raise ValueError(
-                f"{normal_name}(...) expected one or two args, got {len(node.args)}"
             )
 
         arg = node.args[0].value
@@ -591,8 +571,15 @@ class ResolveStaticNames(SyntaxTreeVisitor):
     def visit_name_access(self, access: NameAccessExpression):
         super().visit_name_access(access)
 
+        arg_count = -1
+
+        if isinstance(access.parent[0], CallExpression):
+            arg_count = len(access.parent[0].args)
+
         try:
-            value = access.scope.get_static_value_or_fail(access.name.text)
+            value = access.scope.get_static_value_or_fail(
+                access.name.text, arg_count=arg_count
+            )
         except NameError:
             return
 

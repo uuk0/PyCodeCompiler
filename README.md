@@ -32,6 +32,8 @@ print(a)
 The compiler can create two internal variables not sharing the same name,
 both having a strict type in this scope.
 
+Currently, the compiler forbids in some cases reassigning with another data type.
+
 ## Dynamic Types in Objects
 
 A variable might hold a certain type, e.g. int, float, long, ...,
@@ -39,6 +41,11 @@ or a holding container of such type.
 
 The compiler will create a function handling the code with only holding containers,
 and might decide to create functions with primitive arguments and return value.
+
+Dynamic attribute names are by default disabled for general use.
+The only case when they are required are in modules, as they are complex objects.
+
+In the future, there will be an option to generally enable dynamic attribute names.
 
 ## Generics
 
@@ -80,20 +87,33 @@ Make the compiled test suite from python not fail in the major test cases
 - variable assignments, including multiple lhs and complex lhs objects, like e.g. `target[0] = x.y = 10`
 - the subscription operator (`[]`), attribute access (`.`)
 - function calls (`()`)
-- function declarations (python 3.12 syntax with generics via `[]` after the function name)
-  - TODO: yield
+- function declarations (python 3.12 syntax with generics via `[]` after the function name), including generators
+  (WIP)
+  - no inner functions (TODO: make them work with a wrapper)
+  - TODO: yield from
 - class declarations (python 3.12 syntax with generics via `[]` after the class name)
-  - instantiation (only for static-know classes)
+  - instantiation (only for static-know classes currently)
+  - no inner classes (TODO: make them work, PyClassContainer supports it already!)
   - TODO: class references, call mechanism should be able to construct class dynamically
-- while loops
-  - TODO: continue, break
+- while loops, including continue, break and else
 - list and tuple explict construction (using `(a, b)` or `[a, b]`)
   - TODO: comprehensions
   - TODO: assignment targets
-- TODO: if-elif-else, for, arithmetic, while-break
-- TODO: generators (yield, yield from)
+  - TODO: dicts
+- TODO: if-elif-else, for (requires generators to work fully), arithmetic, while-break
 - TODO: compare-chains resolving
-- TODO: module imports (-> require the construction of module scopes at runtime)
-  - module init function invoked where the import should happen
-  - include at TOP of module
-  - raise exception when using `__import__` and similar (or implement a way to make them work!)
+- TODO: dynamic imports (\_\_import__, importlib)
+
+## Supported Builtin Modules
+
+None yet (typing.TYPE_CHECKING is implemented for testing purposes, but not more)
+
+## Command Line Interface
+
+TODO
+
+Usage:
+```
+pycompiler <source files...> [-o <output file>] [--enable-dynamic-attributes] [--disable-module-generation] [--disable-generators]
+[--add-to-path=<file or folder>]
+```

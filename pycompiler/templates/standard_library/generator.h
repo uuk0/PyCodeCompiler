@@ -24,6 +24,9 @@ PyObjectContainer* PY_STD_GENERATOR_next(PyObjectContainer* self, uint8_t argc, 
 PyObjectContainer* PY_STD_GENERATOR_next_fast_arg_0(PyObjectContainer* self);
 PyObjectContainer* PY_STD_GENERATOR_next_fast_arg_1(PyObjectContainer* self, PyObjectContainer* default_value);
 
+PyObjectContainer* PY_STD_NEXT_FORWARD_arg_0(PyObjectContainer* self);
+PyObjectContainer* PY_STD_NEXT_FORWARD_arg_1(PyObjectContainer* self, PyObjectContainer* default_value);
+
 void PY_STD_initGeneratorType(void);
 
 #endif //PYCCOMPILER_GENERATOR_H

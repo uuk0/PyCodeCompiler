@@ -13,7 +13,7 @@ from pycompiler.Lexer import TokenType
 
 
 class Scope:
-    STANDARD_LIBRARY_VALUES: typing.Dict[str, object] = {}
+    STANDARD_LIBRARY_VALUES: typing.Dict[str, typing.Dict[str | int, object]] = {}
     STANDARD_LIBRARY_MODULES: typing.Dict[str, StandardLibraryModuleReference] = {}
 
     def __init__(self):
@@ -121,7 +121,7 @@ class Scope:
         if strong_value != self._NO_VALUE:
             self.strong_variables[name] = strong_value
 
-    def get_static_value_or_fail(self, name: str) -> object:
+    def get_static_value_or_fail(self, name: str, arg_count=-1) -> object:
         if name in self.strong_variables:
             return self.strong_variables[name]
 
@@ -130,11 +130,19 @@ class Scope:
 
         if self.parent is None:
             if name in self.STANDARD_LIBRARY_VALUES:
-                return self.STANDARD_LIBRARY_VALUES[name]
+                if arg_count != -1 and arg_count in self.STANDARD_LIBRARY_VALUES[name]:
+                    return self.STANDARD_LIBRARY_VALUES[name][arg_count]
+
+                if "*" not in self.STANDARD_LIBRARY_VALUES[name]:
+                    raise NameError(
+                        f"could not resolve static value of variable '{name}' without explicit arg count"
+                    )
+
+                return self.STANDARD_LIBRARY_VALUES[name]["*"]
 
             raise NameError(f"could not resolve static value of variable '{name}'")
 
-        return self.parent.get_static_value_or_fail(name)
+        return self.parent.get_static_value_or_fail(name, arg_count=arg_count)
 
     def get_module_global_variable_name(self, name: str) -> str | None:
         if name in self.global_scope.variable_name_stack:
@@ -679,7 +687,7 @@ class TupleConstructor(AbstractASTNodeExpression):
         super().__init__()
         self.items = items
         self.static_value_type = ClassExactDataType(
-            Scope.STANDARD_LIBRARY_VALUES["tuple"]
+            Scope.STANDARD_LIBRARY_VALUES["tuple"]["*"]
         )
 
     def __eq__(self, other):
@@ -722,7 +730,7 @@ class ListConstructor(AbstractASTNodeExpression):
         super().__init__()
         self.items = items
         self.static_value_type = ClassExactDataType(
-            Scope.STANDARD_LIBRARY_VALUES["list"]
+            Scope.STANDARD_LIBRARY_VALUES["list"]["*"]
         )
 
     def __eq__(self, other):
@@ -2248,8 +2256,9 @@ def load_std_data():
             target = Scope.STANDARD_LIBRARY_VALUES
 
             for entry in module["items"]:
-                target[entry["name"]] = _parse_std_lib_decl_entry(entry)
-
+                target.setdefault(entry["name"], {})[
+                    entry.get("arguments", "*")
+                ] = _parse_std_lib_decl_entry(entry)
         else:
             module_obj = StandardLibraryModuleReference(
                 module["module"], module["header"]

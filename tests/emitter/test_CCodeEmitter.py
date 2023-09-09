@@ -126,5 +126,5 @@ class TestCCodeEmitter(TestCase):
     def test_import_mechanism(self):
         self.run_named_folder_test("import_mechanism_test")
 
-    # def test_generators(self):
-    #     self.run_named_folder_test("generators")
+    def test_generators(self):
+        self.run_named_folder_test("generators")
