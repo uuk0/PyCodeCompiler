@@ -59,6 +59,7 @@ void PY_CLASS_INIT_PY_CLASS_Test_4(void) {
 PyObjectContainer* init_1(PyObjectContainer* self_0) {
     return PY_NONE;
 
+
     return PY_NONE;
 }
 

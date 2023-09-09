@@ -23,6 +23,8 @@ from pycompiler.Parser import (
     ImportStatement,
     ModuleReference,
     StandardLibraryModuleReference,
+    PyNewlineNode,
+    YieldStatement,
 )
 
 if typing.TYPE_CHECKING:
@@ -131,6 +133,7 @@ class ResolveParentAttribute(SyntaxTreeVisitor):
         self, node: FunctionDefinitionNode.FunctionDefinitionParameter
     ):
         super().visit_function_definition_parameter(node)
+
         if node.mode == FunctionDefinitionNode.ParameterType.KEYWORD:
             assert node.default is not None
 
@@ -140,6 +143,13 @@ class ResolveParentAttribute(SyntaxTreeVisitor):
         super().visit_return_statement(return_statement)
         return_statement.return_value.parent = (
             return_statement,
+            ParentAttributeSection.RHS,
+        )
+
+    def visit_yield_statement(self, yield_statement: YieldStatement):
+        super().visit_yield_statement(yield_statement)
+        yield_statement.yield_expression.parent = (
+            yield_statement,
             ParentAttributeSection.RHS,
         )
 
@@ -494,7 +504,7 @@ class ResolveClassFunctionNode(SyntaxTreeVisitor):
                 )
                 expression.parent[0].try_replace_child(
                     expression,
-                    target,
+                    target.copy(),
                     expression.parent[1],
                 )
 
@@ -507,7 +517,7 @@ class ResolveClassFunctionNode(SyntaxTreeVisitor):
         ):
             expression.parent[0].try_replace_child(
                 expression,
-                expression.base.value.base_scope[expression.attribute.text],
+                expression.base.value.base_scope[expression.attribute.text].copy(),
                 expression.parent[1],
             )
 
@@ -525,7 +535,7 @@ class ResolveClassFunctionNode(SyntaxTreeVisitor):
                 expression.parent[0].parent[0].try_replace_child(
                     expression.parent[0],
                     CallExpression(
-                        data_type.function_table["__setitem__"],
+                        data_type.function_table["__setitem__"].copy(),
                         [],
                         TokenType.OPENING_ROUND_BRACKET("("),
                         [
@@ -550,7 +560,7 @@ class ResolveClassFunctionNode(SyntaxTreeVisitor):
             expression.parent[0].try_replace_child(
                 expression,
                 CallExpression(
-                    data_type.function_table["__getitem__"],
+                    data_type.function_table["__getitem__"].copy(),
                     [],
                     TokenType.OPENING_ROUND_BRACKET("("),
                     [
@@ -570,6 +580,10 @@ class ResolveClassFunctionNode(SyntaxTreeVisitor):
 class ResolveStaticNames(SyntaxTreeVisitor):
     def visit_name_access(self, access: NameAccessExpression):
         super().visit_name_access(access)
+
+        if access.parent is None:
+            print("error ResolveStaticNames", access)
+            return
 
         arg_count = -1
 

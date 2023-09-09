@@ -12,6 +12,10 @@ def test():
     assert next(gen) == 2
     assert next(gen, None) == None
 
+    gen = generator_4()
+    assert next(gen) == 5
+    assert next(gen) == 10
+
 
 def generator_1():
     yield 1
@@ -27,3 +31,10 @@ def generator_3():
     yield 1
     yield 2
     return
+    yield 5
+
+
+def generator_4():
+    a = 10
+    yield 5
+    yield a

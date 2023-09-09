@@ -358,6 +358,10 @@ class AbstractASTNode(abc.ABC):
         self.parent: typing.Tuple[AbstractASTNode, ParentAttributeSection] | None = None
         self.static_value_type = None
 
+    def set_parent(self, node: AbstractASTNode, section: ParentAttributeSection):
+        self.parent = node, section
+        return self
+
     def try_replace_child(
         self,
         original: AbstractASTNode | None,
@@ -373,6 +377,12 @@ class AbstractASTNode(abc.ABC):
         is_target=False,
     ):
         pass
+
+    def copy(self):
+        try:
+            return type(self)()
+        except:
+            raise NotImplementedError(type(self).__name__)
 
 
 class AbstractASTNodeExpression(AbstractASTNode, abc.ABC):
@@ -469,6 +479,7 @@ class AssignmentExpression(AbstractASTNode):
         replacement: AbstractASTNode,
         position: ParentAttributeSection,
     ) -> bool:
+        replacement.parent = self, position
         if position == ParentAttributeSection.LHS:
             if original is None:
                 return False
@@ -583,6 +594,11 @@ class GlobalCNameAccessExpression(AbstractASTNodeExpression):
         super().__init__()
         self.name = self.normal_name = name
 
+    def copy(self):
+        obj = type(self)(self.name)
+        obj.normal_name = self.normal_name
+        return obj
+
     def __eq__(self, other):
         return type(other) == NameAccessExpression and self.name == other.name
 
@@ -670,6 +686,7 @@ class PriorityBrackets(AbstractASTNode):
         replacement: AbstractASTNode,
         position: ParentAttributeSection,
     ) -> bool:
+        replacement.parent = self, position
         self.inner_node = replacement
         return True
 
@@ -702,6 +719,7 @@ class TupleConstructor(AbstractASTNodeExpression):
         replacement: AbstractASTNode,
         position: ParentAttributeSection,
     ) -> bool:
+        replacement.parent = self, position
         self.items[self.items.index(original)] = replacement
         return True
 
@@ -745,6 +763,7 @@ class ListConstructor(AbstractASTNodeExpression):
         replacement: AbstractASTNode,
         position: ParentAttributeSection,
     ) -> bool:
+        replacement.parent = self, position
         self.items[self.items.index(original)] = replacement
         return True
 
@@ -792,6 +811,7 @@ class AttributeExpression(AbstractASTNodeExpression):
         replacement: AbstractASTNode,
         position: ParentAttributeSection,
     ) -> bool:
+        replacement.parent = self, position
         if position != ParentAttributeSection.LHS:
             return False
 
@@ -850,6 +870,7 @@ class SubscriptionExpression(AbstractASTNodeExpression):
         replacement: AbstractASTNode,
         position: ParentAttributeSection,
     ) -> bool:
+        replacement.parent = self, position
         if position == ParentAttributeSection.LHS:
             self.base = replacement
         elif position == ParentAttributeSection.RHS:
@@ -919,6 +940,7 @@ class CallExpression(AbstractASTNodeExpression):
             replacement: AbstractASTNode,
             position: ParentAttributeSection,
         ) -> bool:
+            replacement.parent = self, position
             if position == ParentAttributeSection.PARAMETER:
                 self.value = replacement
                 return True
@@ -948,6 +970,9 @@ class CallExpression(AbstractASTNodeExpression):
         self.args = args
         self.r_bracket = r_bracket
 
+        for arg in args:
+            arg.set_parent(self, ParentAttributeSection.PARAMETER)
+
     def __eq__(self, other):
         return (
             type(other) == CallExpression
@@ -967,6 +992,7 @@ class CallExpression(AbstractASTNodeExpression):
         replacement: AbstractASTNode,
         position: ParentAttributeSection,
     ) -> bool:
+        replacement.parent = self, position
         if position == ParentAttributeSection.LHS:
             self.base = replacement
         elif position == ParentAttributeSection.PARAMETER:
@@ -1128,6 +1154,7 @@ class ReturnStatement(AbstractASTNode):
         replacement: AbstractASTNode,
         position: ParentAttributeSection,
     ) -> bool:
+        replacement.parent = self, position
         if position == ParentAttributeSection.RHS:
             self.return_value = replacement
             return True
@@ -1176,6 +1203,7 @@ class YieldStatement(AbstractASTNode):
         replacement: AbstractASTNode,
         position: ParentAttributeSection,
     ) -> bool:
+        replacement.parent = self, position
         if position == ParentAttributeSection.RHS:
             self.yield_expression = replacement
             return True
@@ -1237,6 +1265,7 @@ class FunctionDefinitionNode(AbstractASTNode):
             replacement: AbstractASTNode,
             position: ParentAttributeSection,
         ) -> bool:
+            replacement.parent = self, position
             if (
                 self.mode == FunctionDefinitionNode.ParameterType.KEYWORD
                 and position == ParentAttributeSection.PARAMETER
@@ -1286,6 +1315,7 @@ class FunctionDefinitionNode(AbstractASTNode):
         replacement: AbstractASTNode,
         position: ParentAttributeSection,
     ) -> bool:
+        replacement.parent = self, position
         for i, node in enumerate(self.body):
             if node is original:
                 self.body[i] = replacement
@@ -1507,6 +1537,7 @@ class ClassDefinitionNode(AbstractASTNode):
         replacement: AbstractASTNode,
         position: ParentAttributeSection,
     ) -> bool:
+        replacement.parent = self, position
         if original is None:
             return False
 
@@ -1678,6 +1709,7 @@ class WhileStatement(AbstractASTNode):
         replacement: AbstractASTNode,
         position: ParentAttributeSection,
     ) -> bool:
+        replacement.parent = self, position
         if position == ParentAttributeSection.LHS:
             self.condition = replacement
             return True
@@ -1853,6 +1885,7 @@ class BinaryOperatorExpression(AbstractASTNodeExpression):
         replacement: AbstractASTNode,
         position: ParentAttributeSection,
     ) -> bool:
+        replacement.parent = self, position
         if position == ParentAttributeSection.LHS:
             self.lhs = replacement
         elif position == ParentAttributeSection.RHS:
@@ -1914,6 +1947,7 @@ class WalrusOperatorExpression(AbstractASTNodeExpression):
         replacement: AbstractASTNode,
         position: ParentAttributeSection,
     ) -> bool:
+        replacement.parent = self, position
         if position == ParentAttributeSection.LHS:
             self.target = replacement
         elif position == ParentAttributeSection.RHS:
@@ -1955,6 +1989,7 @@ class AssertStatement(AbstractASTNode):
         replacement: AbstractASTNode,
         position: ParentAttributeSection,
     ) -> bool:
+        replacement.parent = self, position
         if position == ParentAttributeSection.LHS:
             self.statement = replacement
         elif position == ParentAttributeSection.RHS:
@@ -2115,6 +2150,8 @@ class SyntaxTreeVisitor:
             return self.visit_standard_library_operator(obj)
         elif obj_type == YieldStatement:
             return self.visit_yield_statement(obj)
+        elif obj_type == GeneratorNameAccessExpression:
+            return self.visit_name_access(obj)
         else:
             print(type(obj))
             raise RuntimeError(obj)
@@ -2961,6 +2998,7 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
         if keyword != "return ":
             if keyword and keyword.startswith("return"):
                 if keyword[-1] == "\n":
+                    self.lexer.give_back("\n")
                     return ReturnStatement(ConstantAccessExpression(None))
 
                 white = self.lexer.try_parse_whitespaces()
@@ -2974,10 +3012,14 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
 
             return
 
+        self.lexer.save_state()
         return_value = self.try_parse_expression()
 
         if return_value is None:
             return_value = ConstantAccessExpression(None)
+            self.lexer.rollback_state()
+        else:
+            self.lexer.discard_save_state()
 
         return ReturnStatement(return_value)
 

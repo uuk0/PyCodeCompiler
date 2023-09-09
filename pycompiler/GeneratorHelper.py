@@ -36,7 +36,11 @@ class LocalNameAccessRewriter(SyntaxTreeVisitor):
     def visit_name_access(self, access: NameAccessExpression):
         super().visit_name_access(access)
 
-        if access.name not in access.scope.variable_name_stack:
+        if access.name.text not in access.scope.variable_name_stack:
+            return
+
+        if access.parent is None:
+            print("error LocalNameAccessRewriter", access)
             return
 
         if access.name.text in self.name_index_table:
@@ -44,7 +48,7 @@ class LocalNameAccessRewriter(SyntaxTreeVisitor):
         else:
             index = self.next_name_id
             self.next_name_id += 1
-            self.next_name_id[access.name.text] = index
+            self.name_index_table[access.name.text] = index
 
         access.parent[0].try_replace_child(
             access,
