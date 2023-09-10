@@ -24,7 +24,7 @@ PyObjectContainer* PY_STD_GENERATOR_create(uint16_t local_count)
     }
     container->raw_value = generator;
     generator->next_section = NULL;
-    generator->locals = malloc(local_count * sizeof(PyObjectContainer*));
+    generator->locals = calloc(local_count, sizeof(PyObjectContainer*));
     generator->section_id = 0;
     if (generator->locals == NULL)
     {

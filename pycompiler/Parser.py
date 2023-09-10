@@ -1241,9 +1241,27 @@ class YieldStatement(AbstractASTNode):
         context: CCodeEmitter.CExpressionBuilder,
         is_target=False,
     ):
-        context.add_code(f"generator->section_id = {self.yield_label_id};\nreturn ")
-        self.yield_expression.emit_c_code(base, context)
-        context.add_code(f";\ngen_{self.yield_label_id}:;\n")
+        if not self.is_yield_from:
+            context.add_code(f"generator->section_id = {self.yield_label_id};\nreturn ")
+            self.yield_expression.emit_c_code(base, context)
+            context.add_code(f";\ngen_{self.yield_label_id}:;\n")
+        else:
+            partial = base.get_fresh_name("yield_from_partial")
+            context.add_code(
+                f"PyObjectContainer* {partial} = PY_STD_GENERATOR_next_fast_arg_1("
+            )
+            self.yield_expression.emit_c_code(base, context)
+            context.add_code(", NULL);\n")
+            context.add_code(
+                f"""
+if ({partial} == NULL)
+{{
+    goto gen_{self.yield_label_id};
+}}
+return {partial};
+gen_{self.yield_label_id}:;\n
+"""
+            )
 
 
 class FunctionDefinitionNode(AbstractASTNode):
@@ -2417,6 +2435,8 @@ class Parser:
                     self.lexer.get_chars(1)
                     self.lexer.try_parse_whitespaces()
                     require_indent = False
+                elif self.lexer.inspect_chars(1) == "#":
+                    node = self.try_parse_comment()
                 else:
                     require_indent = True
 

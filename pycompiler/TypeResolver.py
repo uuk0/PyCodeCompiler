@@ -389,18 +389,27 @@ class NameNormalizer(SyntaxTreeVisitor):
 
         name = yield_statement.scope.get_fresh_name("yield_intermediate_value")
 
+        # todo: wrap __iter__ call in condition
         yield_statement.parent[0].try_insert_before(
             yield_statement,
             new_node := AssignmentExpression(
                 [NameAccessExpression(TokenType.IDENTIFIER(name))],
                 TokenType.EQUAL_SIGN("="),
                 CallExpression(
-                    Scope.STANDARD_LIBRARY_VALUES["iter"][1],
+                    ConstantAccessExpression(
+                        GlobalCNameAccessExpression(
+                            "PY_STD_operator_iter_for_yield_from"
+                        )
+                    ),
                     [],
                     TokenType.OPENING_ROUND_BRACKET("("),
                     [
                         CallExpression.CallExpressionArgument(
                             yield_statement.yield_expression,
+                            CallExpression.ParameterType.NORMAL,
+                        ),
+                        CallExpression.CallExpressionArgument(
+                            NameAccessExpression(TokenType.IDENTIFIER(name)),
                             CallExpression.ParameterType.NORMAL,
                         ),
                     ],

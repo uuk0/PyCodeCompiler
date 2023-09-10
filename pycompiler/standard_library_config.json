@@ -149,6 +149,11 @@
         "c name": "PY_NONE"
       },
       {
+        "name": "C_NULL",
+        "type": "constant",
+        "c name": "NULL"
+      },
+      {
         "name": "<generator>",
         "type": "class",
         "type variable": "PY_TYPE_GENERATOR",
