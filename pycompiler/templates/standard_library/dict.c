@@ -8,6 +8,12 @@
 #include "helpers/hashmap.h"
 #include "operators.h"
 #include "exceptions.h"
+#include "config.h"
+#include "tuple.h"
+
+#ifdef PY_ENABLE_GENERATORS
+#include "generator.h"
+#endif
 
 PyClassContainer* PY_TYPE_DICT;
 
@@ -34,11 +40,14 @@ bool HASH_compare_py_object(void* lhs, void* rhs)
 PyObjectContainer* PY_STD_dict_CREATE(uint8_t argc, ...)
 {
     PyObjectContainer* dict = PY_createClassInstance(PY_TYPE_DICT);
+    PY_STD_dict_init_fast_arg_zero(dict);
 
     va_list ap;
     va_start(ap, argc * 2);
     for(int i = 0; i < argc; i++){
-        PY_STD_dict_setitem_fast(dict, va_arg(ap, PyObjectContainer*), va_arg(ap, PyObjectContainer*));
+        PyObjectContainer* key = va_arg(ap, PyObjectContainer*);
+        PyObjectContainer* value = va_arg(ap, PyObjectContainer*);
+        PY_STD_dict_setitem_fast(dict, key, value);
     }
     va_end(ap);
 
@@ -163,6 +172,137 @@ PyObjectContainer* PY_STD_dict_contains_fast(PyObjectContainer* self, PyObjectCo
     return HASHMAP_has_key(self->raw_value, key) ? PY_TRUE : PY_FALSE;
 }
 
+#ifdef PY_ENABLE_GENERATORS
+PyObjectContainer* PY_STD_dict_keys_iterator(PyGeneratorContainer* generator)
+{
+    PyObjectContainer* self = generator->locals[0];
+    HashMapContainer* dict = self->raw_value;
+
+    while (1)
+    {
+        if (generator->section_id >= dict->used_size)
+        {
+            return NULL;
+        }
+
+        PyObjectContainer* key = dict->key_memory[generator->section_id++];
+        if (key == NULL || key == (PyObjectContainer*)&HASHMAP_MARKER_UNSET)
+        {
+            continue;
+        }
+
+        return key;
+    }
+}
+
+PyObjectContainer* PY_STD_dict_keys(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
+{
+    assert(argc == 0);
+    return PY_STD_dict_keys_fast(self);
+}
+
+PyObjectContainer* PY_STD_dict_keys_fast(PyObjectContainer* self)
+{
+    assert(self != NULL);
+    assert(self->type == PY_TYPE_PY_IMPL);
+    assert(self->py_type == PY_TYPE_DICT);
+
+    PyObjectContainer* generator = PY_STD_GENERATOR_create(1);
+    PyGeneratorContainer* container = generator->raw_value;
+    container->section_id = 0;
+    container->locals[0] = self;
+    container->next_section = PY_STD_dict_keys_iterator;
+    return generator;
+}
+
+PyObjectContainer* PY_STD_dict_values_iterator(PyGeneratorContainer* generator)
+{
+    PyObjectContainer* self = generator->locals[0];
+    HashMapContainer* dict = self->raw_value;
+
+    while (1)
+    {
+        if (generator->section_id >= dict->used_size)
+        {
+            return NULL;
+        }
+
+        PyObjectContainer* key = dict->key_memory[generator->section_id++];
+        if (key == NULL || key == (PyObjectContainer*)&HASHMAP_MARKER_UNSET)
+        {
+            continue;
+        }
+
+        PyObjectContainer* value = dict->value_memory[generator->section_id-1];
+        return value;
+    }
+}
+
+PyObjectContainer* PY_STD_dict_values(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
+{
+    assert(argc == 0);
+    return PY_STD_dict_values_fast(self);
+}
+
+PyObjectContainer* PY_STD_dict_values_fast(PyObjectContainer* self)
+{
+    assert(self != NULL);
+    assert(self->type == PY_TYPE_PY_IMPL);
+    assert(self->py_type == PY_TYPE_DICT);
+
+    PyObjectContainer* generator = PY_STD_GENERATOR_create(1);
+    PyGeneratorContainer* container = generator->raw_value;
+    container->section_id = 0;
+    container->locals[0] = self;
+    container->next_section = PY_STD_dict_values_iterator;
+    return generator;
+}
+
+PyObjectContainer* PY_STD_dict_items_iterator(PyGeneratorContainer* generator)
+{
+    PyObjectContainer* self = generator->locals[0];
+    HashMapContainer* dict = self->raw_value;
+
+    while (1)
+    {
+        if (generator->section_id >= dict->used_size)
+        {
+            return NULL;
+        }
+
+        PyObjectContainer* key = dict->key_memory[generator->section_id++];
+        if (key == NULL || key == (PyObjectContainer*)&HASHMAP_MARKER_UNSET)
+        {
+            continue;
+        }
+
+        PyObjectContainer* value = dict->value_memory[generator->section_id-1];
+        return PY_STD_tuple_CREATE(2, key, value);
+    }
+}
+
+PyObjectContainer* PY_STD_dict_items(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
+{
+    assert(argc == 0);
+    return PY_STD_dict_items_fast(self);
+}
+
+PyObjectContainer* PY_STD_dict_items_fast(PyObjectContainer* self)
+{
+    assert(self != NULL);
+    assert(self->type == PY_TYPE_PY_IMPL);
+    assert(self->py_type == PY_TYPE_DICT);
+
+    PyObjectContainer* generator = PY_STD_GENERATOR_create(1);
+    PyGeneratorContainer* container = generator->raw_value;
+    container->section_id = 0;
+    container->locals[0] = self;
+    container->next_section = PY_STD_dict_items_iterator;
+    return generator;
+}
+
+#endif
+
 void PY_STD_initDictType(void)
 {
     PY_TYPE_DICT = PY_createClassContainer("dict");
@@ -172,5 +312,12 @@ void PY_STD_initDictType(void)
     PY_setClassAttributeByNameOrCreate(PY_TYPE_DICT, "__getitem__", PY_createBoxForFunction(PY_STD_dict_getitem));
     PY_setClassAttributeByNameOrCreate(PY_TYPE_DICT, "__delitem__", PY_createBoxForFunction(PY_STD_dict_delitem));
     PY_setClassAttributeByNameOrCreate(PY_TYPE_DICT, "__contains__", PY_createBoxForFunction(PY_STD_dict_contains));
+
+#ifdef PY_ENABLE_GENERATORS
+    PY_setClassAttributeByNameOrCreate(PY_TYPE_DICT, "__iter__", PY_createBoxForFunction(PY_STD_dict_keys));
+    PY_setClassAttributeByNameOrCreate(PY_TYPE_DICT, "keys", PY_createBoxForFunction(PY_STD_dict_keys));
+    PY_setClassAttributeByNameOrCreate(PY_TYPE_DICT, "values", PY_createBoxForFunction(PY_STD_dict_values));
+    PY_setClassAttributeByNameOrCreate(PY_TYPE_DICT, "items", PY_createBoxForFunction(PY_STD_dict_items));
+#endif
 }
 

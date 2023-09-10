@@ -14,3 +14,8 @@ def test():
     assert obj.get("test") == 20
     assert obj.get("test", 10) == 20
     assert obj.get("test 2", 10) == 10
+
+    obj = {"test": 30}
+    assert obj.get("test") == 30
+    assert obj.get("test", 10) == 30
+    assert obj.get("test 2", 10) == 10

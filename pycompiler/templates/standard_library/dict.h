@@ -28,6 +28,15 @@ PyObjectContainer* PY_STD_dict_delitem_fast(PyObjectContainer* self, PyObjectCon
 PyObjectContainer* PY_STD_dict_contains(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info);
 PyObjectContainer* PY_STD_dict_contains_fast(PyObjectContainer* self, PyObjectContainer* key);
 
+PyObjectContainer* PY_STD_dict_keys(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info);
+PyObjectContainer* PY_STD_dict_keys_fast(PyObjectContainer* self);
+
+PyObjectContainer* PY_STD_dict_values(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info);
+PyObjectContainer* PY_STD_dict_values_fast(PyObjectContainer* self);
+
+PyObjectContainer* PY_STD_dict_items(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info);
+PyObjectContainer* PY_STD_dict_items_fast(PyObjectContainer* self);
+
 void PY_STD_initDictType(void);
 
 #endif //PYCCOMPILER_DICT_H

@@ -841,7 +841,7 @@ class DictConstructor(AbstractASTNodeExpression):
         context: CCodeEmitter.CExpressionBuilder,
         is_target=False,
     ):
-        if self.items:
+        if self.key_value_pairs:
             context.add_code(f"PY_STD_dict_CREATE({len(self.key_value_pairs)}, ")
 
             for key, value in self.key_value_pairs[:-1]:

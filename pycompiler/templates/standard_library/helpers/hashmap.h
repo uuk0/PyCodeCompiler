@@ -8,6 +8,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+extern bool HASHMAP_MARKER_UNSET;
+
 typedef int64_t HASH_METHOD(void* obj);
 typedef bool HASH_COMPARE_ELEMENT(void* lhs, void* rhs);
 

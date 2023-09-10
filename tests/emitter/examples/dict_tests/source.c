@@ -78,6 +78,18 @@ PyObjectContainer* test_0(void) {
 
     PyObjectContainer* assert_target_9 = PY_CHECK_EXCEPTION(PY_STD_operator_equals(PY_CHECK_EXCEPTION(PY_STD_dict_get_fast_arg_2 (obj_1 , PY_createString("test 2") , PY_createInteger(10))), PY_createInteger(10)));
     assert(PY_getTruthValueOf(assert_target_9));
+
+
+    obj_1 = PY_STD_dict_CREATE(1, PY_createString("test"), PY_createInteger(30));
+
+    PyObjectContainer* assert_target_10 = PY_CHECK_EXCEPTION(PY_STD_operator_equals(PY_CHECK_EXCEPTION(PY_STD_dict_getitem_fast (obj_1 , PY_createString("test"))), PY_createInteger(30)));
+    assert(PY_getTruthValueOf(assert_target_10));
+
+    PyObjectContainer* assert_target_11 = PY_CHECK_EXCEPTION(PY_STD_operator_equals(PY_CHECK_EXCEPTION(PY_STD_dict_get_fast_arg_2 (obj_1 , PY_createString("test") , PY_createInteger(10))), PY_createInteger(30)));
+    assert(PY_getTruthValueOf(assert_target_11));
+
+    PyObjectContainer* assert_target_12 = PY_CHECK_EXCEPTION(PY_STD_operator_equals(PY_CHECK_EXCEPTION(PY_STD_dict_get_fast_arg_2 (obj_1 , PY_createString("test 2") , PY_createInteger(10))), PY_createInteger(10)));
+    assert(PY_getTruthValueOf(assert_target_12));
     return PY_NONE;
 }
 

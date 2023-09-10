@@ -8,6 +8,7 @@
 #include "pyinclude.h"
 
 PyObjectContainer* PY_builtin_int_compare(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info);
+PyObjectContainer* PY_builtin_int_hash(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info);
 void PY_STD_initIntType(void);
 
 #endif //TEMPLATES_INT_H

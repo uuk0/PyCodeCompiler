@@ -19,6 +19,7 @@ PyObjectContainer* PY_FALSE;
 PyObjectContainer* PY_TRUE;
 
 PyObjectContainer* PY_builtin_int_compare_container;
+PyObjectContainer* PY_builtin_int_hash_container;
 
 PyClassContainer* PY_TYPE_OBJECT;
 
@@ -207,6 +208,10 @@ static PyObjectContainer* PY_getObjectAttributeByNameOrStatic_primitive(PyObject
         if (strcmp(name, "__eq__") == 0)
         {
             return PY_builtin_int_compare_container;
+        }
+        else if (strcmp(name, "__hash__") == 0)
+        {
+            return PY_builtin_int_hash_container;
         }
         printf("%s\n", name);
         PY_THROW_EXCEPTION_WITH_MESSAGE(NULL, "cannot get attribute on type <int>");

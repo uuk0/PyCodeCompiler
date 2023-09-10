@@ -18,6 +18,7 @@ struct PyGeneratorContainer;
 struct PyFunctionContext;
 
 extern struct PyObjectContainer* PY_builtin_int_compare_container;
+extern struct PyObjectContainer* PY_builtin_int_hash_container;
 
 
 enum PyObjectType

@@ -25,7 +25,14 @@ PyObjectContainer* PY_builtin_int_compare(PyObjectContainer* self, uint8_t argc,
     return PY_FALSE;
 }
 
+PyObjectContainer* PY_builtin_int_hash(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
+{
+    assert(argc == 0);
+    return PY_createInteger(PY_unpackInteger(self));
+}
+
 void PY_STD_initIntType(void)
 {
     PY_builtin_int_compare_container = PY_createBoxForFunction(PY_builtin_int_compare);
+    PY_builtin_int_hash_container = PY_createBoxForFunction(PY_builtin_int_hash);
 }

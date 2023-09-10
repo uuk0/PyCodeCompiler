@@ -124,6 +124,29 @@
             "name": "__contains__",
             "type": "method",
             "c name": "PY_STD_dict_contains_fast"
+          },
+          {
+            "name": "__iter__",
+            "type": "method",
+            "c name": "PY_STD_dict_keys_fast"
+          },
+          {
+            "name": "keys",
+            "type": "method",
+            "c name": "PY_STD_dict_keys_fast",
+            "parameters": 0
+          },
+          {
+            "name": "values",
+            "type": "method",
+            "c name": "PY_STD_dict_values_fast",
+            "parameters": 0
+          },
+          {
+            "name": "items",
+            "type": "method",
+            "c name": "PY_STD_dict_items_fast",
+            "parameters": 0
           }
         ]
       },
