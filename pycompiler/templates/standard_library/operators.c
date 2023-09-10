@@ -381,11 +381,13 @@ PyObjectContainer* PY_STD_operator_next_with_default(PyObjectContainer* value, P
 #ifdef PY_ENABLE_GENERATORS
 PyObjectContainer* PY_STD_operator_iter(PyObjectContainer* value)
 {
-    PyObjectContainer* len = PY_getObjectAttributeByNameOrStatic(value, "__iter__");
-    assert(len != NULL);
-    PyObjectContainer* result = PY_invokeBoxedMethod(len, value, 0, NULL, NULL);
-    assert(result->type == PY_TYPE_PY_IMPL && result->raw_value == PY_TYPE_GENERATOR);
-    return result;
+    PyObjectContainer* iterator = PY_getObjectAttributeByNameOrStatic(value, "__iter__");
+    if (iterator == NULL)
+    {
+        printf("object type: %s\n", PY_getObjectClassName(value));
+        PY_THROW_EXCEPTION_WITH_MESSAGE(NULL, "could not get __iter__ of object");
+    }
+    return PY_invokeBoxedMethod(iterator, value, 0, NULL, NULL);
 }
 #endif
 

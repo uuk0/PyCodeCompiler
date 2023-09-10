@@ -377,6 +377,33 @@ void PY_setClassAttributeByNameOrCreate(PyClassContainer* cls, char* name, PyObj
     cls->static_attribute_values[i+1] = NULL;
 }
 
+char* PY_getObjectClassName(PyObjectContainer* obj)
+{
+
+    switch (obj->type)
+    {
+        case PY_TYPE_PY_IMPL:
+            return obj->py_type->class_name;
+        case PY_TYPE_NONE:
+            return "None";
+        case PY_TYPE_BOOL:
+            return "bool";
+        case PY_TYPE_INT:
+            return "int";
+        case PY_TYPE_STRING:
+            return "string";
+        case PY_TYPE_FLOAT:
+            return "float";
+        case PY_TYPE_PY_TYPE:
+            return "type";
+        case PY_TYPE_FUNC_POINTER:
+            return "<function pointer>";
+        case PY_EXCEPTION:
+            return "<exception>";
+    }
+    assert(0);
+}
+
 PyObjectContainer* PY_invokeBoxedMethod(PyObjectContainer* method, PyObjectContainer* self, uint8_t param_count, PyObjectContainer** args, CallStructureInfo* info)
 {
     assert(method != NULL);

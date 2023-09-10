@@ -88,6 +88,20 @@ PyObjectContainer* PY_STD_GENERATOR_next_fast_arg_1(PyObjectContainer* self, PyO
     return result != NULL ? result : default_value;
 }
 
+PyObjectContainer* PY_STD_GENERATOR_iter(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
+{
+#ifndef PY_ENABLE_GENERATORS
+    assert(0 && "generators are not enabled!");
+#endif
+    assert(self != NULL);
+    if (!(self->type == PY_TYPE_PY_IMPL && self->py_type == PY_TYPE_GENERATOR))
+    {
+        printf("%s\n", PY_getObjectClassName(self));
+        PY_THROW_EXCEPTION_WITH_MESSAGE(NULL, "argument is not a generator!");
+    }
+    return self;
+}
+
 PyObjectContainer* PY_STD_NEXT_FORWARD_arg_0(PyObjectContainer* self)
 {
     assert(self != NULL);
@@ -108,5 +122,6 @@ void PY_STD_initGeneratorType(void)
 {
     PY_TYPE_GENERATOR = PY_createClassContainer("<generator>");
     PY_setClassAttributeByNameOrCreate(PY_TYPE_GENERATOR, "__next__", PY_createBoxForFunction(PY_STD_GENERATOR_next));
+    PY_setClassAttributeByNameOrCreate(PY_TYPE_GENERATOR, "__iter__", PY_createBoxForFunction(PY_STD_GENERATOR_iter));
 }
 

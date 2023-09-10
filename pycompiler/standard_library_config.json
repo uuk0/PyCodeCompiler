@@ -164,6 +164,12 @@
             "type": "method",
             "arguments": 2,
             "c name": "PY_STD_GENERATOR_next_fast_arg_1"
+          },
+          {
+            "name": "__iter__",
+            "type": "method",
+            "arguments": 0,
+            "c name": "PY_STD_GENERATOR_iter"
           }
         ]
       }
