@@ -5,6 +5,11 @@
 #include "list.h"
 #include "operators.h"
 #include "exceptions.h"
+#include "config.h"
+
+#ifdef PY_ENABLE_GENERATORS
+#include "generator.h"
+#endif
 
 PyClassContainer* PY_TYPE_LIST;
 
@@ -530,6 +535,39 @@ PyObjectContainer* PY_STD_list_toBool_fast(PyObjectContainer* self)
     return PY_TRUE;
 }
 
+#ifdef PY_ENABLE_GENERATORS
+PyObjectContainer* PY_STD_list_iter(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
+{
+    assert(argc == 0);
+    return PY_STD_list_iter_fast(self);
+}
+
+PyObjectContainer* PY_STD_list_iterator(PyGeneratorContainer* generator)
+{
+    PyObjectContainer* self = generator->locals[0];
+    PY_STD_list_container* list = (PY_STD_list_container*)self->raw_value;
+    if (generator->section_id >= list->curr_size)
+    {
+        return NULL;
+    }
+    return list->array[generator->section_id++];
+}
+
+PyObjectContainer* PY_STD_list_iter_fast(PyObjectContainer* self)
+{
+    assert(self != NULL);
+    assert(self->type == PY_TYPE_PY_IMPL);
+    assert(self->py_type == PY_TYPE_LIST);
+
+    PyObjectContainer* generator = PY_STD_GENERATOR_create(1);
+    PyGeneratorContainer* container = generator->raw_value;
+    container->section_id = 0;
+    container->locals[0] = self;
+    container->next_section = PY_STD_list_iterator;
+    return generator;
+}
+#endif
+
 void PY_STD_list_removeIndex(PY_STD_list_container* list, uint16_t index)
 {
     assert(list != NULL);
@@ -602,7 +640,9 @@ void PY_STD_initListType(void)
     PY_setClassAttributeByNameOrCreate(PY_TYPE_LIST, "clear", PY_createBoxForFunction(PY_STD_list_clear));
     PY_setClassAttributeByNameOrCreate(PY_TYPE_LIST, "__eq__", PY_createBoxForFunction(PY_STD_list_eq));
     PY_setClassAttributeByNameOrCreate(PY_TYPE_LIST, "__len__", PY_createBoxForFunction(PY_STD_list_len));
-    // __iter__
+#ifdef PY_ENABLE_GENERATORS
+    PY_setClassAttributeByNameOrCreate(PY_TYPE_LIST, "__iter__", PY_createBoxForFunction(PY_STD_list_iter));
+#endif
     PY_setClassAttributeByNameOrCreate(PY_TYPE_LIST, "__bool__", PY_createBoxForFunction(PY_STD_list_toBool));
     // __iadd__
     // __add__
@@ -615,5 +655,4 @@ void PY_STD_initListType(void)
     // copy
     // __mul__
     // __imul__
-    // __iter__
 }
