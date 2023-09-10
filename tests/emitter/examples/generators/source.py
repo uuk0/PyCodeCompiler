@@ -26,6 +26,11 @@ def test():
     assert next(gen) == 2
     assert next(gen) == 4
 
+    gen = generator_7(6)
+    assert next(gen) == 2
+    assert next(gen) == 6
+    assert next(gen) == 4
+
 
 def generator_1():
     yield 1
@@ -56,3 +61,10 @@ def generator_5():
 
 def generator_6():
     yield from [1, 2, 4]
+
+
+def generator_7(x):
+    yield 2
+    yield x
+    x = 4
+    yield x
