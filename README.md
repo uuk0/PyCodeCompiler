@@ -98,8 +98,7 @@ Make the compiled test suite from python not fail in the major test cases
 - list and tuple explict construction (using `(a, b)` or `[a, b]`)
   - TODO: comprehensions
   - TODO: assignment targets
-  - TODO: dicts
-- TODO: if-elif-else, for (requires generators to work fully), arithmetic, while-break
+- TODO: if-elif-else, for
 - TODO: compare-chains resolving
 - TODO: dynamic imports (\_\_import__, importlib)
 
