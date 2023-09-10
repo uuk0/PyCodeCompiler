@@ -148,6 +148,12 @@
             "parameters": 0
           },
           {
+            "name": "copy",
+            "type": "method",
+            "c name": "PY_STD_dict_copy_fast",
+            "parameters": 0
+          },
+          {
             "name": "keys",
             "type": "method",
             "c name": "PY_STD_dict_keys_fast",

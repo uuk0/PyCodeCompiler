@@ -4,6 +4,7 @@
 
 #include <assert.h>
 #include <stdarg.h>
+#include <memory.h>
 #include "dict.h"
 #include "helpers/hashmap.h"
 #include "operators.h"
@@ -227,6 +228,30 @@ PyObjectContainer* PY_STD_dict_clear_fast(PyObjectContainer* self)
     return PY_NONE;
 }
 
+PyObjectContainer* PY_STD_dict_copy(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
+{
+    assert(argc == 0);
+    return PY_STD_dict_copy_fast(self);
+}
+
+PyObjectContainer* PY_STD_dict_copy_fast(PyObjectContainer* self)
+{
+    assert(self->type == PY_TYPE_PY_IMPL);
+    assert(self->py_type == PY_TYPE_DICT);
+    assert(self->raw_value != NULL);
+
+    HashMapContainer* container = self->raw_value;
+
+    PyObjectContainer* copy = PY_createClassInstance(PY_TYPE_DICT);
+    HashMapContainer* copy_container = HASHMAP_create_with_size(container->hash_method, container->compare_keys, container->alloc_size);
+    copy->raw_value = copy_container;
+
+    memcpy(copy_container->key_memory, container->key_memory, container->alloc_size * sizeof(void*));
+    memcpy(copy_container->value_memory, container->value_memory, container->alloc_size * sizeof(void*));
+
+    return copy;
+}
+
 #ifdef PY_ENABLE_GENERATORS
 PyObjectContainer* PY_STD_dict_keys_iterator(PyGeneratorContainer* generator)
 {
@@ -370,6 +395,7 @@ void PY_STD_initDictType(void)
     PY_setClassAttributeByNameOrCreate(PY_TYPE_DICT, "__len__", PY_createBoxForFunction(PY_STD_dict_len));
     PY_setClassAttributeByNameOrCreate(PY_TYPE_DICT, "setdefault", PY_createBoxForFunction(PY_STD_dict_setdefault));
     PY_setClassAttributeByNameOrCreate(PY_TYPE_DICT, "clear", PY_createBoxForFunction(PY_STD_dict_clear));
+    PY_setClassAttributeByNameOrCreate(PY_TYPE_DICT, "copy", PY_createBoxForFunction(PY_STD_dict_copy));
 
 #ifdef PY_ENABLE_GENERATORS
     PY_setClassAttributeByNameOrCreate(PY_TYPE_DICT, "__iter__", PY_createBoxForFunction(PY_STD_dict_keys));

@@ -37,6 +37,9 @@ PyObjectContainer* PY_STD_dict_setdefault_fast(PyObjectContainer* self, PyObject
 PyObjectContainer* PY_STD_dict_clear(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info);
 PyObjectContainer* PY_STD_dict_clear_fast(PyObjectContainer* self);
 
+PyObjectContainer* PY_STD_dict_copy(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info);
+PyObjectContainer* PY_STD_dict_copy_fast(PyObjectContainer* self);
+
 PyObjectContainer* PY_STD_dict_keys(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info);
 PyObjectContainer* PY_STD_dict_keys_fast(PyObjectContainer* self);
 
