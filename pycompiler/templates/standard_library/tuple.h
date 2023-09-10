@@ -18,4 +18,7 @@ PyObjectContainer* PY_STD_tuple_index(PyObjectContainer* self, uint8_t argc, PyO
 PyObjectContainer* PY_STD_tuple_getAtIndex(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info);
 PyObjectContainer* PY_STD_tuple_toBool(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info);
 
+PyObjectContainer* PY_STD_tuple_iter(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info);
+PyObjectContainer* PY_STD_tuple_iter_fast(PyObjectContainer* self);
+
 #endif //TEMPLATES_TUPLE_H

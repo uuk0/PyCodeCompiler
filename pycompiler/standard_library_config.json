@@ -56,13 +56,25 @@
             "name": "__bool__",
             "type": "method",
             "c name": "PY_STD_list_toBool_fast"
+          },
+          {
+            "name": "__iter__",
+            "type": "method",
+            "c name": "PY_STD_list_iter_fast"
           }
         ]
       },
       {
         "name": "tuple",
         "type": "class",
-        "type variable": "PY_TYPE_TUPLE"
+        "type variable": "PY_TYPE_TUPLE",
+        "static attributes": [
+          {
+            "name": "__iter__",
+            "type": "method",
+            "c name": "PY_STD_tuple_iter_fast"
+          }
+        ]
       },
       {
         "name": "dict",
