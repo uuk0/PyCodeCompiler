@@ -128,6 +128,12 @@
         "arguments": 2
       },
       {
+        "name": "iter",
+        "type": "operator wrapper",
+        "c name": "PY_STD_operator_iter",
+        "arguments": 1
+      },
+      {
         "name": "True",
         "type": "constant",
         "c name": "PY_TRUE"

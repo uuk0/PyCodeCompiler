@@ -382,6 +382,44 @@ class NameNormalizer(SyntaxTreeVisitor):
         node.normal_name = node.scope.get_normalised_name(node.name.text)
         node.scope.add_remapped_name(node.name.text, node.normal_name)
 
+    def visit_yield_statement(self, yield_statement: YieldStatement):
+        if not yield_statement.is_yield_from or yield_statement.is_rebuild:
+            return
+        yield_statement.is_rebuild = True
+
+        name = yield_statement.scope.get_fresh_name("yield_intermediate_value")
+
+        yield_statement.parent[0].try_insert_before(
+            yield_statement,
+            new_node := AssignmentExpression(
+                [NameAccessExpression(TokenType.IDENTIFIER(name))],
+                TokenType.EQUAL_SIGN("="),
+                CallExpression(
+                    Scope.STANDARD_LIBRARY_VALUES["iter"][1],
+                    [],
+                    TokenType.OPENING_ROUND_BRACKET("("),
+                    [
+                        CallExpression.CallExpressionArgument(
+                            yield_statement.yield_expression,
+                            CallExpression.ParameterType.NORMAL,
+                        ),
+                    ],
+                    TokenType.CLOSING_ROUND_BRACKET(")"),
+                ),
+            ),
+            yield_statement.parent[1],
+        )
+        yield_statement.yield_expression = NameAccessExpression(
+            TokenType.IDENTIFIER(name)
+        )
+
+        gen = ScopeGeneratorVisitor(yield_statement.scope)
+        gen.visit_any(new_node)
+        yield_statement.yield_expression.scope = yield_statement.scope
+
+        gen = ResolveParentAttribute()
+        gen.visit_any(yield_statement.parent[0])
+
 
 class GenericFuncCallInliner(SyntaxTreeVisitor):
     def visit_call_expression(self, node: CallExpression):

@@ -370,6 +370,14 @@ class AbstractASTNode(abc.ABC):
     ) -> bool:
         return False
 
+    def try_insert_before(
+        self,
+        original: AbstractASTNode | None,
+        insert: AbstractASTNode,
+        position: ParentAttributeSection,
+    ) -> bool:
+        return False
+
     def emit_c_code(
         self,
         base: CCodeEmitter,
@@ -1007,7 +1015,9 @@ class CallExpression(AbstractASTNodeExpression):
         context: CCodeEmitter.CExpressionBuilder,
         is_target=False,
     ):
-        if isinstance(self.base, GlobalCNameAccessExpression):
+        if isinstance(
+            self.base, (GlobalCNameAccessExpression, StandardLibraryBoundOperator)
+        ):
             obj = self.base
         elif not isinstance(self.base, ConstantAccessExpression):
             self.emit_c_code_any_call(base, context)
@@ -1064,6 +1074,7 @@ class CallExpression(AbstractASTNodeExpression):
                 context.parent.add_code(f"PyObjectContainer* {temp} = ")
                 self.args[0].emit_c_code(base, context.parent)
                 context.parent.add_code(f";\nPyObjectContainer** {args} = &{temp};")
+
             elif self.args:
                 args = base.get_fresh_name("args")
 
@@ -1103,7 +1114,19 @@ DECREF({constructor});
     def emit_c_code_any_call(
         self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder
     ):
-        if self.args:
+        if len(self.args) == 1:
+            temporary = base.get_fresh_name("temporary")
+
+            with context.parent.get_statement_builder(indent=context.indent) as intro:
+                intro.add_code(f"PyObjectContainer* {temporary} = ")
+                self.args[0].emit_c_code(base, intro)
+                intro.add_code(";\n")
+
+            context.add_code("PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(")
+            self.base.emit_c_code(base, context)
+            context.add_code(f", NULL, {len(self.args)}, &{temporary}, NULL))")
+
+        elif self.args:
             temporary = base.get_fresh_name("temporary")
 
             with context.parent.get_statement_builder(indent=context.indent) as intro:
@@ -1183,10 +1206,12 @@ class GeneratorExitReturnStatement(ReturnStatement):
 
 
 class YieldStatement(AbstractASTNode):
-    def __init__(self, yield_expression: AbstractASTNode):
+    def __init__(self, yield_expression: AbstractASTNode, is_yield_from=False):
         super().__init__()
         self.yield_expression = yield_expression
         self.yield_label_id: int = -1
+        self.is_yield_from = is_yield_from
+        self.is_rebuild = False
 
     def __eq__(self, other):
         return (
@@ -1195,7 +1220,7 @@ class YieldStatement(AbstractASTNode):
         )
 
     def __repr__(self):
-        return f"YIELD({self.yield_expression})"
+        return f"YIELD({self.yield_expression}|{self.is_yield_from})"
 
     def try_replace_child(
         self,
@@ -1207,6 +1232,7 @@ class YieldStatement(AbstractASTNode):
         if position == ParentAttributeSection.RHS:
             self.yield_expression = replacement
             return True
+
         return False
 
     def emit_c_code(
@@ -1319,6 +1345,20 @@ class FunctionDefinitionNode(AbstractASTNode):
         for i, node in enumerate(self.body):
             if node is original:
                 self.body[i] = replacement
+                return True
+
+        return False
+
+    def try_insert_before(
+        self,
+        original: AbstractASTNode | None,
+        insert: AbstractASTNode,
+        position: ParentAttributeSection,
+    ) -> bool:
+        insert.parent = self, position
+        for i, node in enumerate(self.body[:]):
+            if node is original:
+                self.body.insert(i, insert)
                 return True
 
         return False
@@ -1550,6 +1590,18 @@ class ClassDefinitionNode(AbstractASTNode):
 
         return False
 
+    def try_insert_before(
+        self,
+        original: AbstractASTNode | None,
+        insert: AbstractASTNode,
+        position: ParentAttributeSection,
+    ) -> bool:
+        if position != ParentAttributeSection.BODY:
+            return False
+        index = self.body.index(original)
+        self.body.insert(index, insert)
+        return True
+
     def emit_c_code(
         self,
         base: CCodeEmitter,
@@ -1718,6 +1770,22 @@ class WhileStatement(AbstractASTNode):
             return True
         elif position == ParentAttributeSection.ELSE_BRANCH:
             self.else_node[self.else_node.index(original)] = replacement
+            return True
+        return False
+
+    def try_insert_before(
+        self,
+        original: AbstractASTNode | None,
+        insert: AbstractASTNode,
+        position: ParentAttributeSection,
+    ) -> bool:
+        if position == ParentAttributeSection.BODY:
+            index = self.body.index(original)
+            self.body.insert(index, insert)
+            return True
+        elif position == ParentAttributeSection.ELSE_BRANCH:
+            index = self.else_node.index(original)
+            self.else_node.insert(index, insert)
             return True
         return False
 
@@ -3030,12 +3098,17 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
             self.lexer.give_back(keyword)
             return
 
+        is_yield_from = False
+        if self.lexer.inspect_chars(len("from ")) == "from ":
+            is_yield_from = True
+            self.lexer.get_chars(len("from "))
+
         yield_expression = self.try_parse_expression()
 
         if yield_expression is None:
             raise SyntaxError
 
-        return YieldStatement(yield_expression)
+        return YieldStatement(yield_expression, is_yield_from=is_yield_from)
 
     def parse_quoted_string(self, quote_type: str) -> ConstantAccessExpression:
         self.lexer.get_chars(1)

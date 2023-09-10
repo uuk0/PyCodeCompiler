@@ -6,7 +6,12 @@
 #include "operators.h"
 #include "string.h"
 #include "exceptions.h"
+#include "config.h"
 #include <math.h>
+
+#ifdef PY_ENABLE_GENERATORS
+#include "generator.h"
+#endif
 
 static inline PyObjectContainer* PY_STD_operator_apply(PyObjectContainer* lhs, PyObjectContainer* rhs, char* lopname, char* ropname)
 {
@@ -372,4 +377,15 @@ PyObjectContainer* PY_STD_operator_next_with_default(PyObjectContainer* value, P
     assert(next != NULL);
     return PY_invokeBoxedMethod(next, value, 1, &default_value, NULL);
 }
+
+#ifdef PY_ENABLE_GENERATORS
+PyObjectContainer* PY_STD_operator_iter(PyObjectContainer* value)
+{
+    PyObjectContainer* len = PY_getObjectAttributeByNameOrStatic(value, "__iter__");
+    assert(len != NULL);
+    PyObjectContainer* result = PY_invokeBoxedMethod(len, value, 0, NULL, NULL);
+    assert(result->type == PY_TYPE_PY_IMPL && result->raw_value == PY_TYPE_GENERATOR);
+    return result;
+}
+#endif
 
