@@ -25,7 +25,10 @@ PyObjectContainer* PY_STD_operator_contains(PyObjectContainer* lhs, PyObjectCont
 PyObjectContainer* PY_STD_operator_len(PyObjectContainer* value);
 PyObjectContainer* PY_STD_operator_next(PyObjectContainer* value);
 PyObjectContainer* PY_STD_operator_iter(PyObjectContainer* value);  // implementation only provided when generators are enabled!
-PyObjectContainer* PY_STD_operator_iter_for_yield_from(PyObjectContainer* value, PyObjectContainer* possible_existing);
+// PyObjectContainer* PY_STD_operator_iter_for_yield_from(PyObjectContainer* value, PyObjectContainer* possible_existing);
 PyObjectContainer* PY_STD_operator_next_with_default(PyObjectContainer* value, PyObjectContainer* default_value);
+
+// defined as a macro so we evaluate 'value' only when needed
+#define PY_STD_operator_iter_for_yield_from(value, possible_existing) (possible_existing != NULL ? possible_existing : PY_STD_operator_iter(value))
 
 #endif //TEMPLATES_OPERATORS_H

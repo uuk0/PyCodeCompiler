@@ -390,20 +390,5 @@ PyObjectContainer* PY_STD_operator_iter(PyObjectContainer* value)
     return PY_invokeBoxedMethod(iterator, value, 0, NULL, NULL);
 }
 
-PyObjectContainer* PY_STD_operator_iter_for_yield_from(PyObjectContainer* value, PyObjectContainer* possible_existing)
-{
-    if (possible_existing != NULL)
-    {
-        return possible_existing;
-    }
-
-    PyObjectContainer* iterator = PY_getObjectAttributeByNameOrStatic(value, "__iter__");
-    if (iterator == NULL)
-    {
-        printf("object type: %s\n", PY_getObjectClassName(value));
-        PY_THROW_EXCEPTION_WITH_MESSAGE(NULL, "could not get __iter__ of object");
-    }
-    return PY_invokeBoxedMethod(iterator, value, 0, NULL, NULL);
-}
 #endif
 
