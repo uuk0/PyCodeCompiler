@@ -760,7 +760,7 @@ class ListConstructor(AbstractASTNodeExpression):
         )
 
     def __eq__(self, other):
-        return type(other) == TupleConstructor and self.items == other.items
+        return type(other) == ListConstructor and self.items == other.items
 
     def __repr__(self):
         return f"LIST({repr(self.items)[1:-1]})"
@@ -793,6 +793,71 @@ class ListConstructor(AbstractASTNodeExpression):
             context.add_code(")")
         else:
             context.add_code("PY_STD_list_CREATE(0)")
+
+
+class DictConstructor(AbstractASTNodeExpression):
+    def __init__(
+        self,
+        key_value_pairs: typing.List[typing.Tuple[AbstractASTNode, AbstractASTNode]],
+    ):
+        super().__init__()
+        self.key_value_pairs = key_value_pairs
+        self.static_value_type = ClassExactDataType(
+            Scope.STANDARD_LIBRARY_VALUES["dict"]["*"]
+        )
+
+    def __eq__(self, other):
+        return (
+            type(other) == DictConstructor
+            and self.key_value_pairs == other.key_value_pairs
+        )
+
+    def __repr__(self):
+        return f"DICT({repr(self.key_value_pairs)[1:-1]})"
+
+    def try_replace_child(
+        self,
+        original: AbstractASTNode | None,
+        replacement: AbstractASTNode,
+        position: ParentAttributeSection,
+    ) -> bool:
+        replacement.parent = self, position
+
+        for i, (key, value) in enumerate(self.key_value_pairs):
+            if key is original:
+                self.key_value_pairs[i] = replacement, value
+                break
+            elif value is original:
+                self.key_value_pairs[i] = key, replacement
+                break
+        else:
+            return False
+
+        return True
+
+    def emit_c_code(
+        self,
+        base: CCodeEmitter,
+        context: CCodeEmitter.CExpressionBuilder,
+        is_target=False,
+    ):
+        if self.items:
+            context.add_code(f"PY_STD_dict_CREATE({len(self.key_value_pairs)}, ")
+
+            for key, value in self.key_value_pairs[:-1]:
+                key.emit_c_code(base, context)
+                context.add_code(", ")
+                value.emit_c_code(base, context)
+                context.add_code(", ")
+
+            key, value = self.key_value_pairs[-1]
+            key.emit_c_code(base, context)
+            context.add_code(", ")
+            value.emit_c_code(base, context)
+
+            context.add_code(")")
+        else:
+            context.add_code("PY_STD_dict_CREATE(0)")
 
 
 class AttributeExpression(AbstractASTNodeExpression):
@@ -2220,6 +2285,8 @@ class SyntaxTreeVisitor:
             return self.visit_tuple_constructor(obj)
         elif obj_type == ListConstructor:
             return self.visit_list_constructor(obj)
+        elif obj_type == DictConstructor:
+            return self.visit_dict_constructor(obj)
         elif obj_type == PassStatement:
             return self.visit_pass_statement(obj)
         elif obj_type == BinaryOperatorExpression:
@@ -2323,6 +2390,14 @@ class SyntaxTreeVisitor:
 
     def visit_list_constructor(self, node: ListConstructor):
         return (self.visit_any_list(node.items),)
+
+    def visit_dict_constructor(self, node: DictConstructor):
+        return (
+            [
+                (self.visit_any(key), self.visit_any(value))
+                for key, value in node.key_value_pairs
+            ],
+        )
 
     def visit_pass_statement(self, node: PassStatement):
         pass
@@ -2769,9 +2844,11 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
             elif c == "(":  # PriorityBracket or TUPLE
                 self.lexer.save_state()
                 self.lexer.get_chars(1)
+                self.lexer.try_parse_whitespaces()
+
                 inner = self.try_parse_expression()
                 if inner is None:
-                    raise SyntaxError
+                    raise SyntaxError("expected <inner expression>, got 'None'")
 
                 self.lexer.try_parse_whitespaces()
                 if self.lexer.inspect_chars(1) == ",":  # TUPLE
@@ -2788,6 +2865,10 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
 
             elif c == "[":
                 base = self.try_pase_expression_list_like()
+
+            elif c == "{":
+                base = self.try_pase_expression_dict_like()
+
             else:
                 return
 
@@ -2955,6 +3036,47 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
             raise SyntaxError
 
         return ListConstructor(elements)
+
+    def try_pase_expression_dict_like(self):
+        self.lexer.save_state()
+        self.lexer.get_chars(1)
+        elements = []
+
+        self.lexer.try_parse_whitespaces()
+
+        while self.lexer.inspect_chars(1) != "}":
+            self.lexer.try_parse_whitespaces(include_newline=True)
+            key = self.try_parse_expression()
+            self.lexer.try_parse_whitespaces()
+
+            if key is None:
+                raise SyntaxError
+
+            if self.lexer.inspect_chars(1) != ":":
+                self.lexer.rollback_state()
+                return
+
+            self.lexer.get_chars(1)
+
+            self.lexer.try_parse_whitespaces()
+            value = self.try_parse_expression()
+            self.lexer.try_parse_whitespaces()
+
+            elements.append((key, value))
+
+            if self.lexer.inspect_chars(1) != ",":
+                break
+
+            self.lexer.get_chars(1)
+
+        self.lexer.try_parse_whitespaces(include_newline=True)
+
+        if self.lexer.get_chars(1) != "}":
+            raise SyntaxError
+
+        self.lexer.discard_save_state()
+
+        return DictConstructor(elements)
 
     def try_parse_expression_tuple_like(self, inner):
         self.lexer.get_chars(1)

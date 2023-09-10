@@ -3,6 +3,7 @@
 //
 
 #include <assert.h>
+#include <stdarg.h>
 #include "dict.h"
 #include "helpers/hashmap.h"
 #include "operators.h"
@@ -28,6 +29,20 @@ int64_t HASH_py_object(void* raw_obj)
 bool HASH_compare_py_object(void* lhs, void* rhs)
 {
     return PY_unpackBoolean(PY_STD_operator_equals(lhs, rhs));
+}
+
+PyObjectContainer* PY_STD_dict_CREATE(uint8_t argc, ...)
+{
+    PyObjectContainer* dict = PY_createClassInstance(PY_TYPE_DICT);
+
+    va_list ap;
+    va_start(ap, argc * 2);
+    for(int i = 0; i < argc; i++){
+        PY_STD_dict_setitem_fast(dict, va_arg(ap, PyObjectContainer*), va_arg(ap, PyObjectContainer*));
+    }
+    va_end(ap);
+
+    return dict;
 }
 
 PyObjectContainer* PY_STD_dict_init(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)

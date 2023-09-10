@@ -10,6 +10,8 @@ from pycompiler.Parser import (
     WalrusOperatorExpression,
     PriorityBrackets,
     TupleConstructor,
+    ListConstructor,
+    DictConstructor,
 )
 from pycompiler.Lexer import TokenType
 from pycompiler.TypeResolver import BinaryOperatorPriorityRewriter
@@ -178,6 +180,104 @@ class TestOperatorPriority(TestCase):
                         ConstantAccessExpression(12),
                     ),
                 )
+            ],
+            expr,
+        )
+
+
+class TestPrimitiveConstruction(TestCase):
+    def test_list_empty(self):
+        parser = Parser.Parser("[]")
+        expr = parser.parse()
+        self.assertEqual(
+            [
+                ListConstructor([]),
+            ],
+            expr,
+        )
+
+    def test_dict_empty(self):
+        parser = Parser.Parser("{}")
+        expr = parser.parse()
+        self.assertEqual(
+            [
+                DictConstructor([]),
+            ],
+            expr,
+        )
+
+    def test_dict_single(self):
+        parser = Parser.Parser("{10: 20}")
+        expr = parser.parse()
+        self.assertEqual(
+            [
+                DictConstructor(
+                    [
+                        (
+                            ConstantAccessExpression(10),
+                            ConstantAccessExpression(20),
+                        )
+                    ]
+                ),
+            ],
+            expr,
+        )
+
+    def test_dict_single_trailing_comma(self):
+        parser = Parser.Parser("{10: 20,}")
+        expr = parser.parse()
+        self.assertEqual(
+            [
+                DictConstructor(
+                    [
+                        (
+                            ConstantAccessExpression(10),
+                            ConstantAccessExpression(20),
+                        )
+                    ]
+                ),
+            ],
+            expr,
+        )
+
+    def test_dict_multi(self):
+        parser = Parser.Parser("{10: 20, 30: 40}")
+        expr = parser.parse()
+        self.assertEqual(
+            [
+                DictConstructor(
+                    [
+                        (
+                            ConstantAccessExpression(10),
+                            ConstantAccessExpression(20),
+                        ),
+                        (
+                            ConstantAccessExpression(30),
+                            ConstantAccessExpression(40),
+                        ),
+                    ]
+                ),
+            ],
+            expr,
+        )
+
+    def test_dict_multi_trailing_comma(self):
+        parser = Parser.Parser("{10: 20, 30: 40,}")
+        expr = parser.parse()
+        self.assertEqual(
+            [
+                DictConstructor(
+                    [
+                        (
+                            ConstantAccessExpression(10),
+                            ConstantAccessExpression(20),
+                        ),
+                        (
+                            ConstantAccessExpression(30),
+                            ConstantAccessExpression(40),
+                        ),
+                    ]
+                ),
             ],
             expr,
         )

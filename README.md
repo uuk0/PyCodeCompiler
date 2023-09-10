@@ -90,7 +90,6 @@ Make the compiled test suite from python not fail in the major test cases
 - function declarations (python 3.12 syntax with generics via `[]` after the function name), including generators
   (WIP)
   - no inner functions (TODO: make them work with a wrapper)
-  - TODO: yield from
 - class declarations (python 3.12 syntax with generics via `[]` after the class name)
   - instantiation (only for static-know classes currently)
   - no inner classes (TODO: make them work, PyClassContainer supports it already!)

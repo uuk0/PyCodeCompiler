@@ -25,6 +25,7 @@ from pycompiler.Parser import (
     StandardLibraryModuleReference,
     PyNewlineNode,
     YieldStatement,
+    DictConstructor,
 )
 
 if typing.TYPE_CHECKING:
@@ -187,17 +188,24 @@ class ResolveParentAttribute(SyntaxTreeVisitor):
 
     def visit_priority_bracket(self, node: PriorityBrackets):
         super().visit_priority_bracket(node)
-        node.inner_node.parent = node
+        node.inner_node.parent = node, ParentAttributeSection.RHS
 
     def visit_tuple_constructor(self, node: TupleConstructor):
         super().visit_tuple_constructor(node)
         for n in node.items:
-            n.parent = node
+            n.parent = node, ParentAttributeSection.RHS
 
     def visit_list_constructor(self, node: ListConstructor):
         super().visit_list_constructor(node)
         for n in node.items:
-            n.parent = node
+            n.parent = node, ParentAttributeSection.RHS
+
+    def visit_dict_constructor(self, node: DictConstructor):
+        super().visit_dict_constructor(node)
+
+        for key, value in node.key_value_pairs:
+            key.parent = node, ParentAttributeSection.LHS
+            value.parent = node, ParentAttributeSection.RHS
 
     def visit_assert_statement(self, node: AssertStatement):
         super().visit_assert_statement(node)

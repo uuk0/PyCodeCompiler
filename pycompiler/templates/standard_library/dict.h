@@ -9,6 +9,7 @@
 
 extern PyClassContainer* PY_TYPE_DICT;
 
+PyObjectContainer* PY_STD_dict_CREATE(uint8_t argc, ...);
 PyObjectContainer* PY_STD_dict_init(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info);
 PyObjectContainer* PY_STD_dict_init_fast_arg_zero(PyObjectContainer* self);
 
