@@ -216,6 +216,16 @@ void* HASHMAP_remove(HashMapContainer* container, void* key)
     }
 }
 
+void HASHMAP_clear(HashMapContainer* container)
+{
+    container->alloc_size = 8;
+    container->used_size = 0;
+    free(container->key_memory);
+    free(container->value_memory);
+    container->key_memory = calloc(container->alloc_size, sizeof(void*));
+    container->value_memory = calloc(container->alloc_size, sizeof(void*));
+}
+
 int64_t HASH_string(void* raw_string)
 {
     int64_t hash = -(int64_t)0xbaadf00dbaadf00d;

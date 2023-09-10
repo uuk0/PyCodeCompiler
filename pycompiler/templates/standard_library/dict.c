@@ -172,6 +172,61 @@ PyObjectContainer* PY_STD_dict_contains_fast(PyObjectContainer* self, PyObjectCo
     return HASHMAP_has_key(self->raw_value, key) ? PY_TRUE : PY_FALSE;
 }
 
+PyObjectContainer* PY_STD_dict_len(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
+{
+    assert(argc == 0);
+    return PY_STD_dict_len_fast(self);
+}
+
+PyObjectContainer* PY_STD_dict_len_fast(PyObjectContainer* self)
+{
+    assert(self->type == PY_TYPE_PY_IMPL);
+    assert(self->py_type == PY_TYPE_DICT);
+    assert(self->raw_value != NULL);
+    HashMapContainer* container = self->raw_value;
+    return PY_createInteger((int64_t)container->used_size);
+}
+
+PyObjectContainer* PY_STD_dict_setdefault(PyObjectContainer* self,  uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
+{
+    assert(argc == 2);
+    return PY_STD_dict_setdefault_fast(self, args[0], args[1]);
+}
+
+PyObjectContainer* PY_STD_dict_setdefault_fast(PyObjectContainer* self, PyObjectContainer* key, PyObjectContainer* default_value)
+{
+    assert(self->type == PY_TYPE_PY_IMPL);
+    assert(self->py_type == PY_TYPE_DICT);
+    assert(self->raw_value != NULL);
+
+    PyObjectContainer* value = HASHMAP_lookup(self->raw_value, key);
+
+    if (value == NULL)
+    {
+        HASHMAP_insert(self->raw_value, key, default_value);
+        return default_value;
+    }
+
+    return value;
+}
+
+PyObjectContainer* PY_STD_dict_clear(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
+{
+    assert(argc == 0);
+    return PY_STD_dict_clear_fast(self);
+}
+
+PyObjectContainer* PY_STD_dict_clear_fast(PyObjectContainer* self)
+{
+    assert(self->type == PY_TYPE_PY_IMPL);
+    assert(self->py_type == PY_TYPE_DICT);
+    assert(self->raw_value != NULL);
+
+    HASHMAP_clear(self->raw_value);
+
+    return PY_NONE;
+}
+
 #ifdef PY_ENABLE_GENERATORS
 PyObjectContainer* PY_STD_dict_keys_iterator(PyGeneratorContainer* generator)
 {
@@ -312,6 +367,9 @@ void PY_STD_initDictType(void)
     PY_setClassAttributeByNameOrCreate(PY_TYPE_DICT, "__getitem__", PY_createBoxForFunction(PY_STD_dict_getitem));
     PY_setClassAttributeByNameOrCreate(PY_TYPE_DICT, "__delitem__", PY_createBoxForFunction(PY_STD_dict_delitem));
     PY_setClassAttributeByNameOrCreate(PY_TYPE_DICT, "__contains__", PY_createBoxForFunction(PY_STD_dict_contains));
+    PY_setClassAttributeByNameOrCreate(PY_TYPE_DICT, "__len__", PY_createBoxForFunction(PY_STD_dict_len));
+    PY_setClassAttributeByNameOrCreate(PY_TYPE_DICT, "setdefault", PY_createBoxForFunction(PY_STD_dict_setdefault));
+    PY_setClassAttributeByNameOrCreate(PY_TYPE_DICT, "clear", PY_createBoxForFunction(PY_STD_dict_clear));
 
 #ifdef PY_ENABLE_GENERATORS
     PY_setClassAttributeByNameOrCreate(PY_TYPE_DICT, "__iter__", PY_createBoxForFunction(PY_STD_dict_keys));

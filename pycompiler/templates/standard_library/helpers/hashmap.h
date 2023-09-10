@@ -33,6 +33,7 @@ void HASHMAP_insert(HashMapContainer* container, void* key, void* value);
 void* HASHMAP_lookup(HashMapContainer* container, void* key);
 bool HASHMAP_has_key(HashMapContainer* container, void* key);
 void* HASHMAP_remove(HashMapContainer* container, void* key);
+void HASHMAP_clear(HashMapContainer* container);
 
 int64_t HASH_string(void* string);
 bool HASH_COMPARE_string(void* lhs, void* rhs);

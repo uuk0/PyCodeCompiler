@@ -131,6 +131,23 @@
             "c name": "PY_STD_dict_keys_fast"
           },
           {
+            "name": "__len__",
+            "type": "method",
+            "c name": "PY_STD_dict_len"
+          },
+          {
+            "name": "setdefault",
+            "type": "method",
+            "c name": "PY_STD_dict_setdefault_fast",
+            "parameters": 2
+          },
+          {
+            "name": "clear",
+            "type": "method",
+            "c name": "PY_STD_dict_clear_fast",
+            "parameters": 0
+          },
+          {
             "name": "keys",
             "type": "method",
             "c name": "PY_STD_dict_keys_fast",
