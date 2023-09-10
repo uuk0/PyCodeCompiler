@@ -31,7 +31,8 @@ PyObjectContainer* PY_STD_list_init(PyObjectContainer* self, uint8_t argc, PyObj
     }
     else
     {
-        assert(false);  // not implemented todo: implement
+        assert(argc == 1);
+        return PY_STD_list_init_fast_arg_1(self, args[0]);
     }
 }
 
@@ -59,6 +60,30 @@ PyObjectContainer* PY_STD_list_init_fast_arg_0(PyObjectContainer* self)
     {
         perror("malloc PY_STD_list_init array");
         exit(EXIT_FAILURE);
+    }
+
+    return PY_NONE;
+}
+
+PyObjectContainer* PY_STD_list_init_fast_arg_1(PyObjectContainer* self, PyObjectContainer* source)
+{
+    PyObjectContainer* list = PY_STD_list_init_fast_arg_0(self);
+
+    PyObjectContainer* iter_method = PY_getObjectAttributeByNameOrStatic(source, "__iter__");
+    if (iter_method == NULL)
+    {
+        printf("data type: %s\n", PY_getObjectClassName(source));
+        PY_THROW_EXCEPTION_WITH_MESSAGE(NULL, "expected <supports __iter__>");
+    }
+
+    PyObjectContainer* iterator = PY_invokeBoxedMethod(iter_method, NULL, 0, NULL, NULL);
+
+    PyObjectContainer* value;
+    value = PY_STD_operator_next_with_default(iterator, NULL);
+    while (value)
+    {
+        PY_STD_list_append_fast(list, value);
+        value = PY_STD_operator_next_with_default(iterator, NULL);
     }
 
     return PY_NONE;

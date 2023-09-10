@@ -14,6 +14,12 @@
             "c name": "PY_STD_list_init_fast_arg_0"
           },
           {
+            "name": "__init__",
+            "type": "method",
+            "arguments": 1,
+            "c name": "PY_STD_list_init_fast_arg_1"
+          },
+          {
             "name": "append",
             "type": "method",
             "arguments": 1,
