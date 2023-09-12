@@ -436,6 +436,7 @@ void PY_STD_initDictType(void)
     PY_setClassAttributeByNameOrCreate(PY_TYPE_DICT, "__delitem__", PY_createBoxForFunction(PY_STD_dict_delitem));
     PY_setClassAttributeByNameOrCreate(PY_TYPE_DICT, "__contains__", PY_createBoxForFunction(PY_STD_dict_contains));
     PY_setClassAttributeByNameOrCreate(PY_TYPE_DICT, "__len__", PY_createBoxForFunction(PY_STD_dict_len));
+    PY_setClassAttributeByNameOrCreate(PY_TYPE_DICT, "__eq__", PY_createBoxForFunction(PY_STD_dict_eq));
     PY_setClassAttributeByNameOrCreate(PY_TYPE_DICT, "setdefault", PY_createBoxForFunction(PY_STD_dict_setdefault));
     PY_setClassAttributeByNameOrCreate(PY_TYPE_DICT, "clear", PY_createBoxForFunction(PY_STD_dict_clear));
     PY_setClassAttributeByNameOrCreate(PY_TYPE_DICT, "copy", PY_createBoxForFunction(PY_STD_dict_copy));

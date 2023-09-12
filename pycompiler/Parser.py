@@ -378,13 +378,16 @@ class AbstractASTNode(abc.ABC):
     ) -> bool:
         return False
 
-    def emit_c_code(
+    def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder):
+        pass
+
+    def emit_c_code_for_write(
         self,
         base: CCodeEmitter,
         context: CCodeEmitter.CExpressionBuilder,
-        is_target=False,
+        value_source: AbstractASTNodeExpression,
     ):
-        pass
+        raise RuntimeError
 
     def copy(self):
         try:
@@ -408,12 +411,7 @@ class PyNewlineNode(AbstractASTNode):
     def __repr__(self):
         return "NEWLINE"
 
-    def emit_c_code(
-        self,
-        base: CCodeEmitter,
-        context: CCodeEmitter.CExpressionBuilder,
-        is_target=False,
-    ):
+    def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder):
         context.add_code("\n")
 
 
@@ -433,12 +431,7 @@ class PyCommentNode(AbstractASTNode):
     def __repr__(self):
         return f"COMMENT({self.base_token}|{self.inner_string})"
 
-    def emit_c_code(
-        self,
-        base: CCodeEmitter,
-        context: CCodeEmitter.CExpressionBuilder,
-        is_target=False,
-    ):
+    def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder):
         context.add_code(f"// SOURCE: {self.inner_string.text}\n")
 
 
@@ -449,12 +442,7 @@ class PassStatement(AbstractASTNode):
     def __eq__(self, other):
         return type(other) == PassStatement
 
-    def emit_c_code(
-        self,
-        base: CCodeEmitter,
-        context: CCodeEmitter.CExpressionBuilder,
-        is_target=False,
-    ):
+    def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder):
         pass
 
 
@@ -463,7 +451,7 @@ class AssignmentExpression(AbstractASTNode):
         self,
         lhs: typing.List[AbstractASTNode],
         eq_sign: Lexer.Token,
-        rhs: AbstractASTNode,
+        rhs: AbstractASTNodeExpression,
     ):
         super().__init__()
         self.lhs = lhs
@@ -499,16 +487,11 @@ class AssignmentExpression(AbstractASTNode):
             return False
         return True
 
-    def emit_c_code(
-        self,
-        base: CCodeEmitter,
-        context: CCodeEmitter.CExpressionBuilder,
-        is_target=False,
-    ):
+    def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder):
         assert len(self.lhs) > 0
 
         if len(self.lhs) == 1:
-            self._emit_target(base, context, self.lhs[0], self.rhs)
+            self.lhs[0].emit_c_code_for_write(base, context, self.rhs)
             context.add_code(";")
             return
 
@@ -520,37 +503,9 @@ class AssignmentExpression(AbstractASTNode):
         context.add_code(";\n")
 
         for target in self.lhs:
-            self._emit_target(base, context, target, temporary)
-            context.add_code(";")
-
-    def _emit_target(
-        self,
-        base: CCodeEmitter,
-        context: CCodeEmitter.CExpressionBuilder,
-        tar: AbstractASTNode,
-        source: str | AbstractASTNode,
-    ):
-        if isinstance(tar, SubscriptionExpression):
-            self._emit_target_subscription(context, tar, base, source)
-        else:
-            tar.emit_c_code(base, context)
-            context.add_code(" = ")
-            if isinstance(source, str):
-                context.add_code(source)
-            else:
-                source.emit_c_code(base, context)
-
-    def _emit_target_subscription(self, context, tar, base, source):
-        context.add_code("PY_SetSubscriptionValue(")
-        tar.base.emit_c_code(base, context)
-        context.add_code(", ")
-        tar.expression.emit_c_code(base, context)
-        context.add_code(", ")
-        if isinstance(source, str):
-            context.add_code(source)
-        else:
-            source.emit_c_code(base, context)
-        context.add_code(")")
+            target.emit_c_code_for_write(
+                base, context, GlobalCNameAccessExpression(temporary)
+            )
 
 
 class NameAccessExpression(AbstractASTNodeExpression):
@@ -564,13 +519,18 @@ class NameAccessExpression(AbstractASTNodeExpression):
     def __repr__(self):
         return f"VARIABLE({self.name})"
 
-    def emit_c_code(
+    def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder):
+        context.add_code(self.scope.get_remapped_name(self.name.text))
+
+    def emit_c_code_for_write(
         self,
         base: CCodeEmitter,
         context: CCodeEmitter.CExpressionBuilder,
-        is_target=False,
+        value_source: AbstractASTNodeExpression,
     ):
         context.add_code(self.scope.get_remapped_name(self.name.text))
+        context.add_code(" = ")
+        value_source.emit_c_code(base, context)
 
 
 class GeneratorNameAccessExpression(NameAccessExpression):
@@ -588,13 +548,17 @@ class GeneratorNameAccessExpression(NameAccessExpression):
     def __repr__(self):
         return f"GENERATOR-VARIABLE({self.name})"
 
-    def emit_c_code(
+    def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder):
+        context.add_code(f"generator->locals[{self.index}]")
+
+    def emit_c_code_for_write(
         self,
         base: CCodeEmitter,
         context: CCodeEmitter.CExpressionBuilder,
-        is_target=False,
+        value_source: AbstractASTNodeExpression,
     ):
-        context.add_code(f"generator->locals[{self.index}]")
+        context.add_code(f"generator->locals[{self.index}] = ")
+        value_source.emit_c_code(base, context)
 
 
 class GlobalCNameAccessExpression(AbstractASTNodeExpression):
@@ -613,14 +577,18 @@ class GlobalCNameAccessExpression(AbstractASTNodeExpression):
     def __repr__(self):
         return f"GLOBAL-C-VARIABLE({self.name})"
 
-    def emit_c_code(
+    def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder):
+        base.add_global_variable("PyObjectContainer*", self.name)
+        context.add_code(self.name)
+
+    def emit_c_code_for_write(
         self,
         base: CCodeEmitter,
         context: CCodeEmitter.CExpressionBuilder,
-        is_target=False,
+        value_source: AbstractASTNodeExpression,
     ):
-        base.add_global_variable("PyObjectContainer*", self.name)
-        context.add_code(self.name)
+        context.add_code(f"{self.name} = ")
+        value_source.emit_c_code(base, context)
 
 
 class ConstantAccessExpression(AbstractASTNodeExpression):
@@ -640,15 +608,7 @@ class ConstantAccessExpression(AbstractASTNodeExpression):
     def __repr__(self):
         return f"CONSTANT({repr(self.value)})"
 
-    def emit_c_code(
-        self,
-        base: CCodeEmitter,
-        context: CCodeEmitter.CExpressionBuilder,
-        is_target=False,
-    ):
-        if is_target:
-            raise SyntaxError("cannot write to constant")
-
+    def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder):
         if isinstance(self.value, int):
             context.add_code(f"PY_createInteger({self.value})")
 
@@ -698,13 +658,16 @@ class PriorityBrackets(AbstractASTNode):
         self.inner_node = replacement
         return True
 
-    def emit_c_code(
+    def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder):
+        self.inner_node.emit_c_code(base, context)
+
+    def emit_c_code_for_write(
         self,
         base: CCodeEmitter,
         context: CCodeEmitter.CExpressionBuilder,
-        is_target=False,
+        value_source: AbstractASTNodeExpression,
     ):
-        self.inner_node.emit_c_code(base, context, is_target=is_target)
+        self.inner_node.emit_c_code_for_write(base, context, value_source)
 
 
 class TupleConstructor(AbstractASTNodeExpression):
@@ -731,12 +694,7 @@ class TupleConstructor(AbstractASTNodeExpression):
         self.items[self.items.index(original)] = replacement
         return True
 
-    def emit_c_code(
-        self,
-        base: CCodeEmitter,
-        context: CCodeEmitter.CExpressionBuilder,
-        is_target=False,
-    ):
+    def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder):
         if self.items:
             context.add_code(f"PY_STD_tuple_CREATE({len(self.items)}, ")
 
@@ -749,6 +707,14 @@ class TupleConstructor(AbstractASTNodeExpression):
             context.add_code(")")
         else:
             context.add_code("PY_STD_tuple_CREATE(0)")
+
+    def emit_c_code_for_write(
+        self,
+        base: CCodeEmitter,
+        context: CCodeEmitter.CExpressionBuilder,
+        value_source: AbstractASTNodeExpression,
+    ):
+        raise RuntimeError("not implemented")
 
 
 class ListConstructor(AbstractASTNodeExpression):
@@ -775,12 +741,7 @@ class ListConstructor(AbstractASTNodeExpression):
         self.items[self.items.index(original)] = replacement
         return True
 
-    def emit_c_code(
-        self,
-        base: CCodeEmitter,
-        context: CCodeEmitter.CExpressionBuilder,
-        is_target=False,
-    ):
+    def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder):
         if self.items:
             context.add_code(f"PY_STD_list_CREATE({len(self.items)}, ")
 
@@ -793,6 +754,14 @@ class ListConstructor(AbstractASTNodeExpression):
             context.add_code(")")
         else:
             context.add_code("PY_STD_list_CREATE(0)")
+
+    def emit_c_code_for_write(
+        self,
+        base: CCodeEmitter,
+        context: CCodeEmitter.CExpressionBuilder,
+        value_source: AbstractASTNodeExpression,
+    ):
+        raise RuntimeError("not implemented")
 
 
 class DictConstructor(AbstractASTNodeExpression):
@@ -835,12 +804,7 @@ class DictConstructor(AbstractASTNodeExpression):
 
         return True
 
-    def emit_c_code(
-        self,
-        base: CCodeEmitter,
-        context: CCodeEmitter.CExpressionBuilder,
-        is_target=False,
-    ):
+    def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder):
         if self.key_value_pairs:
             context.add_code(f"PY_STD_dict_CREATE({len(self.key_value_pairs)}, ")
 
@@ -858,6 +822,14 @@ class DictConstructor(AbstractASTNodeExpression):
             context.add_code(")")
         else:
             context.add_code("PY_STD_dict_CREATE(0)")
+
+    def emit_c_code_for_write(
+        self,
+        base: CCodeEmitter,
+        context: CCodeEmitter.CExpressionBuilder,
+        value_source: AbstractASTNodeExpression,
+    ):
+        raise RuntimeError("not implemented")
 
 
 class AttributeExpression(AbstractASTNodeExpression):
@@ -891,24 +863,24 @@ class AttributeExpression(AbstractASTNodeExpression):
         self.base = replacement
         return True
 
-    def emit_c_code(
+    def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder):
+        context.add_code("PY_getObjectAttributeByNameOrStatic(")
+
+        self.base.emit_c_code(base, context)
+        context.add_code(f', "{self.attribute.text}")')
+
+    def emit_c_code_for_write(
         self,
         base: CCodeEmitter,
         context: CCodeEmitter.CExpressionBuilder,
-        is_target=False,
+        value_source: AbstractASTNodeExpression,
     ):
-        if is_target:
-            temporary = base.get_fresh_name("temp")
-            context.parent.add_code(f"PyObjectContainer* {temporary} = ")
-            context.add_code(f";\nPY_setObjectAttributeByName(")
-            self.base.emit_c_code(base, context)
-            context.add_code(f', {temporary}, "{self.attribute.text}")')
-
-        else:
-            context.add_code("PY_getObjectAttributeByNameOrStatic(")
-
-            self.base.emit_c_code(base, context)
-            context.add_code(f', "{self.attribute.text}")')
+        temporary = base.get_fresh_name("temp")
+        context.add_code(f"PyObjectContainer* {temporary} = ")
+        value_source.emit_c_code(base, context)
+        context.add_code(f";\nPY_setObjectAttributeByName(")
+        self.base.emit_c_code(base, context)
+        context.add_code(f', {temporary}, "{self.attribute.text}")')
 
 
 class SubscriptionExpression(AbstractASTNodeExpression):
@@ -953,23 +925,25 @@ class SubscriptionExpression(AbstractASTNodeExpression):
 
         return True
 
-    def emit_c_code(
+    def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder):
+        context.add_code("PY_GetSubscriptionValue(")
+        self.base.emit_c_code(base, context)
+        context.add_code(", ")
+        self.expression.emit_c_code(base, context)
+        context.add_code(")")
+
+    def emit_c_code_for_write(
         self,
         base: CCodeEmitter,
         context: CCodeEmitter.CExpressionBuilder,
-        is_target=False,
+        value_source: AbstractASTNodeExpression,
     ):
-        if not is_target:
-            context.add_code("PY_GetSubscriptionValue(")
-            self.base.emit_c_code(base, context)
-            context.add_code(", ")
-        else:
-            temporary = base.get_fresh_name("temp")
-            context.parent.add_code(f"PyObjectContainer* {temporary} = ")
-            context.add_code(f";\nPY_SetSubscriptionValue(")
-            self.base.emit_c_code(base, context)
-            context.add_code(f", {temporary}, ")
-
+        temporary = base.get_fresh_name("temp")
+        context.add_code(f"PyObjectContainer* {temporary} = ")
+        value_source.emit_c_code(base, context)
+        context.add_code(f";\nPY_SetSubscriptionValue(")
+        self.base.emit_c_code(base, context)
+        context.add_code(f", {temporary}, ")
         self.expression.emit_c_code(base, context)
         context.add_code(")")
 
@@ -1020,13 +994,10 @@ class CallExpression(AbstractASTNodeExpression):
             return False
 
         def emit_c_code(
-            self,
-            base: CCodeEmitter,
-            context: CCodeEmitter.CExpressionBuilder,
-            is_target=False,
+            self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder
         ):
             assert self.mode == CallExpression.ParameterType.NORMAL
-            self.value.emit_c_code(base, context, is_target=is_target)
+            self.value.emit_c_code(base, context)
 
     def __init__(
         self,
@@ -1074,12 +1045,7 @@ class CallExpression(AbstractASTNodeExpression):
             return False
         return True
 
-    def emit_c_code(
-        self,
-        base: CCodeEmitter,
-        context: CCodeEmitter.CExpressionBuilder,
-        is_target=False,
-    ):
+    def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder):
         if isinstance(
             self.base, (GlobalCNameAccessExpression, StandardLibraryBoundOperator)
         ):
@@ -1248,24 +1214,14 @@ class ReturnStatement(AbstractASTNode):
             return True
         return False
 
-    def emit_c_code(
-        self,
-        base: CCodeEmitter,
-        context: CCodeEmitter.CExpressionBuilder,
-        is_target=False,
-    ):
+    def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder):
         context.add_code("return ")
         self.return_value.emit_c_code(base, context)
         context.add_code(";")
 
 
 class GeneratorExitReturnStatement(ReturnStatement):
-    def emit_c_code(
-        self,
-        base: CCodeEmitter,
-        context: CCodeEmitter.CExpressionBuilder,
-        is_target=False,
-    ):
+    def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder):
         context.add_code("generator->next_section = NULL;\n")
         super().emit_c_code(base, context)
 
@@ -1300,12 +1256,7 @@ class YieldStatement(AbstractASTNode):
 
         return False
 
-    def emit_c_code(
-        self,
-        base: CCodeEmitter,
-        context: CCodeEmitter.CExpressionBuilder,
-        is_target=False,
-    ):
+    def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder):
         if not self.is_yield_from:
             context.add_code(f"generator->section_id = {self.yield_label_id};\nreturn ")
             self.yield_expression.emit_c_code(base, context)
@@ -1446,14 +1397,9 @@ class FunctionDefinitionNode(AbstractASTNode):
 
         return False
 
-    def emit_c_code(
-        self,
-        base: CCodeEmitter,
-        context: CCodeEmitter.CExpressionBuilder,
-        is_target=False,
-    ):
+    def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder):
         if self.is_generator:
-            return self.emit_c_code_for_generator(base, context, is_target)
+            return self.emit_c_code_for_generator(base, context)
 
         func_name = self.normal_name
 
@@ -1685,12 +1631,7 @@ class ClassDefinitionNode(AbstractASTNode):
         self.body.insert(index, insert)
         return True
 
-    def emit_c_code(
-        self,
-        base: CCodeEmitter,
-        context: CCodeEmitter.CExpressionBuilder,
-        is_target=False,
-    ):
+    def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder):
         variable_name = f"PY_CLASS_{self.normal_name}"
 
         base.add_global_variable("PyClassContainer*", variable_name)
@@ -1770,12 +1711,7 @@ class StandardLibraryClass(ClassDefinitionNode):
     def __repr__(self):
         return f"STANDARD_LIBRARY_CLASS({self.name.text})"
 
-    def emit_c_code(
-        self,
-        base: CCodeEmitter,
-        context: CCodeEmitter.CExpressionBuilder,
-        is_target=False,
-    ):
+    def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder):
         raise RuntimeError
 
     def try_replace_child(
@@ -1803,12 +1739,7 @@ class StandardLibraryBoundOperator(AbstractASTNode):
     def __repr__(self):
         return f"STANDRAD_LIBRARY_OPERATOR({self.name}, {self.exposed_operator})"
 
-    def emit_c_code(
-        self,
-        base: CCodeEmitter,
-        context: CCodeEmitter.CExpressionBuilder,
-        is_target=False,
-    ):
+    def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder):
         if is_target:
             raise SyntaxError(f"cannot write into name '{self.name}'")
 
@@ -1872,12 +1803,7 @@ class WhileStatement(AbstractASTNode):
             return True
         return False
 
-    def emit_c_code(
-        self,
-        base: CCodeEmitter,
-        context: CCodeEmitter.CExpressionBuilder,
-        is_target=False,
-    ):
+    def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder):
         context.add_code("\nwhile (PY_getTruthValueOf(")
         self.condition.emit_c_code(base, context)
         context.add_code(")) {\n")
@@ -1964,12 +1890,7 @@ class ForLoopStatement(AbstractASTNode):
     ) -> bool:
         pass
 
-    def emit_c_code(
-        self,
-        base: CCodeEmitter,
-        context: CCodeEmitter.CExpressionBuilder,
-        is_target=False,
-    ):
+    def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder):
         """
         PyObjectContainer* iterator = @iterator;
         PyObjectContainer* value = 'next'(iterator, NULL);
@@ -1985,7 +1906,7 @@ class ForLoopStatement(AbstractASTNode):
         iterator = base.get_fresh_name("iterator")
         value = base.get_fresh_name("value")
         exit_label = (
-            base.get_fresh_name("while_exit_label") if self.else_block else "<break>"
+            base.get_fresh_name("for_exit_label") if self.else_block else "<break>"
         )
 
         context.add_code(f"PyObjectContainer* {iterator} = ")
@@ -1997,8 +1918,9 @@ class ForLoopStatement(AbstractASTNode):
         context.add_code(f"while ({value} != NULL) {{\n")
         context.add_code(f"PY_CHECK_EXCEPTION({value});\n")
 
-        self.target.emit_c_code(base, context, is_target=True)
-        context.add_code(f" = {value};\n")
+        self.target.emit_c_code_for_write(
+            base, context, NameAccessExpression(TokenType.IDENTIFIER(value))
+        )
 
         block = context.get_statement_builder()
 
@@ -2161,12 +2083,7 @@ class BinaryOperatorExpression(AbstractASTNodeExpression):
             return False
         return True
 
-    def emit_c_code(
-        self,
-        base: CCodeEmitter,
-        context: CCodeEmitter.CExpressionBuilder,
-        is_target=False,
-    ):
+    def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder):
         if self.operator in self.OPERATOR_CALL_FUNCTIONS:
             reverse = self.operator == BinaryOperatorExpression.BinaryOperation.CONTAINS
 
@@ -2223,13 +2140,8 @@ class WalrusOperatorExpression(AbstractASTNodeExpression):
             return False
         return True
 
-    def emit_c_code(
-        self,
-        base: CCodeEmitter,
-        context: CCodeEmitter.CExpressionBuilder,
-        is_target=False,
-    ):
-        self.target.emit_c_code(base, context, is_target=True)
+    def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder):
+        self.target.emit_c_code(base, context)
         context.add_code(" = ")
         self.value.emit_c_code(base, context)
 
@@ -2265,12 +2177,7 @@ class AssertStatement(AbstractASTNode):
             return False
         return True
 
-    def emit_c_code(
-        self,
-        base: CCodeEmitter,
-        context: CCodeEmitter.CExpressionBuilder,
-        is_target=False,
-    ):
+    def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder):
         base.add_include("<assert.h>")
         name = base.get_fresh_name("assert_target")
         context.add_code(f"PyObjectContainer* {name} = PY_CHECK_EXCEPTION(")
@@ -2300,12 +2207,7 @@ class ImportStatement(AbstractASTNode):
             and self.as_name == other.as_name
         )
 
-    def emit_c_code(
-        self,
-        base: CCodeEmitter,
-        context: CCodeEmitter.CExpressionBuilder,
-        is_target=False,
-    ):
+    def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder):
         # initialise all modules in the path to our module
         for i in range(self.module.count(".") - 1):
             partial_module = "___".join(self.module.split(".")[: i + 1])
@@ -2344,12 +2246,7 @@ class ModuleReference(AbstractASTNode):
             and self.base_scope == other.base_scope
         )
 
-    def emit_c_code(
-        self,
-        base: CCodeEmitter,
-        context: CCodeEmitter.CExpressionBuilder,
-        is_target=False,
-    ):
+    def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder):
         return f"PY_MODULE_INSTANCE_{self.name.replace('.', '___')}"
 
 

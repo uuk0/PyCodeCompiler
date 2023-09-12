@@ -24,7 +24,6 @@ PyObjectContainer* PY_MODULE_INSTANCE_source;
 
 // Global Variables
 PyClassContainer* PY_CLASS_test_2;
-PyObjectContainer* obj;
 
 
 

@@ -19,10 +19,6 @@ PyObjectContainer* PY_MODULE_INSTANCE_source;
 // code compiled from python to c via PyCodeCompiler
 
 
-// Global Variables
-PyObjectContainer* test;
-
-
 
 // implementations
 
