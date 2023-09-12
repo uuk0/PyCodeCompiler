@@ -1923,6 +1923,118 @@ class WhileStatement(AbstractASTNode):
             context.add_code(f'{exit_label}:\n"marker";')
 
 
+class ForLoopStatement(AbstractASTNode):
+    def __init__(
+        self,
+        target: AbstractASTNode,
+        iterator: AbstractASTNodeExpression,
+        body: typing.List[AbstractASTNode],
+        else_block: typing.List[AbstractASTNode],
+    ):
+        super().__init__()
+        self.target = target
+        self.iterator = iterator
+        self.body = body
+        self.else_block = else_block
+
+    def __eq__(self, other):
+        return (
+            type(other) == ForLoopStatement
+            and self.target == other.target
+            and self.iterator == other.iterator
+            and self.body == other.body
+        )
+
+    def __repr__(self):
+        return f"FOR-LOOP({self.target} <- {self.iterator} | {self.body})"
+
+    def try_replace_child(
+        self,
+        original: AbstractASTNode | None,
+        replacement: AbstractASTNode,
+        position: ParentAttributeSection,
+    ) -> bool:
+        pass
+
+    def try_insert_before(
+        self,
+        original: AbstractASTNode | None,
+        insert: AbstractASTNode,
+        position: ParentAttributeSection,
+    ) -> bool:
+        pass
+
+    def emit_c_code(
+        self,
+        base: CCodeEmitter,
+        context: CCodeEmitter.CExpressionBuilder,
+        is_target=False,
+    ):
+        """
+        PyObjectContainer* iterator = @iterator;
+        PyObjectContainer* value = 'next'(iterator, NULL);
+        while (value != NULL)
+        {
+            PY_CHECK_EXCEPTION(value);
+            @target := value;
+            @body;
+            PyObjectContainer* value = 'next'(iterator, NULL);
+        }
+        """
+
+        iterator = base.get_fresh_name("iterator")
+        value = base.get_fresh_name("value")
+        exit_label = base.get_fresh_name("while_exit_label") if self.else_block else "<break>"
+
+        context.add_code(f"PyObjectContainer* {iterator} = ")
+        self.iterator.emit_c_code(base, context)
+        context.add_code(";\n")
+        context.add_code(f"PyObjectContainer* {value} = PY_STD_NEXT_FORWARD_arg_1({iterator}, NULL);")
+        context.add_code(f"while ({value} != NULL) {{\n")
+        context.add_code(f"PY_CHECK_EXCEPTION({value});\n")
+
+        self.target.emit_c_code(base, context, is_target=True)
+        context.add_code(f" = {value};\n")
+        
+        block = context.get_statement_builder()
+        
+        for line in self.body:
+            inner_block = block.get_statement_builder(indent=False)
+            inner_block.parent = block
+            inner_block.break_to_label = exit_label
+        
+            line.emit_c_code(base, inner_block)
+        
+            if isinstance(line, AbstractASTNodeExpression):
+                inner_block.add_code(";\n")
+            else:
+                inner_block.add_code("\n")
+        
+            block.add_code(inner_block.get_result() + "\n")
+        
+        context.add_code(block.get_result())
+
+        context.add_code(f"{value} = PY_STD_NEXT_FORWARD_arg_1({iterator}, NULL);")
+        
+        context.add_code("\n}\n")
+
+        if self.else_block:
+            for line in self.else_block:
+                inner_block = block.get_statement_builder(indent=False)
+                inner_block.parent = block
+
+                line.emit_c_code(base, inner_block)
+
+                if isinstance(line, AbstractASTNodeExpression):
+                    inner_block.add_code(";\n")
+                else:
+                    inner_block.add_code("\n")
+
+                context.add_code(inner_block.get_result() + "\n")
+
+            context.add_code(f'{exit_label}:\n"marker";')
+
+
 class BinaryOperatorExpression(AbstractASTNodeExpression):
     class BinaryOperation(enum.Enum):
         PLUS = enum.auto()
