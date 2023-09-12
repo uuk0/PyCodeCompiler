@@ -223,7 +223,7 @@ PyObjectContainer* PY_STD_dict_eq_fast(PyObjectContainer* self, PyObjectContaine
         }
         PyObjectContainer* self_value = self_cont->value_memory[i];
         PyObjectContainer* eq_method = PY_getObjectAttributeByNameOrStatic(self_value, "__eq__");
-        if (PY_invokeBoxedMethod(eq_method, self_value, 1, &other_value, NULL) == PY_FALSE)
+        if (PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(eq_method, self_value, 1, &other_value, NULL)) == PY_FALSE)
         {
             return PY_FALSE;
         }
