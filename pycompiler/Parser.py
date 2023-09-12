@@ -1984,38 +1984,42 @@ class ForLoopStatement(AbstractASTNode):
 
         iterator = base.get_fresh_name("iterator")
         value = base.get_fresh_name("value")
-        exit_label = base.get_fresh_name("while_exit_label") if self.else_block else "<break>"
+        exit_label = (
+            base.get_fresh_name("while_exit_label") if self.else_block else "<break>"
+        )
 
         context.add_code(f"PyObjectContainer* {iterator} = ")
         self.iterator.emit_c_code(base, context)
         context.add_code(";\n")
-        context.add_code(f"PyObjectContainer* {value} = PY_STD_NEXT_FORWARD_arg_1({iterator}, NULL);")
+        context.add_code(
+            f"PyObjectContainer* {value} = PY_STD_NEXT_FORWARD_arg_1({iterator}, NULL);"
+        )
         context.add_code(f"while ({value} != NULL) {{\n")
         context.add_code(f"PY_CHECK_EXCEPTION({value});\n")
 
         self.target.emit_c_code(base, context, is_target=True)
         context.add_code(f" = {value};\n")
-        
+
         block = context.get_statement_builder()
-        
+
         for line in self.body:
             inner_block = block.get_statement_builder(indent=False)
             inner_block.parent = block
             inner_block.break_to_label = exit_label
-        
+
             line.emit_c_code(base, inner_block)
-        
+
             if isinstance(line, AbstractASTNodeExpression):
                 inner_block.add_code(";\n")
             else:
                 inner_block.add_code("\n")
-        
+
             block.add_code(inner_block.get_result() + "\n")
-        
+
         context.add_code(block.get_result())
 
         context.add_code(f"{value} = PY_STD_NEXT_FORWARD_arg_1({iterator}, NULL);")
-        
+
         context.add_code("\n}\n")
 
         if self.else_block:
@@ -2875,6 +2879,9 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
 
         if while_statement := self.try_parse_while_statement():
             return while_statement
+
+        if for_statement := self.try_parse_for_statement():
+            return for_statement
 
         if self.indent_level != 0 and (
             pass_statement := self.try_parse_pass_statement()
@@ -3849,6 +3856,77 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
             condition,
             body,
             else_node=else_branch,
+        )
+
+    def try_parse_for_statement(self) -> ForLoopStatement | None:
+        # for <target> in <iterable>:
+        for_token = self.lexer.get_chars(len("for "))
+
+        if for_token != "for ":
+            self.lexer.give_back(for_token)
+            return
+
+        self.lexer.try_parse_whitespaces()
+
+        target = self.try_parse_assignment_target()
+
+        if target is None:
+            raise SyntaxError("expected <target> after 'for'")
+
+        self.lexer.try_parse_whitespaces()
+
+        if self.lexer.get_chars(3) != "in ":
+            raise SyntaxError("expected 'in' after <target>")
+
+        self.lexer.try_parse_whitespaces()
+
+        iterator = self.try_parse_expression()
+
+        if iterator is None:
+            raise SyntaxError("expected <expression> after 'while'")
+
+        if self.lexer.get_chars(1) != ":":
+            raise SyntaxError("expected ':' after <iterator>")
+
+        self.lexer.try_parse_whitespaces()
+
+        if self.lexer.inspect_chars(1) != "\n":
+            body = [self.parse_line(include_comment=False)]
+        else:
+            self.indent_level += 1
+            body = self.parse(stop_on_indention_exit=True)
+
+            if len(body) == 0:
+                raise SyntaxError("expected <body>")
+
+            self.indent_level -= 1
+
+        self.lexer.save_state()
+        else_branch = []
+
+        if self.try_get_indent() is None:
+            self.lexer.rollback_state()
+
+        elif self.lexer.inspect_chars(len("else:")) == "else:":
+            self.lexer.discard_save_state()
+            self.lexer.get_chars(len("else:"))
+
+            self.indent_level += 1
+            else_branch = self.parse(stop_on_indention_exit=True)
+
+            if len(else_branch) == 0:
+                raise SyntaxError("expected <body> after 'else'")
+
+            self.indent_level -= 1
+
+        else:
+            self.lexer.rollback_state()
+
+        return ForLoopStatement(
+            target,
+            iterator,
+            body,
+            else_branch,
         )
 
     def try_parse_pass_statement(self) -> PassStatement | None:
