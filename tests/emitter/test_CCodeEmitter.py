@@ -128,3 +128,6 @@ class TestCCodeEmitter(TestCase):
 
     def test_generators(self):
         self.run_named_folder_test("generators")
+
+    def test_for_loop(self):
+        self.run_named_folder_test("for_loop")

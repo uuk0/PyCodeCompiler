@@ -26,6 +26,7 @@ from pycompiler.Parser import (
     PyNewlineNode,
     YieldStatement,
     DictConstructor,
+    ForLoopStatement,
 )
 
 if typing.TYPE_CHECKING:
@@ -174,6 +175,18 @@ class ResolveParentAttribute(SyntaxTreeVisitor):
         for line in while_statement.else_node:
             line.parent = while_statement, ParentAttributeSection.ELSE_BRANCH
 
+    def visit_for_statement(self, for_statement: ForLoopStatement):
+        super().visit_for_statement(for_statement)
+
+        for_statement.target.parent = for_statement, ParentAttributeSection.LHS
+        for_statement.iterator.parent = for_statement, ParentAttributeSection.RHS
+
+        for line in for_statement.body:
+            line.parent = for_statement, ParentAttributeSection.BODY
+
+        for line in for_statement.else_block:
+            line.parent = for_statement, ParentAttributeSection.ELSE_BRANCH
+
     def visit_binary_operator(self, operator: BinaryOperatorExpression):
         super().visit_binary_operator(operator)
 
@@ -293,14 +306,17 @@ class ScopeGeneratorVisitor(SyntaxTreeVisitor):
         self.scope: Scope = scope
 
     def visit_any(self, obj: AbstractASTNode):
-        obj.scope = self.scope
-        super().visit_any(obj)
+        if obj:
+            obj.scope = self.scope
+            super().visit_any(obj)
 
     def visit_class_definition(self, node: ClassDefinitionNode):
         outer_scope = self.scope
         outer_scope.expose_type_name(node.name.text, node)
         self.scope = self.scope.copy()
         self.scope.class_name_stack.append(node.name.text)
+
+        self.scope.is_scope_root = True
 
         for name in node.generics:
             self.scope.export_variable_name(name.text)
@@ -315,6 +331,8 @@ class ScopeGeneratorVisitor(SyntaxTreeVisitor):
     def visit_function_definition(self, node: FunctionDefinitionNode):
         outer_scope = self.scope
         self.scope = self.scope.copy()
+
+        self.scope.is_scope_root = True
 
         for name in node.generics:
             self.scope.export_variable_name(name.text)
@@ -342,13 +360,29 @@ class ScopeGeneratorVisitor(SyntaxTreeVisitor):
                 self.scope.export_variable_name(target.name.text)
 
     def visit_while_statement(self, while_statement: WhileStatement):
-        self.visit_any(while_statement.condition)
+        super().visit_while_statement(while_statement)
 
         outer_scope = self.scope
         self.scope = self.scope.copy()
 
         self.visit_any_list(while_statement.body)
         self.visit_any_list(while_statement.else_node)
+
+        self.scope.close()
+        self.scope = outer_scope
+
+    def visit_for_statement(self, for_statement: ForLoopStatement):
+        self.visit_any(for_statement.iterator),
+        self.visit_any(AssignmentExpression([for_statement.target], None, None))
+        for_statement.target.scope = self.scope
+        self.visit_any_list(for_statement.body),
+        self.visit_any_list(for_statement.else_block)
+
+        outer_scope = self.scope
+        self.scope = self.scope.copy()
+
+        self.visit_any_list(for_statement.body)
+        self.visit_any_list(for_statement.else_block)
 
         self.scope.close()
         self.scope = outer_scope

@@ -41,7 +41,7 @@ void PY_MODULE_source_init(void) {
     PyObjectContainer* obj_instance_0 = PY_createClassInstance(PY_CLASS_test_2);
     PY_CHECK_EXCEPTION(init_1(obj_instance_0));
 
-    obj = obj_instance_0;
+    obj_3 = obj_instance_0;
     #ifdef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE
     PY_exposeModuleObject(PY_MODULE_INSTANCE_source);
     #endif
@@ -60,9 +60,9 @@ void PY_CLASS_INIT_PY_CLASS_test_2(void) {
 }
 
 PyObjectContainer* init_1(PyObjectContainer* self_0) {
-    PyObjectContainer* value_3;
+    PyObjectContainer* value_4;
 
-    value_3 = PY_createInteger(0);
+    value_4 = PY_createInteger(0);
 
 
 

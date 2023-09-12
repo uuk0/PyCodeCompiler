@@ -20,6 +20,7 @@ class Scope:
         self._fresh_name_counter = 0
         self.parent: Scope | None = None
         self.global_scope: Scope = self
+        self.is_scope_root = False
 
         self.module_file: str | None = None
         self.class_name_stack: typing.List[str] = []
@@ -58,7 +59,26 @@ class Scope:
         return self.get_fresh_name(name)
 
     def get_remapped_name(self, name: str) -> str:
-        return self.variable_name_remap.get(name, name)
+        if name not in self.variable_name_remap:
+            if self.parent and not self.is_scope_root:
+                parent = self.parent
+
+                while parent:
+                    if name in parent.variable_name_remap:
+                        self.variable_name_remap[
+                            name
+                        ] = result = parent.variable_name_remap[name]
+                        return result
+
+                    if not parent.is_scope_root:
+                        break
+
+                    parent = parent.parent
+
+            self.variable_name_remap[name] = result = self.get_fresh_name(name)
+            return result
+
+        return self.variable_name_remap[name]
 
     def add_remapped_name(self, name: str, remapped: str):
         self.variable_name_remap[name] = remapped
@@ -1740,9 +1760,6 @@ class StandardLibraryBoundOperator(AbstractASTNode):
         return f"STANDRAD_LIBRARY_OPERATOR({self.name}, {self.exposed_operator})"
 
     def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder):
-        if is_target:
-            raise SyntaxError(f"cannot write into name '{self.name}'")
-
         context.add_code(self.exposed_operator)
 
 
@@ -1913,16 +1930,18 @@ class ForLoopStatement(AbstractASTNode):
         self.iterator.emit_c_code(base, context)
         context.add_code(";\n")
         context.add_code(
-            f"PyObjectContainer* {value} = PY_STD_NEXT_FORWARD_arg_1({iterator}, NULL);"
+            f"PyObjectContainer* {value} = PY_STD_NEXT_FORWARD_arg_1({iterator}, NULL);\n"
         )
         context.add_code(f"while ({value} != NULL) {{\n")
-        context.add_code(f"PY_CHECK_EXCEPTION({value});\n")
-
-        self.target.emit_c_code_for_write(
-            base, context, NameAccessExpression(TokenType.IDENTIFIER(value))
-        )
 
         block = context.get_statement_builder()
+        block.add_code(f"PY_CHECK_EXCEPTION({value});\n")
+
+        source = GlobalCNameAccessExpression(value)
+        source.scope = self.scope
+
+        self.target.emit_c_code_for_write(base, block, source)
+        block.add_code(";")
 
         for line in self.body:
             inner_block = block.get_statement_builder(indent=False)
@@ -1938,9 +1957,9 @@ class ForLoopStatement(AbstractASTNode):
 
             block.add_code(inner_block.get_result() + "\n")
 
-        context.add_code(block.get_result())
+        block.add_code(f"{value} = PY_STD_NEXT_FORWARD_arg_1({iterator}, NULL);")
 
-        context.add_code(f"{value} = PY_STD_NEXT_FORWARD_arg_1({iterator}, NULL);")
+        context.add_code(block.get_result())
 
         context.add_code("\n}\n")
 
@@ -2292,6 +2311,8 @@ class SyntaxTreeVisitor:
             return self.visit_constant(obj)
         elif obj_type == WhileStatement:
             return self.visit_while_statement(obj)
+        elif obj_type == ForLoopStatement:
+            return self.visit_for_statement(obj)
         elif obj_type == PriorityBrackets:
             return self.visit_priority_bracket(obj)
         elif obj_type == TupleConstructor:
@@ -2385,8 +2406,18 @@ class SyntaxTreeVisitor:
         return (self.visit_any(yield_statement.yield_expression),)
 
     def visit_while_statement(self, while_statement: WhileStatement):
-        return self.visit_any(while_statement.condition), self.visit_any_list(
-            while_statement.body
+        return (
+            self.visit_any(while_statement.condition),
+            self.visit_any_list(while_statement.body),
+            self.visit_any_list(while_statement.else_node),
+        )
+
+    def visit_for_statement(self, for_statement: ForLoopStatement):
+        return (
+            self.visit_any(for_statement.iterator),
+            self.visit_any(for_statement.target),
+            self.visit_any_list(for_statement.body),
+            self.visit_any_list(for_statement.else_block),
         )
 
     def visit_binary_operator(self, operator: BinaryOperatorExpression):

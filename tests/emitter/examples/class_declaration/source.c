@@ -42,7 +42,7 @@ void PY_MODULE_source_init(void) {
 }
 
 void PY_CLASS_INIT_PY_CLASS_test_2(void) {
-    PyObjectContainer* attr;
+    PyObjectContainer* attr_3;
 
     // Create Class PY_CLASS_test_2 ('test' in source code)
     PY_CLASS_test_2 = PY_createClassContainer("test");
@@ -54,7 +54,7 @@ void PY_CLASS_INIT_PY_CLASS_test_2(void) {
     // Attributes
     PY_setClassAttributeByNameOrCreate(PY_CLASS_test_2, "test", PY_createBoxForFunction(test_1_safeWrap));
 
-    attr = PY_createInteger(10);
+    attr_3 = PY_createInteger(10);
 }
 
 PyObjectContainer* test_1(PyObjectContainer* self_0) {
