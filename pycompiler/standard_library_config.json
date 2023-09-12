@@ -133,7 +133,12 @@
           {
             "name": "__len__",
             "type": "method",
-            "c name": "PY_STD_dict_len"
+            "c name": "PY_STD_dict_len_fast"
+          },
+          {
+            "name": "__eq__",
+            "type": "method",
+            "c name": "PY_STD_eq_fast"
           },
           {
             "name": "setdefault",

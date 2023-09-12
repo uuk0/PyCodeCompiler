@@ -188,6 +188,49 @@ PyObjectContainer* PY_STD_dict_len_fast(PyObjectContainer* self)
     return PY_createInteger((int64_t)container->used_size);
 }
 
+PyObjectContainer* PY_STD_dict_eq(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
+{
+    assert(argc == 1);
+    return PY_STD_dict_eq_fast(self, args[0]);
+}
+
+PyObjectContainer* PY_STD_dict_eq_fast(PyObjectContainer* self, PyObjectContainer* other)
+{
+    assert(self->type == PY_TYPE_PY_IMPL);
+    assert(self->py_type == PY_TYPE_DICT);
+    assert(self->raw_value != NULL);
+
+    if (other->type != PY_TYPE_PY_IMPL || other->py_type != PY_TYPE_DICT || other->raw_value == NULL)
+    {
+        return PY_FALSE;
+    }
+
+    HashMapContainer* self_cont = self->raw_value;
+    HashMapContainer* other_cont = other->raw_value;
+
+    if (self_cont->used_size != other_cont->used_size)
+    {
+        return PY_FALSE;
+    }
+
+    for (int i = 0; i < self_cont->alloc_size; i++)
+    {
+        PyObjectContainer* key = self_cont->key_memory[i];
+        PyObjectContainer* other_value = HASHMAP_lookup(other_cont, key);
+        if (other_value == NULL)
+        {
+            return PY_FALSE;
+        }
+        PyObjectContainer* self_value = self_cont->value_memory[i];
+        PyObjectContainer* eq_method = PY_getObjectAttributeByNameOrStatic(self_value, "__eq__");
+        if (PY_invokeBoxedMethod(eq_method, self_value, 1, &other_value, NULL) == PY_FALSE)
+        {
+            return PY_FALSE;
+        }
+    }
+    return PY_TRUE;
+}
+
 PyObjectContainer* PY_STD_dict_setdefault(PyObjectContainer* self,  uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
 {
     assert(argc == 2);
