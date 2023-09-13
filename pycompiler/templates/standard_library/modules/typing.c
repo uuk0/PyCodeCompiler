@@ -8,7 +8,7 @@
 
 PyObjectContainer* PY_MODULE_INSTANCE_typing;
 
-void PY_MODULE_typing_init(void)
+PyObjectContainer* PY_MODULE_typing_init(void)
 {
     INVOKE_SINGLE();
 
@@ -16,4 +16,6 @@ void PY_MODULE_typing_init(void)
     PY_setObjectAttributeByName(PY_MODULE_INSTANCE_typing, "TYPE_CHECKING", PY_FALSE);
 
     PY_exposeModuleObject(PY_MODULE_INSTANCE_typing);
+
+    return PY_NONE;
 }

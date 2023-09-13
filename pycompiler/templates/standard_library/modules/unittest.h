@@ -9,6 +9,6 @@
 
 extern PyObjectContainer* PY_MODULE_INSTANCE_unittest;
 
-void PY_MODULE_unittest_init(void);
+PyObjectContainer* PY_MODULE_unittest_init(void);
 
 #endif //PYCCOMPILER_UNITTEST_H

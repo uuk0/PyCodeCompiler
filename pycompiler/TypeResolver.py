@@ -77,7 +77,7 @@ class GetHeaderRelatedInfo(SyntaxTreeVisitor):
         super().visit_class_definition(node)
 
         self.function_signatures.append(
-            f"void PY_CLASS_INIT_PY_CLASS_{node.normal_name}(void)"
+            f"PyObjectContainer* PY_CLASS_INIT_PY_CLASS_{node.normal_name}(void)"
         )
         self.global_variables.append(f"PyClassContainer* PY_CLASS_{node.normal_name}")
 

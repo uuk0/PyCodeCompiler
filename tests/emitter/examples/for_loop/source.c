@@ -29,7 +29,7 @@ PyObjectContainer* value_1;
 
 // implementations
 
-void PY_MODULE_source_init(void) {
+PyObjectContainer* PY_MODULE_source_init(void) {
     INVOKE_SINGLE();
     PY_STD_INIT();
     #ifdef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE

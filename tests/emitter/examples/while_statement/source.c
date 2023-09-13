@@ -20,29 +20,29 @@ PyObjectContainer* PY_MODULE_INSTANCE_source;
 
 
 // Global Variables
-PyObjectContainer* test;
+PyObjectContainer* test_0;
 
 
 
 // implementations
 
-void PY_MODULE_source_init(void) {
+PyObjectContainer* PY_MODULE_source_init(void) {
     INVOKE_SINGLE();
     PY_STD_INIT();
     #ifdef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE
     PY_MODULE_INSTANCE_source = PY_createModuleObject("source");
     #endif
-    PyObjectContainer* test;
-    test = PY_createInteger(10);
+    PyObjectContainer* test_0;
+    test_0 = PY_createInteger(10);
 
-    while (PY_getTruthValueOf(test)) {
-        test = test;
+    while (PY_getTruthValueOf(test_0)) {
+        test_0 = test_0;
     }
-    while (PY_getTruthValueOf(test)) {
-        test = PY_STD_operator_sub(test, PY_createInteger(1));
+    while (PY_getTruthValueOf(test_0)) {
+        test_0 = PY_STD_operator_sub(test_0, PY_createInteger(1));
     }
 
-    test = PY_createInteger(20);
+    test_0 = PY_createInteger(20);
     while_exit_label_0:
     "marker";
     #ifdef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE

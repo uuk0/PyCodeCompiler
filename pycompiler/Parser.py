@@ -1657,7 +1657,7 @@ class ClassDefinitionNode(AbstractASTNode):
         base.add_global_variable("PyClassContainer*", variable_name)
 
         init_class = CCodeEmitter.CFunctionBuilder(
-            f"PY_CLASS_INIT_{variable_name}", [], "void", base.scope
+            f"PY_CLASS_INIT_{variable_name}", [], "PyObjectContainer*", base.scope
         )
         base.add_function(init_class)
 
@@ -2243,9 +2243,9 @@ class ImportStatement(AbstractASTNode):
                 f'"{Scope.STANDARD_LIBRARY_MODULES[self.module].header_name}"'
             )
 
-        context.add_code(f"PY_MODULE_{name}_init();\n")
+        context.add_code(f"PY_CHECK_EXCEPTION(PY_MODULE_{name}_init());\n")
         context.add_code(
-            f"{self.as_name or self.module.split('.')[0]} = PY_MODULE_INSTANCE_{name};\n"
+            f"{self.scope.get_remapped_name(self.as_name or self.module.split('.')[0])} = PY_MODULE_INSTANCE_{name};\n"
         )
 
 
@@ -2638,7 +2638,7 @@ class Parser:
         main = builder.CFunctionBuilder(
             f"PY_MODULE_{module_name.replace('.', '___') if module_name else 'unknown'}_init",
             [],
-            "void",
+            "PyObjectContainer*",
             scope,
         )
 
@@ -2675,7 +2675,7 @@ class Parser:
         main.add_code("#endif\n")
 
         for var in sorted(list(vars)):
-            main.add_code(f"PyObjectContainer* {var};\n")
+            main.add_code(f"PyObjectContainer* {scope.get_remapped_name(var)};\n")
 
         for line in expr:
             inner_block = main.get_statement_builder(indent=False)

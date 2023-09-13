@@ -22,14 +22,14 @@ PyObjectContainer* PY_MODULE_INSTANCE_source;
 
 // implementations
 
-void PY_MODULE_source_init(void) {
+PyObjectContainer* PY_MODULE_source_init(void) {
     INVOKE_SINGLE();
     PY_STD_INIT();
     #ifdef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE
     PY_MODULE_INSTANCE_source = PY_createModuleObject("source");
     #endif
-    PyObjectContainer* test;
-    test = PY_createInteger(10);
+    PyObjectContainer* test_0;
+    test_0 = PY_createInteger(10);
     #ifdef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE
     PY_exposeModuleObject(PY_MODULE_INSTANCE_source);
     #endif

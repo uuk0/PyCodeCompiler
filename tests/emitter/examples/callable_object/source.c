@@ -29,7 +29,7 @@ PyClassContainer* PY_CLASS_Test_4;
 
 // implementations
 
-void PY_MODULE_source_init(void) {
+PyObjectContainer* PY_MODULE_source_init(void) {
     INVOKE_SINGLE();
     PY_STD_INIT();
     #ifdef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE
@@ -43,7 +43,7 @@ void PY_MODULE_source_init(void) {
     #endif
 }
 
-void PY_CLASS_INIT_PY_CLASS_Test_4(void) {
+PyObjectContainer* PY_CLASS_INIT_PY_CLASS_Test_4(void) {
     // Create Class PY_CLASS_Test_4 ('Test' in source code)
     PY_CLASS_Test_4 = PY_createClassContainer("Test");
     PY_ClassContainer_AllocateParentArray(PY_CLASS_Test_4, 1);

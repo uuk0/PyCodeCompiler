@@ -27,20 +27,20 @@ PyObjectContainer* PY_MODULE_INSTANCE_source;
 
 // implementations
 
-void PY_MODULE_source_init(void) {
+PyObjectContainer* PY_MODULE_source_init(void) {
     INVOKE_SINGLE();
     PY_STD_INIT();
     #ifdef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE
     PY_MODULE_INSTANCE_source = PY_createModuleObject("source");
     #endif
-    PyObjectContainer* test;
-    PyObjectContainer* test_module;
-    PyObjectContainer* typing;
-    PY_MODULE_typing_init();
-    typing = PY_MODULE_INSTANCE_typing;
+    PyObjectContainer* test_0;
+    PyObjectContainer* test_module_1;
+    PyObjectContainer* typing_2;
+    PY_CHECK_EXCEPTION(PY_MODULE_typing_init());
+    typing_2 = PY_MODULE_INSTANCE_typing;
 
-    PY_MODULE_test_module_init();
-    test_module = PY_MODULE_INSTANCE_test_module;
+    PY_CHECK_EXCEPTION(PY_MODULE_test_module_init());
+    test_module_1 = PY_MODULE_INSTANCE_test_module;
 
 
 

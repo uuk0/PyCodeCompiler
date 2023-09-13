@@ -190,7 +190,7 @@ class Project:
 // Header for the module {module}
 
 // Functions
-void PY_MODULE_{module.replace('.', '___')}_init(void);
+PyObjectContainer* PY_MODULE_{module.replace('.', '___')}_init(void);
 """
 
             for signature in header_info.function_signatures:
