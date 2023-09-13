@@ -52,7 +52,7 @@ PyObjectContainer* test_0(void) {
     s_2 = PY_createInteger(0);
 
 
-    PyObjectContainer* iterator_0 = l_1;
+    PyObjectContainer* iterator_0 = PY_CHECK_EXCEPTION(PY_STD_operator_iter(l_1));
     PyObjectContainer* value_1 = PY_STD_NEXT_FORWARD_arg_1(iterator_0, NULL);
     while (value_1 != NULL) {
         PY_CHECK_EXCEPTION(value_1);

@@ -114,7 +114,11 @@ PyObjectContainer* PY_STD_NEXT_FORWARD_arg_1(PyObjectContainer* self, PyObjectCo
 {
     assert(self != NULL);
     PyObjectContainer* method = PY_getObjectAttributeByNameOrStatic(self, "__next__");
-    assert(method != NULL);
+    if (method == NULL)
+    {
+        printf("Data type: %s\n", PY_getObjectClassName(self));
+        PY_THROW_EXCEPTION_WITH_MESSAGE(NULL, "could not get '__next__'");
+    }
     return PY_invokeBoxedMethod(method, self, 1, &default_value, NULL);
 }
 

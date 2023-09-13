@@ -1909,7 +1909,7 @@ class ForLoopStatement(AbstractASTNode):
 
     def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder):
         """
-        PyObjectContainer* iterator = @iterator;
+        PyObjectContainer* iterator = (@iterator).__iter__();
         PyObjectContainer* value = 'next'(iterator, NULL);
         while (value != NULL)
         {
@@ -1926,9 +1926,11 @@ class ForLoopStatement(AbstractASTNode):
             base.get_fresh_name("for_exit_label") if self.else_block else "<break>"
         )
 
-        context.add_code(f"PyObjectContainer* {iterator} = ")
+        context.add_code(
+            f"PyObjectContainer* {iterator} = PY_CHECK_EXCEPTION(PY_STD_operator_iter("
+        )
         self.iterator.emit_c_code(base, context)
-        context.add_code(";\n")
+        context.add_code("));\n")
         context.add_code(
             f"PyObjectContainer* {value} = PY_STD_NEXT_FORWARD_arg_1({iterator}, NULL);\n"
         )
