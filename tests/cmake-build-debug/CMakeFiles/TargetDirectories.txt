@@ -1,0 +1,3 @@
+C:/Projects/Python/PyCodeCompiler/tests/cmake-build-debug/CMakeFiles/tests_class_decl_with_function.dir
+C:/Projects/Python/PyCodeCompiler/tests/cmake-build-debug/CMakeFiles/edit_cache.dir
+C:/Projects/Python/PyCodeCompiler/tests/cmake-build-debug/CMakeFiles/rebuild_cache.dir
