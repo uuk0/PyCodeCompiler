@@ -335,6 +335,9 @@ class CCodeEmitter:
         if (var_type, var_name) in self.global_variables:
             return
 
+        # if var_name.startswith("value"):
+        #     raise ValueError(var_name)
+
         self.global_variables.append((var_type, var_name))
 
     def add_to_initializer_top(self, code: str):
@@ -598,7 +601,9 @@ class GlobalCNameAccessExpression(AbstractASTNodeExpression):
         return f"GLOBAL-C-VARIABLE({self.name})"
 
     def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder):
-        base.add_global_variable("PyObjectContainer*", self.name)
+        if self.name.isidentifier():
+            base.add_global_variable("PyObjectContainer*", self.name)
+
         context.add_code(self.name)
 
     def emit_c_code_for_write(
@@ -734,7 +739,23 @@ class TupleConstructor(AbstractASTNodeExpression):
         context: CCodeEmitter.CExpressionBuilder,
         value_source: AbstractASTNodeExpression,
     ):
-        raise RuntimeError("not implemented")
+        temporary = base.get_fresh_name("temporary_tuple")
+        context.add_code(f"PyObjectContainer* {temporary} = ")
+        value_source.emit_c_code(base, context)
+        context.add_code(";\n")
+        context.add_code(
+            f"assert(PY_unpackInteger(PY_STD_operator_len({temporary})) == {len(self.items)});\n"
+        )
+
+        for i, item in enumerate(self.items):
+            item.emit_c_code_for_write(
+                base,
+                context,
+                GlobalCNameAccessExpression(
+                    f"PY_GetSubscriptionValue({temporary}, PY_createInteger({i}))"
+                ),
+            )
+            context.add_code(";\n")
 
 
 class ListConstructor(AbstractASTNodeExpression):

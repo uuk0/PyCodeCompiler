@@ -304,6 +304,7 @@ class BinaryOperatorPriorityRewriter(SyntaxTreeVisitor):
 class ScopeGeneratorVisitor(SyntaxTreeVisitor):
     def __init__(self, scope: Scope):
         self.scope: Scope = scope
+        self.enable_name_access_export = False
 
     def visit_any(self, obj: AbstractASTNode):
         if obj:
@@ -353,11 +354,16 @@ class ScopeGeneratorVisitor(SyntaxTreeVisitor):
         self.scope.export_variable_name(node.name.text)
 
     def visit_assignment(self, assignment: AssignmentExpression):
-        super().visit_assignment(assignment)
+        self.enable_name_access_export = True
+        self.visit_any_list(assignment.lhs)
+        self.enable_name_access_export = False
+        self.visit_any(assignment.rhs)
 
-        for target in assignment.lhs:
-            if isinstance(target, NameAccessExpression):
-                self.scope.export_variable_name(target.name.text)
+    def visit_name_access(self, access: NameAccessExpression):
+        super().visit_name_access(access)
+
+        if self.enable_name_access_export:
+            self.scope.export_variable_name(access.name.text)
 
     def visit_while_statement(self, while_statement: WhileStatement):
         super().visit_while_statement(while_statement)
