@@ -456,6 +456,13 @@ PyObjectContainer* PY_invokeBoxedMethod(PyObjectContainer* method, PyObjectConta
 
 PyObjectContainer* PY_GetSubscriptionValue(PyObjectContainer* obj, PyObjectContainer* index)
 {
+    // When using [] on a function, it is used for generics,
+    // so we can skip this
+    if (obj->type == PY_TYPE_FUNC_POINTER)
+    {
+        return obj;
+    }
+
     assert(obj->type == PY_TYPE_PY_IMPL);
 
     PyObjectContainer* method = PY_getObjectAttributeByNameOrStatic(obj, "__getitem__");
