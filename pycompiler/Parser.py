@@ -2843,7 +2843,17 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
         if expression := self.try_parse_expression():
             return expression
 
-    def try_parse_assignment_target(self) -> AbstractASTNode | None:
+    def try_parse_assignment_target(
+        self, tuple_assignment_requires_brackets=True
+    ) -> AbstractASTNode | None:
+        if self.lexer.inspect_chars(1) == "(":
+            return self.try_parse_prim_unpack(
+                ")", TupleConstructor, single_is_inner=True
+            )
+
+        # if self.lexer.inspect_chars(1) == "[":
+        #     return self.try_parse_prim_unpack("]", ListConstructor)
+
         identifier = self.lexer.try_parse_identifier()
 
         if identifier is None:
@@ -2870,7 +2880,92 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
             else:
                 break
 
+        self.lexer.try_parse_whitespaces()
+        if (
+            not tuple_assignment_requires_brackets
+            and self.lexer.inspect_chars(1) == ","
+        ):
+            self.lexer.get_chars(1)
+            base = TupleConstructor([base])
+
+            while True:
+                self.lexer.try_parse_whitespaces()
+                target = self.try_parse_assignment_target()
+
+                if target is None:
+                    return base
+
+                base.items.append(target)
+
+                self.lexer.try_parse_whitespaces()
+                if self.lexer.inspect_chars(1) != ",":
+                    return base
+
+                self.lexer.get_chars(1)
+
         return base
+
+    def try_parse_prim_unpack(
+        self, closing_bracket: str, class_type: typing.Type, single_is_inner=False
+    ):
+        self.lexer.save_state()
+        self.lexer.get_chars(1)
+
+        if self.lexer.inspect_chars(1) == closing_bracket:
+            if single_is_inner:
+                self.lexer.rollback_state()
+                return
+
+            return class_type([])
+
+        target = self.try_parse_assignment_target()
+
+        if target is None:
+            self.lexer.rollback_state()
+            return
+
+        self.lexer.discard_save_state()
+        self.lexer.save_state()
+        self.lexer.try_parse_whitespaces()
+
+        if self.lexer.inspect_chars(1) == closing_bracket:
+            if single_is_inner:
+                return target
+
+            return class_type([target])
+
+        if self.lexer.inspect_chars(1) != ",":
+            self.lexer.rollback_state()
+            return
+
+        self.lexer.get_chars(1)
+        target = class_type([target])
+
+        while True:
+            self.lexer.try_parse_whitespaces()
+            if self.lexer.inspect_chars(1) == closing_bracket:
+                self.lexer.get_chars(1)
+                self.lexer.discard_save_state()
+                return target
+
+            item = self.try_parse_assignment_target()
+            self.lexer.try_parse_whitespaces()
+
+            if item is None:
+                self.lexer.discard_save_state()
+                return target
+
+            target.items.append(item)
+
+            if self.lexer.inspect_chars(1) != ",":
+                self.lexer.discard_save_state()
+                if self.lexer.inspect_chars(1) != closing_bracket:
+                    raise SyntaxError
+
+                self.lexer.get_chars(1)
+                return target
+
+            self.lexer.get_chars(1)
 
     def try_parse_expression(self) -> AbstractASTNode | None:
         self.lexer.try_parse_whitespaces()
@@ -3390,10 +3485,13 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
 
     def try_parse_assignment(self) -> AssignmentExpression | None:
         self.lexer.save_state()
-        assigned_variables = [self.try_parse_assignment_target()]
+        assigned_variables = [
+            self.try_parse_assignment_target(tuple_assignment_requires_brackets=False)
+        ]
 
         if assigned_variables[0] is None:
             self.lexer.rollback_state()
+            print("target parsing failed")
             return
 
         self.lexer.try_parse_whitespaces()
@@ -3402,6 +3500,7 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
 
         if eq_sign is None:
             self.lexer.rollback_state()
+            print("no eq sign", self.lexer.inspect_chars(1))
             return
 
         self.lexer.discard_save_state()
@@ -3409,7 +3508,9 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
         while True:
             self.lexer.save_state()
             self.lexer.try_parse_whitespaces()
-            expression = self.try_parse_assignment_target()
+            expression = self.try_parse_assignment_target(
+                tuple_assignment_requires_brackets=False
+            )
             self.lexer.try_parse_whitespaces()
 
             if expression is None:
@@ -3798,7 +3899,9 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
 
         self.lexer.try_parse_whitespaces()
 
-        target = self.try_parse_assignment_target()
+        target = self.try_parse_assignment_target(
+            tuple_assignment_requires_brackets=False
+        )
 
         if target is None:
             raise SyntaxError("expected <target> after 'for'")

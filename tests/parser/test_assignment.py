@@ -18,6 +18,102 @@ class TestAssignment(TestCase):
             expr,
         )
 
+    def test_tuple_unpack(self):
+        parser = Parser.Parser("target, target2 = source")
+        expr = parser.try_parse_assignment()
+
+        self.assertEqual(
+            Parser.AssignmentExpression(
+                [
+                    Parser.TupleConstructor(
+                        [
+                            Parser.NameAccessExpression(
+                                Lexer.TokenType.IDENTIFIER("target")
+                            ),
+                            Parser.NameAccessExpression(
+                                Lexer.TokenType.IDENTIFIER("target2")
+                            ),
+                        ]
+                    ),
+                ],
+                Lexer.TokenType.EQUAL_SIGN("="),
+                Parser.NameAccessExpression(Lexer.TokenType.IDENTIFIER("source")),
+            ),
+            expr,
+        )
+
+    def test_tuple_unpack_with_trailing_comma(self):
+        parser = Parser.Parser("target, target2, = source")
+        expr = parser.try_parse_assignment()
+
+        self.assertEqual(
+            Parser.AssignmentExpression(
+                [
+                    Parser.TupleConstructor(
+                        [
+                            Parser.NameAccessExpression(
+                                Lexer.TokenType.IDENTIFIER("target")
+                            ),
+                            Parser.NameAccessExpression(
+                                Lexer.TokenType.IDENTIFIER("target2")
+                            ),
+                        ]
+                    ),
+                ],
+                Lexer.TokenType.EQUAL_SIGN("="),
+                Parser.NameAccessExpression(Lexer.TokenType.IDENTIFIER("source")),
+            ),
+            expr,
+        )
+
+    def test_tuple_unpack_with_brackets(self):
+        parser = Parser.Parser("(target, target2) = source")
+        expr = parser.try_parse_assignment()
+
+        self.assertEqual(
+            Parser.AssignmentExpression(
+                [
+                    Parser.TupleConstructor(
+                        [
+                            Parser.NameAccessExpression(
+                                Lexer.TokenType.IDENTIFIER("target")
+                            ),
+                            Parser.NameAccessExpression(
+                                Lexer.TokenType.IDENTIFIER("target2")
+                            ),
+                        ]
+                    ),
+                ],
+                Lexer.TokenType.EQUAL_SIGN("="),
+                Parser.NameAccessExpression(Lexer.TokenType.IDENTIFIER("source")),
+            ),
+            expr,
+        )
+
+    def test_tuple_unpack_with_brackets_and_trailing_comma(self):
+        parser = Parser.Parser("(target, target2,) = source")
+        expr = parser.try_parse_assignment()
+
+        self.assertEqual(
+            Parser.AssignmentExpression(
+                [
+                    Parser.TupleConstructor(
+                        [
+                            Parser.NameAccessExpression(
+                                Lexer.TokenType.IDENTIFIER("target")
+                            ),
+                            Parser.NameAccessExpression(
+                                Lexer.TokenType.IDENTIFIER("target2")
+                            ),
+                        ]
+                    ),
+                ],
+                Lexer.TokenType.EQUAL_SIGN("="),
+                Parser.NameAccessExpression(Lexer.TokenType.IDENTIFIER("source")),
+            ),
+            expr,
+        )
+
     def test_simple_lhs_expr(self):
         parser = Parser.Parser("target[self] = source")
         expr = parser.try_parse_assignment()

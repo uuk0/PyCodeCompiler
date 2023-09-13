@@ -125,7 +125,10 @@ class Lexer:
 
         if isinstance(text, str):
             self.file_cursor -= len(text)
-            assert self.inspect_chars(len(text)) == text
+            assert self.inspect_chars(len(text)) == text, (
+                text,
+                self.inspect_chars(len(text)),
+            )
 
         elif isinstance(text, Token):
             self.file_cursor -= len(text.text)
