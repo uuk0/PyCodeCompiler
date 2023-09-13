@@ -95,12 +95,15 @@ Make the compiled test suite from python not fail in the major test cases
   - no inner classes (TODO: make them work, PyClassContainer supports it already!)
   - TODO: class references, call mechanism should be able to construct class dynamically
 - while loops, including continue, break and else
-- list and tuple explict construction (using `(a, b)` or `[a, b]`)
+- list, tuple and dict explict construction (using `(a, b)`,`[a, b]` and `{a: b}`)
   - TODO: comprehensions
-  - TODO: assignment targets
-- TODO: if-elif-else, for
+- tuple-like deconstruction
+  - TODO: allow generator destruction (requires some transforms before)
+- `for`(each)-loops
+  - using the `__iter__` function which can be defined on objects
+- TODO: if-elif-else
 - TODO: compare-chains resolving
-- TODO: dynamic imports (\_\_import__, importlib)
+- TODO: dynamic imports (`__import__`, `importlib`)
 
 ## Supported Builtin Modules
 
