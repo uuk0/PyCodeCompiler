@@ -357,6 +357,11 @@ PyObjectContainer* PY_STD_operator_contains(PyObjectContainer* lhs, PyObjectCont
     return PY_STD_operator_apply(lhs, rhs, "__contains__", NULL);
 }
 
+PyObjectContainer* PY_STD_operator_not_contains(PyObjectContainer* lhs, PyObjectContainer* rhs)
+{
+    return PY_STD_operator_apply(lhs, rhs, "__contains__", NULL) == PY_TRUE ? PY_FALSE : PY_TRUE;
+}
+
 PyObjectContainer* PY_STD_operator_len(PyObjectContainer* value)
 {
     PyObjectContainer* len = PY_getObjectAttributeByNameOrStatic(value, "__len__");
