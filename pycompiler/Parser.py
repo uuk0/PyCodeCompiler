@@ -2003,6 +2003,88 @@ class ForLoopStatement(AbstractASTNode):
             context.add_code(f'{exit_label}:\n"marker";')
 
 
+class IfStatement(AbstractASTNode):
+    def __init__(
+        self,
+        main_condition: AbstractASTNodeExpression,
+        main_block: typing.List[AbstractASTNode],
+        elif_blocks: typing.List[
+            typing.Tuple[AbstractASTNodeExpression, typing.List[AbstractASTNode]]
+        ] = None,
+        else_block: typing.List[AbstractASTNode] = None,
+    ):
+        super().__init__()
+        self.main_condition = main_condition
+        self.main_block = main_block
+        self.elif_blocks = elif_blocks
+        self.else_block = else_block
+
+    def __eq__(self, other):
+        return (
+            type(other) == IfStatement
+            and self.main_condition == other.main_condition
+            and self.main_block == other.main_block
+            and self.elif_blocks == other.elif_blocks
+            and self.else_block == other.else_block
+        )
+
+    def __repr__(self):
+        return f"IF-STATEMENT({self.main_condition}|{self.main_block}|{self.elif_blocks}|{self.else_block})"
+
+    def try_replace_child(
+        self,
+        original: AbstractASTNode | None,
+        replacement: AbstractASTNode,
+        position: ParentAttributeSection,
+    ) -> bool:
+        raise RuntimeError("IfStatement try_replace_child")
+
+    def try_insert_before(
+        self,
+        original: AbstractASTNode | None,
+        insert: AbstractASTNode,
+        position: ParentAttributeSection,
+    ) -> bool:
+        raise RuntimeError("IfStatement try_insert_before")
+
+    def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder):
+        context.add_code("if (")
+        self.main_condition.emit_c_code(base, context)
+        context.add_code(") {\n")
+        self.emit_block(base, context, self.main_block)
+        context.add_code("\n}")
+
+        for cond, nodes in self.elif_blocks:
+            context.add_code("else if (")
+            cond.emit_c_code(base, context)
+            context.add_code(") {\n")
+            self.emit_block(base, context, nodes)
+            context.add_code("\n}")
+
+        if self.else_block:
+            context.add_code("else {\n")
+            self.emit_block(base, context, self.else_block)
+            context.add_code("\n}")
+
+    def emit_block(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder, nodes: typing.List[AbstractASTNode]):
+        block = context.get_statement_builder()
+
+        for line in nodes:
+            inner_block = block.get_statement_builder(indent=False)
+            inner_block.parent = block
+
+            line.emit_c_code(base, inner_block)
+
+            if isinstance(line, AbstractASTNodeExpression):
+                inner_block.add_code(";\n")
+            else:
+                inner_block.add_code("\n")
+
+            block.add_code(inner_block.get_result() + "\n")
+
+        context.add_code(block.get_result())
+
+
 class BinaryOperatorExpression(AbstractASTNodeExpression):
     class BinaryOperation(enum.Enum):
         PLUS = enum.auto()
