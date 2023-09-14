@@ -2066,7 +2066,12 @@ class IfStatement(AbstractASTNode):
             self.emit_block(base, context, self.else_block)
             context.add_code("\n}")
 
-    def emit_block(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder, nodes: typing.List[AbstractASTNode]):
+    def emit_block(
+        self,
+        base: CCodeEmitter,
+        context: CCodeEmitter.CExpressionBuilder,
+        nodes: typing.List[AbstractASTNode],
+    ):
         block = context.get_statement_builder()
 
         for line in nodes:
@@ -2915,6 +2920,9 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
 
         if for_statement := self.try_parse_for_statement():
             return for_statement
+
+        if if_statement := self.try_parse_if_statement():
+            return if_statement
 
         if self.indent_level != 0 and (
             pass_statement := self.try_parse_pass_statement()
@@ -4064,6 +4072,88 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
             body,
             else_branch,
         )
+
+    def try_parse_if_statement(self) -> IfStatement | None:
+        if_token = self.lexer.get_chars(len("if "))
+
+        if if_token != "if ":
+            self.lexer.give_back(if_token)
+            return
+
+        self.lexer.try_parse_whitespaces()
+
+        main_condition = self.try_parse_expression()
+
+        if main_condition is None:
+            raise SyntaxError("expected <expression> after 'if'")
+
+        if self.lexer.get_chars(1) != ":":
+            raise SyntaxError("expected ':' after <condition> in 'if'")
+
+        self.lexer.try_parse_whitespaces()
+
+        if self.lexer.inspect_chars(1) != "\n":
+            main_body = [self.parse_line(include_comment=False)]
+        else:
+            self.indent_level += 1
+            main_body = self.parse(stop_on_indention_exit=True)
+
+            if len(main_body) == 0:
+                raise SyntaxError("expected <body>")
+
+            self.indent_level -= 1
+
+        self.lexer.try_parse_whitespaces()
+
+        elif_nodes = []
+
+        while self.lexer.inspect_chars(len("elif ")) == "elif ":
+            self.lexer.get_chars(len("elif "))
+
+            condition = self.try_parse_expression()
+
+            if condition is None:
+                raise SyntaxError("expected <expression> after 'if'")
+
+            if self.lexer.get_chars(1) != ":":
+                raise SyntaxError("expected ':' after <condition> in 'if'")
+
+            self.lexer.try_parse_whitespaces()
+
+            if self.lexer.inspect_chars(1) != "\n":
+                body = [self.parse_line(include_comment=False)]
+            else:
+                self.indent_level += 1
+                body = self.parse(stop_on_indention_exit=True)
+
+                if len(body) == 0:
+                    raise SyntaxError("expected <body>")
+
+                self.indent_level -= 1
+
+            self.lexer.try_parse_whitespaces()
+
+            elif_nodes.append((condition, body))
+
+        else_body = None
+
+        if self.lexer.inspect_chars(len("else:")) == "else:":
+            self.lexer.get_chars(len("else:"))
+
+            if self.lexer.inspect_chars(1) != "\n":
+                else_body = [self.parse_line(include_comment=False)]
+            else:
+                self.indent_level += 1
+                else_body = self.parse(stop_on_indention_exit=True)
+
+                if len(else_body) == 0:
+                    raise SyntaxError("expected <body>")
+
+                self.indent_level -= 1
+
+            self.lexer.try_parse_whitespaces()
+
+        return IfStatement(main_condition, main_body, elif_nodes, else_body)
 
     def try_parse_pass_statement(self) -> PassStatement | None:
         pass_token = self.lexer.get_chars(len("pass "))
