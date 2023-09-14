@@ -2050,23 +2050,23 @@ class IfStatement(AbstractASTNode):
         raise RuntimeError("IfStatement try_insert_before")
 
     def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder):
-        context.add_code("if (")
+        context.add_code("if (PY_unpackBoolean(PY_CHECK_EXCEPTION(")
         self.main_condition.emit_c_code(base, context)
-        context.add_code(") {\n")
+        context.add_code("))) {\n")
         self.emit_block(base, context, self.main_block)
-        context.add_code("\n}")
+        context.add_code("\n}\n")
 
         for cond, nodes in self.elif_blocks:
-            context.add_code("else if (")
+            context.add_code("else if (PY_unpackBoolean(PY_CHECK_EXCEPTION(")
             cond.emit_c_code(base, context)
-            context.add_code(") {\n")
+            context.add_code("))) {\n")
             self.emit_block(base, context, nodes)
-            context.add_code("\n}")
+            context.add_code("\n}\n")
 
         if self.else_block:
             context.add_code("else {\n")
             self.emit_block(base, context, self.else_block)
-            context.add_code("\n}")
+            context.add_code("\n}\n")
 
     def emit_block(
         self,
@@ -2451,11 +2451,15 @@ class SyntaxTreeVisitor:
             return self.visit_yield_statement(obj)
         elif obj_type == GeneratorNameAccessExpression:
             return self.visit_name_access(obj)
+        elif obj_type == IfStatement:
+            return self.visit_if_statement(obj)
         else:
             print(type(obj))
             raise RuntimeError(obj)
 
     def visit_any_list(self, objs: typing.List[AbstractASTNode]):
+        if objs is None:
+            return None
         return [self.visit_any(obj) for obj in objs]
 
     def visit_newline(self, newline: PyNewlineNode):
@@ -2530,6 +2534,20 @@ class SyntaxTreeVisitor:
             self.visit_any(for_statement.target),
             self.visit_any_list(for_statement.body),
             self.visit_any_list(for_statement.else_block),
+        )
+
+    def visit_if_statement(self, if_statement: IfStatement):
+        return (
+            self.visit_any(if_statement.main_condition),
+            self.visit_any_list(if_statement.main_block),
+            [
+                (
+                    self.visit_any(cond),
+                    self.visit_any_list(nodes),
+                )
+                for cond, nodes in if_statement.elif_blocks
+            ],
+            self.visit_any_list(if_statement.else_block),
         )
 
     def visit_binary_operator(self, operator: BinaryOperatorExpression):

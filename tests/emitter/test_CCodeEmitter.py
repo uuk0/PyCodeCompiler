@@ -57,6 +57,9 @@ class TestCCodeEmitter(TestCase):
             #     f.write(c_compare)
 
             self.assertEqual(c, c_compare, "c source")
+        else:
+            with open(f"{folder}/source.c", mode="w") as f:
+                f.write(c_compare)
 
         if os.path.exists(f"{folder}/test.c"):
             self.compile_and_run(folder, compiler)
@@ -131,3 +134,6 @@ class TestCCodeEmitter(TestCase):
 
     def test_for_loop(self):
         self.run_named_folder_test("for_loop")
+
+    def test_if_statement(self):
+        self.run_named_folder_test("if_statement")

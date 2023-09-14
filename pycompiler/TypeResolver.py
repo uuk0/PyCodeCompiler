@@ -27,6 +27,7 @@ from pycompiler.Parser import (
     YieldStatement,
     DictConstructor,
     ForLoopStatement,
+    IfStatement,
 )
 
 if typing.TYPE_CHECKING:
@@ -186,6 +187,23 @@ class ResolveParentAttribute(SyntaxTreeVisitor):
 
         for line in for_statement.else_block:
             line.parent = for_statement, ParentAttributeSection.ELSE_BRANCH
+
+    def visit_if_statement(self, if_statement: IfStatement):
+        super().visit_if_statement(if_statement)
+
+        if_statement.main_condition.parent = if_statement, ParentAttributeSection.LHS
+
+        for line in if_statement.main_block:
+            line.parent = if_statement, ParentAttributeSection.RHS
+
+        for cond, nodes in if_statement.elif_blocks:
+            cond.parent = if_statement, ParentAttributeSection.PARAMETER
+
+            for line in nodes:
+                line.parent = if_statement, ParentAttributeSection.BODY
+
+        for line in if_statement.else_block or []:
+            line.parent = if_statement, ParentAttributeSection.ELSE_BRANCH
 
     def visit_binary_operator(self, operator: BinaryOperatorExpression):
         super().visit_binary_operator(operator)
