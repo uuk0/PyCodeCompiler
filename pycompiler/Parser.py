@@ -424,12 +424,12 @@ class AbstractASTNodeExpression(AbstractASTNode, abc.ABC):
 
 
 class PyNewlineNode(AbstractASTNode):
-    def __init__(self, token: Lexer.Token):
+    def __init__(self, token: Lexer.Token = None):
         super().__init__()
-        self.token = token
+        self.token = token or TokenType.IDENTIFIER("\n")
 
     def __eq__(self, other):
-        return type(other) == PyNewlineNode and self.token == other.token
+        return type(other) == PyNewlineNode
 
     def __repr__(self):
         return "NEWLINE"
@@ -532,9 +532,11 @@ class AssignmentExpression(AbstractASTNode):
 
 
 class NameAccessExpression(AbstractASTNodeExpression):
-    def __init__(self, name: Lexer.Token):
+    def __init__(self, name: Lexer.Token | str):
         super().__init__()
-        self.name = name
+        self.name = (
+            name if isinstance(name, Lexer.Token) else TokenType.IDENTIFIER(name)
+        )
 
     def __eq__(self, other):
         return type(other) == NameAccessExpression and self.name == other.name
@@ -2016,7 +2018,7 @@ class IfStatement(AbstractASTNode):
         super().__init__()
         self.main_condition = main_condition
         self.main_block = main_block
-        self.elif_blocks = elif_blocks
+        self.elif_blocks = elif_blocks or []
         self.else_block = else_block
 
     def __eq__(self, other):
@@ -2632,6 +2634,7 @@ class Parser:
         self.indent_markers: str | None = None
         self.is_in_function = False
         self.skip_end_check = False
+        self.is_in_singleline_expression = False
 
     def parse(
         self, stop_on_indention_exit=False, mention_on_yield=None
@@ -2670,8 +2673,10 @@ class Parser:
                     require_indent = True
 
                     if self.lexer.inspect_chars(1) not in ("\n", None):
-                        for node in ast_stream:
-                            print(node)
+                        print("count:", len(ast_stream))
+                        for n in ast_stream:
+                            print(n)
+                        print("current:", node)
                         print(self.indent_level)
                         print(repr(self.lexer.file[self.lexer.file_cursor :]))
                         raise SyntaxError(
@@ -2924,7 +2929,7 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
         if if_statement := self.try_parse_if_statement():
             return if_statement
 
-        if self.indent_level != 0 and (
+        if (self.indent_level != 0 or self.is_in_singleline_expression) and (
             pass_statement := self.try_parse_pass_statement()
         ):
             return pass_statement
@@ -3602,7 +3607,6 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
 
         if assigned_variables[0] is None:
             self.lexer.rollback_state()
-            print("target parsing failed")
             return
 
         self.lexer.try_parse_whitespaces()
@@ -3611,7 +3615,6 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
 
         if eq_sign is None:
             self.lexer.rollback_state()
-            print("no eq sign", self.lexer.inspect_chars(1))
             return
 
         self.lexer.discard_save_state()
@@ -3963,7 +3966,9 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
         self.lexer.try_parse_whitespaces()
 
         if self.lexer.inspect_chars(1) != "\n":
+            self.is_in_singleline_expression = True
             body = [self.parse_line(include_comment=False)]
+            self.is_in_singleline_expression = False
         else:
             self.indent_level += 1
             body = self.parse(stop_on_indention_exit=True)
@@ -4035,7 +4040,9 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
         self.lexer.try_parse_whitespaces()
 
         if self.lexer.inspect_chars(1) != "\n":
+            self.is_in_singleline_expression = True
             body = [self.parse_line(include_comment=False)]
+            self.is_in_singleline_expression = False
         else:
             self.indent_level += 1
             body = self.parse(stop_on_indention_exit=True)
@@ -4093,7 +4100,13 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
         self.lexer.try_parse_whitespaces()
 
         if self.lexer.inspect_chars(1) != "\n":
+            self.is_in_singleline_expression = True
             main_body = [self.parse_line(include_comment=False)]
+            self.is_in_singleline_expression = False
+
+            if main_body[0] == None:
+                raise SyntaxError("expected <expression>")
+
         else:
             self.indent_level += 1
             main_body = self.parse(stop_on_indention_exit=True)
@@ -4108,7 +4121,8 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
         elif_nodes = []
 
         while self.lexer.inspect_chars(len("elif ")) == "elif ":
-            self.lexer.get_chars(len("elif "))
+            self.lexer.get_chars(len("elif"))
+            self.lexer.try_parse_whitespaces()
 
             condition = self.try_parse_expression()
 
@@ -4121,7 +4135,11 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
             self.lexer.try_parse_whitespaces()
 
             if self.lexer.inspect_chars(1) != "\n":
+                self.is_in_singleline_expression = True
                 body = [self.parse_line(include_comment=False)]
+                self.is_in_singleline_expression = False
+                if self.lexer.inspect_chars(1) == "\n":
+                    self.lexer.get_chars(1)
             else:
                 self.indent_level += 1
                 body = self.parse(stop_on_indention_exit=True)
@@ -4139,9 +4157,16 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
 
         if self.lexer.inspect_chars(len("else:")) == "else:":
             self.lexer.get_chars(len("else:"))
+            self.lexer.try_parse_whitespaces()
 
             if self.lexer.inspect_chars(1) != "\n":
+                self.is_in_singleline_expression = True
                 else_body = [self.parse_line(include_comment=False)]
+                self.is_in_singleline_expression = False
+
+                if else_body[0] is None:
+                    raise SyntaxError("expected <expression> after 'else'")
+
             else:
                 self.indent_level += 1
                 else_body = self.parse(stop_on_indention_exit=True)
