@@ -13,14 +13,6 @@
 
 PyClassContainer* PY_TYPE_LIST;
 
-struct PY_STD_list_container
-{
-    uint16_t curr_size;
-    uint16_t rem_size;
-    PyObjectContainer** array;
-};
-typedef struct PY_STD_list_container PY_STD_list_container;
-
 #define PY_STD_LIST_START_SIZE 4
 
 PyObjectContainer* PY_STD_list_init(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
@@ -102,7 +94,9 @@ PyObjectContainer* PY_STD_list_CONSTRUCT(PyObjectContainer* self, uint8_t argc, 
     }
     self->raw_value = container;
     container->curr_size = argc;
-    container->array = malloc(argc * sizeof(PyObjectContainer*));
+    container->rem_size = argc == 0 ? 1 : 0;
+
+    container->array = malloc((argc == 0 ? 1 : argc) * sizeof(PyObjectContainer*));
     if (container->array == NULL)
     {
         perror("malloc PY_STD_list_CONSTRUCT B");

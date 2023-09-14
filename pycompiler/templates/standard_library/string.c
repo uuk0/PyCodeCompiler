@@ -40,6 +40,31 @@ PyObjectContainer* PY_STD_string_eq_fast(PyObjectContainer* lhs, PyObjectContain
     return strcmp(PY_unpackString(lhs), PY_unpackString(rhs)) == 0 ? PY_TRUE : PY_FALSE;
 }
 
+PyObjectContainer* PY_STD_string_startswith(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
+{
+    assert(argc == 1);
+    return PY_STD_string_startswith_fast(self, args[0]);
+}
+
+PyObjectContainer* PY_STD_string_startswith_fast(PyObjectContainer* self, PyObjectContainer* other)
+{
+    return PY_createBoolean(PY_STD_string_startswith_impl(PY_unpackString(self), PY_unpackString(other)));
+}
+
+bool PY_STD_string_startswith_impl(char* self, char* other)
+{
+    if (strlen(self) < strlen(other)) return false;
+
+    for (int i = 0; i < strlen(other); i++)
+    {
+        if (self[i] != other[i])
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
 void PY_STD_initStringType(void)
 {
     PY_STD_string_hash_CONTAINER = PY_createBoxForFunction(PY_STD_string_hash);

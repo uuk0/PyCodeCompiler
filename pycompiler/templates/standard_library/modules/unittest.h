@@ -9,6 +9,14 @@
 
 extern PyObjectContainer* PY_MODULE_INSTANCE_unittest;
 
+extern PyClassContainer* PY_MODULE_unittest_TestCase;
+
+PyObjectContainer* PY_MODULE_unittest_main(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info);
+PyObjectContainer* PY_MODULE_unittest_main_fast(void);
+
+PyObjectContainer* PY_MODULE_unittest_TestCase_initsubclass(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info);
+PyObjectContainer* PY_MODULE_unittest_TestCase_initsubclass_fast(PyObjectContainer* cls);
+
 PyObjectContainer* PY_MODULE_unittest_init(void);
 
 #endif //PYCCOMPILER_UNITTEST_H

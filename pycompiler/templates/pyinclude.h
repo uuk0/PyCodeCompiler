@@ -118,10 +118,13 @@ void PY_ClassContainer_DeclareObjectAttribute(PyClassContainer* cls, char* name)
 
 PyObjectContainer* PY_createClassInstance(PyClassContainer* cls);
 PyObjectContainer* PY_createBoxForFunction(PY_FUNC_UNBOXED* func);
+PyObjectContainer* PY_createClassWrapper(PyClassContainer* cls);
+PyClassContainer* PY_unwrapClassContainer(PyObjectContainer* obj);
 
 PyObjectContainer* PY_getObjectAttributeByName(PyObjectContainer* obj, char* name);
 PyObjectContainer* PY_getObjectAttributeByNameOrStatic(PyObjectContainer* obj, char* name);
 void PY_setObjectAttributeByName(PyObjectContainer* obj, char* name, PyObjectContainer* value);
+PyObjectContainer* PY_getClassAttributeByName(PyClassContainer* cls, char* name);
 void PY_setClassAttributeByName(PyClassContainer* cls, char* name, PyObjectContainer* value);
 void PY_setClassAttributeByNameOrCreate(PyClassContainer* cls, char* name, PyObjectContainer* value);
 char* PY_getObjectClassName(PyObjectContainer* obj);

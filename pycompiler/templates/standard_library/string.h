@@ -14,6 +14,10 @@ extern PyObjectContainer* PY_STD_string_eq_CONTAINER;
 PyObjectContainer* PY_STD_string_eq(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info);
 PyObjectContainer* PY_STD_string_eq_fast(PyObjectContainer* lhs, PyObjectContainer* rhs);
 
+PyObjectContainer* PY_STD_string_startswith(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info);
+PyObjectContainer* PY_STD_string_startswith_fast(PyObjectContainer* self, PyObjectContainer* other);
+bool PY_STD_string_startswith_impl(char* self, char* other);
+
 PyObjectContainer* PY_STD_string_add(PyObjectContainer* lhs, PyObjectContainer* rhs);
 
 void PY_STD_initStringType(void);

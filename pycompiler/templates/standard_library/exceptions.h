@@ -8,6 +8,7 @@
 #include "pyinclude.h"
 #include <stdio.h>
 #include "config.h"
+#include <assert.h>
 
 extern PyClassContainer* PY_TYPE_EXCEPTION;
 

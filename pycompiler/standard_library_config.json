@@ -264,6 +264,25 @@
     "module": "unittest",
     "header": "standard_library/modules/unittest.h",
     "items": [
+      {
+        "name": "main",
+        "type": "method",
+        "arguments": 0,
+        "c name": "PY_MODULE_unittest_main_fast"
+      },
+      {
+        "name": "TestCase",
+        "type": "class",
+        "type variable": "PY_MODULE_unittest_TestCase",
+        "static attributes": [
+          {
+            "name": "__init_subclass__",
+            "type": "method",
+            "arguments": 0,
+            "c name": "PY_MODULE_unittest_TestCase_initsubclass_fast"
+          }
+        ]
+      }
     ]
   }
 ]

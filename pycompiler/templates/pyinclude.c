@@ -155,6 +155,19 @@ PyObjectContainer* PY_createBoxForFunction(PY_FUNC_UNBOXED* func)
     return obj;
 }
 
+PyObjectContainer* PY_createClassWrapper(PyClassContainer* cls)
+{
+    PyObjectContainer* obj = createEmptyContainer(PY_TYPE_PY_TYPE);
+    obj->raw_value = cls;
+    return obj;
+}
+
+PyClassContainer* PY_unwrapClassContainer(PyObjectContainer* obj)
+{
+    assert(obj->type == PY_TYPE_PY_TYPE);
+    return obj->raw_value;
+}
+
 PyObjectContainer* PY_getObjectAttributeByName(PyObjectContainer* obj, char* name)
 {
     // todo: can we implement it for other types also?
@@ -331,6 +344,26 @@ void PY_setObjectAttributeByName(PyObjectContainer* obj, char* name, PyObjectCon
 #endif
 
     assert(0 && "Attribute not found; Are you missing a declaration somewhere?");
+}
+
+PyObjectContainer* PY_getClassAttributeByName(PyClassContainer* cls, char* name)
+{
+    if (cls->static_attribute_names == NULL)
+    {
+        return NULL;
+    }
+
+    int i = 0;
+    while (cls->static_attribute_names[i] != NULL)
+    {
+        if (strcmp(cls->static_attribute_names[i], name) == 0)
+        {
+            return cls->static_attribute_values[i];
+        }
+        i++;
+    }
+
+    return NULL;
 }
 
 void PY_setClassAttributeByName(PyClassContainer* cls, char* name, PyObjectContainer* value)

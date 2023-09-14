@@ -1714,7 +1714,19 @@ PY_ClassContainer_AllocateParentArray({variable_name}, {max(len(self.parents), 1
                         f"{variable_name} -> parents[{i}] = PY_CLASS_{parent.normal_name};\n"
                     )
                 else:
-                    raise NotImplementedError
+                    init_class.add_code(
+                        f"{variable_name} -> parents[{i}] = PY_unwrapClassContainer(PY_CHECK_EXCEPTION("
+                    )
+                    parent.emit_c_code(base, init_class)
+                    init_class.add_code("));\n")
+
+                    init_subclass = base.get_fresh_name("init_subclass")
+                    init_class.add_code(
+                        f"""PyObjectContainer* {init_subclass} = PY_getClassAttributeByName({variable_name}->parents[{i}], "__init_subclass__");
+if ({init_subclass} != NULL) {{
+    PY_CHECK_EXCEPTION(PY_invokeBoxedMethod({init_subclass}, PY_createClassWrapper({variable_name}), 0, NULL, NULL));
+}}\n"""
+                    )
 
         else:
             init_class.add_code(f"{variable_name} -> parents[0] = PY_TYPE_OBJECT;\n")

@@ -4,7 +4,7 @@ import shutil
 import subprocess
 import typing
 
-from pycompiler.Parser import Parser, AbstractASTNode, Scope
+from pycompiler.Parser import Parser, AbstractASTNode, Scope, ConstantAccessExpression
 from pycompiler.TypeResolver import (
     GetModuleImports,
     GetHeaderRelatedInfo,
@@ -55,11 +55,16 @@ class Project:
             if build_folder
             else None
         )
+        self.add_main_function_flag = False
 
     def add_folder(self, path: str):
         if not os.path.isdir(path):
             raise ValueError(path)
         self.path.append(path)
+
+    def add_main_function(self):
+        self.add_main_function_flag = True
+        return self
 
     def add_file(self, path: str, is_entry=False):
         if not os.path.isfile(path):
@@ -86,6 +91,38 @@ class Project:
         prepared_module_files: typing.List[
             typing.Tuple[str, typing.List[AbstractASTNode], Parser, str, Scope]
         ] = []
+        entry_module_names = set()
+
+        if self.add_main_function_flag:
+            content = """// Generated Entry File
+#include <assert.h>
+#include "pyinclude.h"
+#include "standard_library/exceptions.h"
+"""
+
+            for entry_point in self.entry_points:
+                if entry_point.endswith(".py"):
+                    module_name = (
+                        entry_point.split("/")[-1].split("\\")[-1].removesuffix(".py")
+                    )
+                    content += f'\n#include "{module_name}.h"'
+
+            content += """
+int main(int argc, char** args)
+{"""
+            for entry_point in self.entry_points:
+                if entry_point.endswith(".py"):
+                    module_name = (
+                        entry_point.split("/")[-1].split("\\")[-1].removesuffix(".py")
+                    )
+                    content += f"\n    PY_CHECK_EXCEPTION_AND_EXIT(PY_MODULE_{module_name}_init());"
+
+            content += "\n}\n"
+
+            with open(f"{build}/entry.c", mode="w") as f:
+                f.write(content)
+
+            self.add_file(f"{build}/entry.c", is_entry=True)
 
         for entry_point in self.entry_points:
             if entry_point.endswith(".c"):
@@ -98,9 +135,12 @@ class Project:
             pending_compilation_files.append(
                 (
                     entry_point,
-                    entry_point.split("/")[-1].split("\\")[-1].removesuffix(".py"),
+                    module_name := entry_point.split("/")[-1]
+                    .split("\\")[-1]
+                    .removesuffix(".py"),
                 )
             )
+            entry_module_names.add(module_name)
 
         while pending_compilation_files:
             file, module = pending_compilation_files.pop()
@@ -157,6 +197,9 @@ class Project:
                     raise ModuleNotFoundError(module)
 
         for file, ast_nodes, parser, module, scope in prepared_module_files:
+            Scope.STANDARD_LIBRARY_VALUES["__name__"] = {
+                "*": module if module not in entry_module_names else "__main__"
+            }
             self.apply_prep_optimisation_on_module(scope, ast_nodes)
 
         module_table: typing.Dict[str, dict] = {
@@ -165,12 +208,21 @@ class Project:
         }
 
         for file, ast_nodes, parser, module, scope in prepared_module_files:
+            Scope.STANDARD_LIBRARY_VALUES["__name__"] = {
+                "*": module if module not in entry_module_names else "__main__"
+            }
             ModuleReferencesResolver(module_table).visit_any_list(ast_nodes)
 
         for file, ast_nodes, parser, module, scope in prepared_module_files:
+            Scope.STANDARD_LIBRARY_VALUES["__name__"] = {
+                "*": module if module not in entry_module_names else "__main__"
+            }
             self.apply_big_optimisation_on_module(ast_nodes)
 
         for file, ast_nodes, parser, module, scope in prepared_module_files:
+            Scope.STANDARD_LIBRARY_VALUES["__name__"] = {
+                "*": module if module not in entry_module_names else "__main__"
+            }
             c_source = parser.emit_c_code(
                 expr=ast_nodes, module_name=module, scope=scope
             )

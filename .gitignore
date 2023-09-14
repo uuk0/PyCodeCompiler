@@ -5,3 +5,4 @@
 /pycompiler/CMakeCache.txt
 **/test.exe
 **/result.c
+/tests/cpython/test_build/
