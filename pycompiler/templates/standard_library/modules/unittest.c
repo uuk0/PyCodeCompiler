@@ -15,4 +15,6 @@ PyObjectContainer* PY_MODULE_unittest_init(void)
     PY_MODULE_INSTANCE_unittest = PY_createModuleObject("unittest");
 
     PY_exposeModuleObject(PY_MODULE_INSTANCE_unittest);
+
+    return PY_NONE;
 }

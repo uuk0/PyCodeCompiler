@@ -44,7 +44,7 @@ PyObjectContainer* PY_STD_dict_CREATE(uint8_t argc, ...)
     PY_STD_dict_init_fast_arg_zero(dict);
 
     va_list ap;
-    va_start(ap, argc * 2);
+    va_start(ap, argc);
     for(int i = 0; i < argc; i++){
         PyObjectContainer* key = va_arg(ap, PyObjectContainer*);
         PyObjectContainer* value = va_arg(ap, PyObjectContainer*);
