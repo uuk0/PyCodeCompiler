@@ -304,6 +304,12 @@
             "type": "method",
             "arguments": 1,
             "c name": "PY_MODULE_unittest_TestCase_assertNotEqual_fast"
+          },
+          {
+            "name": "fail",
+            "type": "method",
+            "arguments": 0,
+            "c name": "PY_MODULE_unittest_TestCase_fail_fast"
           }
         ]
       }

@@ -67,6 +67,16 @@ PyObjectContainer* PY_MODULE_unittest_TestCase_initsubclass_fast(PyObjectContain
     return PY_NONE;
 }
 
+PyObjectContainer* PY_MODULE_unittest_TestCase_fail(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
+{
+    PY_TEST_FAIL();
+}
+
+PyObjectContainer* PY_MODULE_unittest_TestCase_fail_fast(PyObjectContainer* self)
+{
+    PY_TEST_FAIL();
+}
+
 PyObjectContainer* PY_MODULE_unittest_TestCase_assertTrue(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
 {
     assert(argc == 1);
@@ -139,6 +149,7 @@ PyObjectContainer* PY_MODULE_unittest_init(void)
     PY_setObjectAttributeByName(PY_MODULE_INSTANCE_unittest, "TestCase", PY_createClassWrapper(PY_MODULE_unittest_TestCase));
 
     PY_setClassAttributeByNameOrCreate(PY_MODULE_unittest_TestCase, "__init_subclass__", PY_createBoxForFunction(PY_MODULE_unittest_TestCase_initsubclass));
+    PY_setClassAttributeByNameOrCreate(PY_MODULE_unittest_TestCase, "fail", PY_createBoxForFunction(PY_MODULE_unittest_TestCase_fail));
     PY_setClassAttributeByNameOrCreate(PY_MODULE_unittest_TestCase, "assertTrue", PY_createBoxForFunction(PY_MODULE_unittest_TestCase_assertTrue));
     PY_setClassAttributeByNameOrCreate(PY_MODULE_unittest_TestCase, "assertFalse", PY_createBoxForFunction(PY_MODULE_unittest_TestCase_assertFalse));
     PY_setClassAttributeByNameOrCreate(PY_MODULE_unittest_TestCase, "assertEqual", PY_createBoxForFunction(PY_MODULE_unittest_TestCase_assertEqual));
