@@ -159,6 +159,16 @@ void initialize();
 
 #define INCREF(obj) obj->refcount++;
 #define DECREF(obj) obj->refcount--; if (obj->refcount == 0) free(obj);
+/**
+#define DECREF(obj) obj->refcount--; if (obj->refcount == 0) { \
+PyObjectContainer* method = PY_getObjectAttributeByNameOrStatic(obj, "__del__"); \
+if (method != NULL)                                            \
+{                                                              \
+    PY_invokeBoxedMethod(method, obj, 0, NULL, NULL);          \
+}                                                              \
+free(obj);                                                     \
+};
+ * **/
 
 #endif
 

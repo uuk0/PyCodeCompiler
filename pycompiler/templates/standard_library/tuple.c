@@ -9,6 +9,8 @@
 #include <stdarg.h>
 #include "tuple.h"
 #include "config.h"
+#include "operators.h"
+#include "list.h"
 
 #ifdef PY_ENABLE_GENERATORS
 #include "generator.h"
@@ -46,15 +48,22 @@ PyObjectContainer* PY_STD_tuple_init(PyObjectContainer* self, uint8_t argc, PyOb
     }
     else if (argc == 1)
     {
-        // TODO: use __iter__ on parameter and build with that the tuple!
-        assert(false == "not implemented");
+        PyObjectContainer* list_variant = PY_createClassInstance(PY_TYPE_LIST);
+        PY_STD_list_init_fast_arg_1(list_variant, args[0]);
+        PY_STD_list_container* list_container = list_variant->raw_value;
+
+        container->curr_size = list_container->curr_size;
+        container->array = malloc(sizeof(PyObjectContainer*) * list_container->curr_size);
+        memcpy(container->array, list_container->array, sizeof(PyObjectContainer*) * list_container->curr_size);
+        DECREF(list_variant);
+        return PY_NONE;
     }
     else
     {
         assert(false == "invalid parameter count");
     }
 
-    return NULL;
+    return PY_NONE;
 }
 
 /*
@@ -67,12 +76,14 @@ PyObjectContainer* PY_STD_tuple_CONSTRUCT(PyObjectContainer* self, uint8_t argc,
     assert(self->type == PY_TYPE_PY_IMPL);
     assert(self->py_type == PY_TYPE_TUPLE);
     assert(self->raw_value == NULL);
+
     PY_STD_tuple_container* container = malloc(sizeof(PY_STD_tuple_container));
     if (container == NULL)
     {
         perror("malloc PY_STD_tuple_CONSTRUCT A");
         exit(EXIT_FAILURE);
     }
+
     self->raw_value = container;
     container->curr_size = argc;
     container->array = malloc(argc * sizeof(PyObjectContainer*));
