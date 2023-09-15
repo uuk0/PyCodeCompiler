@@ -17,6 +17,9 @@ PyObjectContainer* PY_MODULE_unittest_main_fast(void);
 PyObjectContainer* PY_MODULE_unittest_TestCase_initsubclass(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info);
 PyObjectContainer* PY_MODULE_unittest_TestCase_initsubclass_fast(PyObjectContainer* cls);
 
+PyObjectContainer* PY_MODULE_unittest_TestCase_assertTrue(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info);
+PyObjectContainer* PY_MODULE_unittest_TestCase_assertTrue_fast(PyObjectContainer* self, PyObjectContainer* value);
+
 PyObjectContainer* PY_MODULE_unittest_init(void);
 
 #endif //PYCCOMPILER_UNITTEST_H

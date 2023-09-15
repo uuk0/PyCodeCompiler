@@ -3,7 +3,7 @@ import unittest
 
 class TestSimple(unittest.TestCase):
     def test_basic(self):
-        pass
+        self.assertTrue(True)
 
 
 if __name__ == "__main__":

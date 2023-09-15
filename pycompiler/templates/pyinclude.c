@@ -296,6 +296,19 @@ PyObjectContainer* PY_getObjectAttributeByNameOrStatic(PyObjectContainer* obj, c
         i++;
     }
 
+    if (cls->parents != NULL)
+    {
+        i = 0;
+        while (cls->parents[i] != NULL)
+        {
+            PyObjectContainer* value = PY_getObjectAttributeByNameOrStatic_StaticTransformer(obj, PY_getClassAttributeByName(cls->parents[i], name));
+            if (value != NULL)
+            {
+                return value;
+            }
+        }
+    }
+
     return NULL;
 }
 

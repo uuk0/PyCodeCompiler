@@ -10,6 +10,7 @@
 #include "standard_library/list.h"
 #include "standard_library/string.h"
 #include "standard_library/exceptions.h"
+#include "standard_library/operators.h"
 
 PyObjectContainer* PY_MODULE_INSTANCE_unittest;
 PyClassContainer* PY_MODULE_unittest_TestCase;
@@ -62,6 +63,21 @@ PyObjectContainer* PY_MODULE_unittest_TestCase_initsubclass_fast(PyObjectContain
     return PY_NONE;
 }
 
+PyObjectContainer* PY_MODULE_unittest_TestCase_assertTrue(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
+{
+    assert(argc == 1);
+    return PY_MODULE_unittest_TestCase_assertTrue_fast(self, args[0]);
+}
+
+PyObjectContainer* PY_MODULE_unittest_TestCase_assertTrue_fast(PyObjectContainer* self, PyObjectContainer* value)
+{
+    if (!PY_getTruthValueOf(value))
+    {
+        PY_THROW_EXCEPTION_WITH_MESSAGE(NULL, "test failed");
+    }
+    return PY_NONE;
+}
+
 PyObjectContainer* PY_MODULE_unittest_init(void)
 {
     INVOKE_SINGLE();
@@ -74,6 +90,7 @@ PyObjectContainer* PY_MODULE_unittest_init(void)
     PY_setObjectAttributeByName(PY_MODULE_INSTANCE_unittest, "TestCase", PY_createClassWrapper(PY_MODULE_unittest_TestCase));
 
     PY_setClassAttributeByNameOrCreate(PY_MODULE_unittest_TestCase, "__init_subclass__", PY_createBoxForFunction(PY_MODULE_unittest_TestCase_initsubclass));
+    PY_setClassAttributeByNameOrCreate(PY_MODULE_unittest_TestCase, "assertTrue", PY_createBoxForFunction(PY_MODULE_unittest_TestCase_assertTrue));
 
     PY_setObjectAttributeByName(PY_MODULE_INSTANCE_unittest, "main", PY_createBoxForFunction(PY_MODULE_unittest_main));
 

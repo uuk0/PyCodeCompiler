@@ -280,6 +280,12 @@
             "type": "method",
             "arguments": 0,
             "c name": "PY_MODULE_unittest_TestCase_initsubclass_fast"
+          },
+          {
+            "name": "assertTrue",
+            "type": "method",
+            "arguments": 1,
+            "c name": "PY_MODULE_unittest_TestCase_assertTrue_fast"
           }
         ]
       }
