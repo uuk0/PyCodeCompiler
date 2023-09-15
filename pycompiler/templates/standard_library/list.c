@@ -263,7 +263,7 @@ PyObjectContainer* PY_STD_list_index(PyObjectContainer* self, uint8_t argc, PyOb
         }
     }
 
-    return PY_NONE;  // TODO: raise exception?
+    PY_THROW_EXCEPTION(NULL);
 }
 
 PyObjectContainer* PY_STD_list_index_fast(PyObjectContainer* self, PyObjectContainer* value)
@@ -287,7 +287,7 @@ PyObjectContainer* PY_STD_list_index_fast(PyObjectContainer* self, PyObjectConta
         }
     }
 
-    return PY_NONE;  // TODO: raise exception?
+    PY_THROW_EXCEPTION(NULL);
 }
 
 int64_t PY_STD_list_index_fast_list(PyObjectContainer* self, PyObjectContainer* value)
@@ -311,7 +311,7 @@ int64_t PY_STD_list_index_fast_list(PyObjectContainer* self, PyObjectContainer* 
         }
     }
 
-    assert(false && "item not found");
+    PY_THROW_EXCEPTION(NULL);
 }
 
 void PY_STD_list_removeIndex(PY_STD_list_container* list, uint16_t index);
@@ -338,7 +338,7 @@ PyObjectContainer* PY_STD_list_remove(PyObjectContainer* self, uint8_t argc, PyO
         }
     }
 
-    PY_THROW_EXCEPTION_WITH_MESSAGE(NULL, "item not found");
+    PY_THROW_EXCEPTION(NULL);
 }
 
 PyObjectContainer* PY_STD_list_setAtIndex(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
