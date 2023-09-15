@@ -60,7 +60,7 @@ PyObjectContainer* PY_STD_list_init_fast_arg_0(PyObjectContainer* self)
 
 PyObjectContainer* PY_STD_list_init_fast_arg_1(PyObjectContainer* self, PyObjectContainer* source)
 {
-    PyObjectContainer* list = PY_STD_list_init_fast_arg_0(self);
+    PY_STD_list_init_fast_arg_0(self);
 
     PyObjectContainer* iter_method = PY_getObjectAttributeByNameOrStatic(source, "__iter__");
     if (iter_method == NULL)
@@ -75,7 +75,7 @@ PyObjectContainer* PY_STD_list_init_fast_arg_1(PyObjectContainer* self, PyObject
     value = PY_STD_operator_next_with_default(iterator, NULL);
     while (value)
     {
-        PY_STD_list_append_fast(list, value);
+        PY_STD_list_append_fast(self, value);
         value = PY_STD_operator_next_with_default(iterator, NULL);
     }
 
@@ -164,7 +164,7 @@ PyObjectContainer* PY_STD_list_append(PyObjectContainer* self, uint8_t argc, PyO
 PyObjectContainer* PY_STD_list_append_fast(PyObjectContainer* self, PyObjectContainer* param)
 {
     assert(self != NULL);
-    assert(self->type == PY_TYPE_PY_IMPL);
+    PY_THROW_EXCEPTION_IF_WITH_MESSAGE(self->type != PY_TYPE_PY_IMPL, NULL, PY_getObjectRepr(self));
     assert(self->py_type == PY_TYPE_LIST);
 
     PY_STD_list_container* list = (PY_STD_list_container*)self->raw_value;

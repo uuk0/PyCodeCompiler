@@ -24,13 +24,21 @@ PyObjectContainer* PY_STD_GENERATOR_create(uint16_t local_count)
     }
     container->raw_value = generator;
     generator->next_section = NULL;
-    generator->locals = calloc(local_count, sizeof(PyObjectContainer*));
-    generator->section_id = 0;
-    if (generator->locals == NULL)
+    if (local_count != 0)
     {
-        perror("malloc PY_STD_GENERATOR_createGeneratorFromFunction locals");
-        exit(EXIT_FAILURE);
+        generator->locals = calloc(local_count, sizeof(PyObjectContainer *));
+
+        if (generator->locals == NULL)
+        {
+            perror("malloc PY_STD_GENERATOR_createGeneratorFromFunction locals");
+            exit(EXIT_FAILURE);
+        }
     }
+    else
+    {
+        generator->locals = NULL;
+    }
+    generator->section_id = 0;
     return container;
 }
 

@@ -37,13 +37,14 @@ PyObjectContainer* PY_MODULE_itertools_chain(PyObjectContainer* self, uint8_t ar
     for (int i = 0; i < argc; i++)
     {
         persistent_args[i] = PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(PY_getObjectAttributeByNameOrStatic(args[i], "__iter__"), args[i], 0, NULL, NULL));
+        assert(persistent_args[i] != NULL);
     }
     persistent_args[argc] = NULL;
 
     PyObjectContainer* generator = PY_STD_GENERATOR_create(0);
     PyGeneratorContainer* container = generator->raw_value;
-    container->locals = persistent_args;
-    container->section_id = argc;
+    container->locals = persistent_args;  // this is the simplest variant, each local entry
+    container->section_id = 0;
     container->next_section = PY_MODULE_itertools_chain_next;
     return generator;
 }
