@@ -292,6 +292,18 @@
             "type": "method",
             "arguments": 1,
             "c name": "PY_MODULE_unittest_TestCase_assertFalse_fast"
+          },
+          {
+            "name": "assertEqual",
+            "type": "method",
+            "arguments": 1,
+            "c name": "PY_MODULE_unittest_TestCase_assertEqual_fast"
+          },
+          {
+            "name": "assertNotEqual",
+            "type": "method",
+            "arguments": 1,
+            "c name": "PY_MODULE_unittest_TestCase_assertNotEqual_fast"
           }
         ]
       }
