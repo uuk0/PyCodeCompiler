@@ -29,6 +29,11 @@ PyObjectContainer* PY_STD_GENERATOR_iter(PyObjectContainer* self, uint8_t argc, 
 PyObjectContainer* PY_STD_NEXT_FORWARD_arg_0(PyObjectContainer* self);
 PyObjectContainer* PY_STD_NEXT_FORWARD_arg_1(PyObjectContainer* self, PyObjectContainer* default_value);
 
+PyObjectContainer* PY_STD_range(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info);
+PyObjectContainer* PY_STD_range_arg_1(PyObjectContainer* end);
+PyObjectContainer* PY_STD_range_arg_2(PyObjectContainer* start, PyObjectContainer* end);
+PyObjectContainer* PY_STD_range_arg_3(PyObjectContainer* start, PyObjectContainer* end, PyObjectContainer* step);
+
 void PY_STD_initGeneratorType(void);
 
 #endif //PYCCOMPILER_GENERATOR_H

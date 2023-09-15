@@ -246,6 +246,24 @@
             "c name": "PY_STD_GENERATOR_iter"
           }
         ]
+      },
+      {
+        "name": "range",
+        "type": "method",
+        "arguments": 1,
+        "c name": "PY_STD_range_arg_1"
+      },
+      {
+        "name": "range",
+        "type": "method",
+        "arguments": 2,
+        "c name": "PY_STD_range_arg_2"
+      },
+      {
+        "name": "range",
+        "type": "method",
+        "arguments": 3,
+        "c name": "PY_STD_range_arg_3"
       }
     ]
   },

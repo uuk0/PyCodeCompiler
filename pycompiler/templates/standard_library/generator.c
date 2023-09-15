@@ -130,6 +130,75 @@ PyObjectContainer* PY_STD_NEXT_FORWARD_arg_1(PyObjectContainer* self, PyObjectCo
     return PY_invokeBoxedMethod(method, self, 1, &default_value, NULL);
 }
 
+PyObjectContainer* PY_STD_range(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
+{
+    switch (argc)
+    {
+        case 1:
+            return PY_STD_range_arg_1(args[0]);
+        case 2:
+            return PY_STD_range_arg_2(args[0], args[1]);
+        case 3:
+            return PY_STD_range_arg_3(args[0], args[1], args[2]);
+        default:
+            PY_THROW_EXCEPTION(NULL);
+    }
+}
+
+PyObjectContainer* PY_STD_range_iterator(PyGeneratorContainer* container)
+{
+    if (PY_unpackInteger(container->locals[0]) >= PY_unpackInteger(container->locals[1]))
+    {
+        return NULL;
+    }
+
+    PyObjectContainer* value = container->locals[0];
+    container->locals[0] = PY_createInteger(PY_unpackInteger(container->locals[0]) + PY_unpackInteger(container->locals[2]));
+    return value;
+}
+
+PyObjectContainer* PY_STD_range_arg_1(PyObjectContainer* end)
+{
+    assert(end->type == PY_TYPE_INT);
+
+    PyObjectContainer* generator = PY_STD_GENERATOR_create(3);
+    PyGeneratorContainer* container = generator->raw_value;
+    container->next_section = PY_STD_range_iterator;
+    container->locals[0] = 0;
+    container->locals[1] = end;
+    container->locals[2] = PY_createInteger(1);
+    return generator;
+}
+
+PyObjectContainer* PY_STD_range_arg_2(PyObjectContainer* start, PyObjectContainer* end)
+{
+    assert(start->type == PY_TYPE_INT);
+    assert(end->type == PY_TYPE_INT);
+
+    PyObjectContainer* generator = PY_STD_GENERATOR_create(3);
+    PyGeneratorContainer* container = generator->raw_value;
+    container->next_section = PY_STD_range_iterator;
+    container->locals[0] = start;
+    container->locals[1] = end;
+    container->locals[2] = PY_createInteger(1);
+    return generator;
+}
+
+PyObjectContainer* PY_STD_range_arg_3(PyObjectContainer* start, PyObjectContainer* end, PyObjectContainer* step)
+{
+    assert(start->type == PY_TYPE_INT);
+    assert(end->type == PY_TYPE_INT);
+    assert(step->type == PY_TYPE_INT);
+
+    PyObjectContainer* generator = PY_STD_GENERATOR_create(3);
+    PyGeneratorContainer* container = generator->raw_value;
+    container->next_section = PY_STD_range_iterator;
+    container->locals[0] = start;
+    container->locals[1] = end;
+    container->locals[2] = step;
+    return generator;
+}
+
 void PY_STD_initGeneratorType(void)
 {
     PY_TYPE_GENERATOR = PY_createClassContainer("<generator>");
