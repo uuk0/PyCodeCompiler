@@ -1291,20 +1291,22 @@ class YieldStatement(AbstractASTNode):
             self.yield_expression.emit_c_code(base, context)
             context.add_code(f";\ngen_{self.yield_label_id}:;\n")
         else:
-            partial = base.get_fresh_name("yield_from_partial")
-            context.add_code(
-                f"PyObjectContainer* {partial} = PY_STD_GENERATOR_next_fast_arg_1("
-            )
+            iterator = base.get_fresh_name("curr_value")
+            context.add_code(f"generator->yield_from_source = PY_STD_operator_iter(")
             self.yield_expression.emit_c_code(base, context)
-            context.add_code(", NULL);\n")
+            context.add_code(");\n")
             context.add_code(
-                f"""
-if ({partial} == NULL)
+                f"""generator->section_id = {self.yield_label_id};
+gen_{self.yield_label_id}:;
+PyObjectContainer* {iterator} = PY_STD_operator_next(generator->yield_from_source);
+
+if ({iterator} == NULL)
 {{
-    goto gen_{self.yield_label_id};
+    generator->section_id = {self.yield_label_id+1};
+    goto gen_{self.yield_label_id+1};
 }}
-return {partial};
-gen_{self.yield_label_id}:;\n
+return {iterator};
+gen_{self.yield_label_id+1}:;\n
 """
             )
 
@@ -1522,9 +1524,16 @@ container->next_section = {func_name}_ENTRY;
         yield_finder = GetValidYieldStatements()
         yield_finder.visit_any_list(self.body)
 
-        for i, statement in enumerate(yield_finder.statements):
+        i = 0
+        for statement in yield_finder.statements:
             inner_func.add_code(f"    case {i+1}: goto gen_{i+1};\n")
             statement.yield_label_id = i + 1
+
+            if statement.is_yield_from:
+                i += 2
+                inner_func.add_code(f"    case {i}: goto gen_{i};\n")
+            else:
+                i += 1
 
         inner_func.add_code("};\n\ngen_0:;\n")
 

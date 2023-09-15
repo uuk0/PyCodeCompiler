@@ -316,19 +316,24 @@ PyObjectContainer* generator5_6_ENTRY(PyGeneratorContainer* generator) {
     switch (generator->section_id){
         case 0: goto gen_0;
         case 1: goto gen_1;
+        case 2: goto gen_2;
     };
 
     gen_0:;
 
     generator->locals[0] = PY_CHECK_EXCEPTION(PY_STD_operator_iter_for_yield_from (PY_CHECK_EXCEPTION(generator2_2 ()) , generator->locals[0]));
-    PyObjectContainer* yield_from_partial_21 = PY_STD_GENERATOR_next_fast_arg_1(generator->locals[0], NULL);
-
-    if (yield_from_partial_21 == NULL)
-    {
-        goto gen_1;
-    }
-    return yield_from_partial_21;
+    generator->yield_from_source = PY_STD_operator_iter(generator->locals[0]);
+    generator->section_id = 1;
     gen_1:;
+    PyObjectContainer* curr_value_21 = PY_STD_operator_next(generator->yield_from_source);
+
+    if (curr_value_21 == NULL)
+    {
+        generator->section_id = 2;
+        goto gen_2;
+    }
+    return curr_value_21;
+    gen_2:;
 
 
 
@@ -352,19 +357,24 @@ PyObjectContainer* generator6_8_ENTRY(PyGeneratorContainer* generator) {
     switch (generator->section_id){
         case 0: goto gen_0;
         case 1: goto gen_1;
+        case 2: goto gen_2;
     };
 
     gen_0:;
 
     generator->locals[0] = PY_CHECK_EXCEPTION(PY_STD_operator_iter_for_yield_from (PY_STD_list_CREATE(3, PY_createInteger(1), PY_createInteger(2), PY_createInteger(4)) , generator->locals[0]));
-    PyObjectContainer* yield_from_partial_22 = PY_STD_GENERATOR_next_fast_arg_1(generator->locals[0], NULL);
-
-    if (yield_from_partial_22 == NULL)
-    {
-        goto gen_1;
-    }
-    return yield_from_partial_22;
+    generator->yield_from_source = PY_STD_operator_iter(generator->locals[0]);
+    generator->section_id = 1;
     gen_1:;
+    PyObjectContainer* curr_value_22 = PY_STD_operator_next(generator->yield_from_source);
+
+    if (curr_value_22 == NULL)
+    {
+        generator->section_id = 2;
+        goto gen_2;
+    }
+    return curr_value_22;
+    gen_2:;
 
 
 
@@ -438,19 +448,24 @@ PyObjectContainer* generator8_12_ENTRY(PyGeneratorContainer* generator) {
     switch (generator->section_id){
         case 0: goto gen_0;
         case 1: goto gen_1;
+        case 2: goto gen_2;
     };
 
     gen_0:;
 
     generator->locals[0] = PY_CHECK_EXCEPTION(PY_STD_operator_iter_for_yield_from (PY_STD_list_CREATE(3, PY_createInteger(1), PY_createInteger(2), PY_createInteger(4)) , generator->locals[0]));
-    PyObjectContainer* yield_from_partial_23 = PY_STD_GENERATOR_next_fast_arg_1(generator->locals[0], NULL);
-
-    if (yield_from_partial_23 == NULL)
-    {
-        goto gen_1;
-    }
-    return yield_from_partial_23;
+    generator->yield_from_source = PY_STD_operator_iter(generator->locals[0]);
+    generator->section_id = 1;
     gen_1:;
+    PyObjectContainer* curr_value_23 = PY_STD_operator_next(generator->yield_from_source);
+
+    if (curr_value_23 == NULL)
+    {
+        generator->section_id = 2;
+        goto gen_2;
+    }
+    return curr_value_23;
+    gen_2:;
     return NULL;
 }
 

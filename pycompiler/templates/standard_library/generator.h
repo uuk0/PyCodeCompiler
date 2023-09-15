@@ -12,6 +12,7 @@ typedef PyObjectContainer* PY_GENERATOR_FRAGMENT(struct PyGeneratorContainer* ge
 struct PyGeneratorContainer
 {
     PyObjectContainer** locals;
+    PyObjectContainer* yield_from_source;
     PY_GENERATOR_FRAGMENT* next_section;
     uint16_t section_id;
 };

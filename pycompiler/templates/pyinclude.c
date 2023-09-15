@@ -431,6 +431,7 @@ void PY_setClassAttributeByNameOrCreate(PyClassContainer* cls, char* name, PyObj
 }
 
 char* PY_getObjectClassName(PyObjectContainer* obj) {
+    assert(obj != 0);
 
     switch (obj->type) {
         case PY_TYPE_PY_IMPL:
@@ -452,7 +453,9 @@ char* PY_getObjectClassName(PyObjectContainer* obj) {
         case PY_EXCEPTION:
             return "<exception>";
     }
-    assert(0);
+
+    printf("data type id: %i; refcount: %i\n", obj->type, obj->refcount);
+    assert(0 && "should not be reachable; invalid 'type' (maybe you passed uninitialized memory?)");
 }
 
 char* PY_getObjectRepr(PyObjectContainer* obj)

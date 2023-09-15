@@ -371,9 +371,9 @@ PyObjectContainer* PY_STD_operator_len(PyObjectContainer* value)
 
 PyObjectContainer* PY_STD_operator_next(PyObjectContainer* value)
 {
-    PyObjectContainer* len = PY_getObjectAttributeByNameOrStatic(value, "__next__");
-    assert(len != NULL);
-    return PY_invokeBoxedMethod(len, value, 0, NULL, NULL);
+    PyObjectContainer* next = PY_getObjectAttributeByNameOrStatic(value, "__next__");
+    assert(next != NULL);
+    return PY_invokeBoxedMethod(next, value, 0, NULL, NULL);
 }
 
 PyObjectContainer* PY_STD_operator_next_with_default(PyObjectContainer* value, PyObjectContainer* default_value)
