@@ -10,6 +10,8 @@
 #include "standard_library/exceptions.h"
 #include <string.h>
 #include <stdio.h>
+#include <math.h>
+#include <inttypes.h>
 
 
 static bool initialized = false;
@@ -445,6 +447,81 @@ char* PY_getObjectClassName(PyObjectContainer* obj) {
             return "float";
         case PY_TYPE_PY_TYPE:
             return "type";
+        case PY_TYPE_FUNC_POINTER:
+            return "<function pointer>";
+        case PY_EXCEPTION:
+            return "<exception>";
+    }
+    assert(0);
+}
+
+char* PY_getObjectRepr(PyObjectContainer* obj)
+{
+    if (obj->type == PY_TYPE_PY_IMPL)
+    {
+        PyObjectContainer* method = PY_getObjectAttributeByNameOrStatic(obj, "__repr__");
+        if (method == NULL)
+        {
+            char* class_name = PY_getObjectClassName(obj);
+            size_t size = strlen(class_name) + strlen("<-object at \?\?\?>");
+            char* buffer = malloc(size+1);
+            if (buffer == NULL)
+            {
+                perror("malloc repr wrapper");
+                exit(EXIT_FAILURE);
+            }
+            snprintf(buffer, size+1, "<%s-object at \?\?\?>", class_name);
+            return buffer;
+        }
+        return PY_unpackString(PY_CHECK_EXCEPTION_AND_EXIT(PY_invokeBoxedMethod(method, obj, 0, NULL, NULL)));
+    }
+
+    switch (obj->type) {
+        case PY_TYPE_NONE:
+            return "None";
+        case PY_TYPE_BOOL:
+            if (obj == PY_TRUE)
+            {
+                return "True";
+            }
+            return "False";
+        case PY_TYPE_INT:
+        {
+            size_t size = (int) ((ceil(log10((double)UINT64_MAX)) + 1 + 1) * sizeof(char));
+            char *buffer = malloc(size);
+            snprintf(buffer, size, "%", PRIu64, *(int64_t*)obj->raw_value);
+            return buffer;
+        }
+        case PY_TYPE_STRING:
+        {
+            char *buffer = malloc(strlen(obj->raw_value) + 2);
+            buffer[0] = '\"';
+            buffer[1] = '\0';
+            strcat(buffer, obj->raw_value);
+            strcat(buffer, "\"");
+            return buffer;
+        }
+        case PY_TYPE_FLOAT:
+        {
+            size_t size = 64;
+            char *buffer = malloc(size);
+            snprintf(buffer, size, "%f", *(double*)obj->raw_value);
+            return buffer;
+        }
+        case PY_TYPE_PY_TYPE:
+        {
+            PyClassContainer* cls = PY_unwrapClassContainer(obj);
+            char* class_name = cls->class_name;
+            size_t size = strlen(class_name) + strlen("<-type-object at \?\?\?>");
+            char* buffer = malloc(size+1);
+            if (buffer == NULL)
+            {
+                perror("malloc repr wrapper");
+                exit(EXIT_FAILURE);
+            }
+            snprintf(buffer, size, "<%s-type-object at \?\?\?>", class_name);
+            return buffer;
+        }
         case PY_TYPE_FUNC_POINTER:
             return "<function pointer>";
         case PY_EXCEPTION:

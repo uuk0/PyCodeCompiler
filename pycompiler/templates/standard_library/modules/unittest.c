@@ -87,6 +87,7 @@ PyObjectContainer* PY_MODULE_unittest_TestCase_assertTrue_fast(PyObjectContainer
 {
     if (!PY_getTruthValueOf(value))
     {
+        fprintf(stderr, "value: %s\n", PY_getObjectRepr(value));
         PY_TEST_FAIL();
     }
     return PY_NONE;
@@ -102,6 +103,7 @@ PyObjectContainer* PY_MODULE_unittest_TestCase_assertFalse_fast(PyObjectContaine
 {
     if (PY_getTruthValueOf(value))
     {
+        fprintf(stderr, "value: %s\n", PY_getObjectRepr(value));
         PY_TEST_FAIL();
     }
     return PY_NONE;
@@ -117,6 +119,8 @@ PyObjectContainer* PY_MODULE_unittest_TestCase_assertEqual_fast(PyObjectContaine
 {
     if (!PY_getTruthValueOf(PY_STD_operator_equals(value, other)))
     {
+        fprintf(stderr, "lhs: %s\n", PY_getObjectRepr(value));
+        fprintf(stderr, "rhs: %s\n", PY_getObjectRepr(other));
         PY_TEST_FAIL();
     }
     return PY_NONE;
@@ -132,6 +136,8 @@ PyObjectContainer* PY_MODULE_unittest_TestCase_assertNotEqual_fast(PyObjectConta
 {
     if (PY_getTruthValueOf(PY_STD_operator_equals(value, other)))
     {
+        fprintf(stderr, "lhs: %s\n", PY_getObjectRepr(value));
+        fprintf(stderr, "rhs: %s\n", PY_getObjectRepr(other));
         PY_TEST_FAIL();
     }
     return PY_NONE;

@@ -2,6 +2,7 @@
 #include <assert.h>
 #include <memory.h>
 #include <stdarg.h>
+#include <string.h>
 #include "list.h"
 #include "operators.h"
 #include "exceptions.h"
@@ -587,6 +588,63 @@ PyObjectContainer* PY_STD_list_iter_fast(PyObjectContainer* self)
 }
 #endif
 
+PyObjectContainer* PY_STD_list_repr(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
+{
+    assert(argc == 0);
+    return PY_STD_list_repr_fast(self);
+}
+
+PyObjectContainer* PY_STD_list_repr_fast(PyObjectContainer* self)
+{
+    assert(self != NULL);
+    assert(self->type == PY_TYPE_PY_IMPL);
+    assert(self->py_type == PY_TYPE_LIST);
+
+    PY_STD_list_container* list = (PY_STD_list_container*)self->raw_value;
+
+    if (list->curr_size == 0)
+    {
+        return PY_createString("[]");
+    }
+
+    char* buffer = strdup("[]");
+    buffer[1] = '\0';
+    if (buffer == NULL)
+    {
+        perror("strdup list repr");
+        exit(EXIT_FAILURE);
+    }
+    size_t size = 3;
+    bool is_first_entry = true;
+
+    for (int i = 0; i < list->curr_size; i++) {
+        char *frag_repr = PY_getObjectRepr(list->array[i]);
+        if (!is_first_entry)
+        {
+            size = size + 2 + strlen(frag_repr);
+        }
+        else
+        {
+            size = size + strlen(frag_repr);
+        }
+        buffer = realloc(buffer, size);
+        if (buffer == NULL)
+        {
+            perror("realloc repr fast");
+            exit(EXIT_FAILURE);
+        }
+        if (!is_first_entry)
+        {
+            strcat(buffer, ", ");
+        }
+        strcat(buffer, frag_repr);
+        is_first_entry = false;
+    }
+    buffer[strlen(buffer)] = ']';
+
+    return PY_createString(buffer);
+}
+
 void PY_STD_list_removeIndex(PY_STD_list_container* list, uint16_t index)
 {
     assert(list != NULL);
@@ -662,6 +720,7 @@ void PY_STD_initListType(void)
 #ifdef PY_ENABLE_GENERATORS
     PY_setClassAttributeByNameOrCreate(PY_TYPE_LIST, "__iter__", PY_createBoxForFunction(PY_STD_list_iter));
 #endif
+    PY_setClassAttributeByNameOrCreate(PY_TYPE_LIST, "__repr__", PY_createBoxForFunction(PY_STD_list_repr));
     PY_setClassAttributeByNameOrCreate(PY_TYPE_LIST, "__bool__", PY_createBoxForFunction(PY_STD_list_toBool));
     // __iadd__
     // __add__

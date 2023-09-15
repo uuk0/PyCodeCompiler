@@ -59,6 +59,9 @@ PyObjectContainer* PY_STD_list_toBool_fast(PyObjectContainer* self);
 PyObjectContainer* PY_STD_list_iter(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info);
 PyObjectContainer* PY_STD_list_iter_fast(PyObjectContainer* self);
 
+PyObjectContainer* PY_STD_list_repr(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info);
+PyObjectContainer* PY_STD_list_repr_fast(PyObjectContainer* self);
+
 PyObjectContainer* PY_STD_list_sort(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info);
 
 void PY_STD_initListType(void);
