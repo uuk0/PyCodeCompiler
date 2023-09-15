@@ -201,6 +201,7 @@ class CCodeEmitter:
             self.parent: CCodeEmitter.CExpressionBuilder | None = None
             self.snippets = []
             self.break_to_label: str = break_to_label
+            self.indent = True
 
         def get_statement_builder(self, indent=True) -> CCodeEmitter.CExpressionBuilder:
             raise NotImplementedError
@@ -1203,33 +1204,18 @@ DECREF({constructor});
         elif self.args:
             temporary = base.get_fresh_name("temporary")
 
-            with context.parent.get_statement_builder(indent=context.indent) as intro:
-                args = self._emit_c_code_any_call_args_resolver(intro, temporary, base)
-
-            context.add_code(
-                f"PY_CHECK_EXCEPTION(PY_invokeBoxedMethod({temporary}, NULL, {len(self.args)}, {args}, NULL))"
-            )
+            context.add_code("PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(")
+            self.base.emit_c_code(base, context)
+            context.add_code(f", NULL, {len(self.args)}, (PyObjectContainer*[]) {{")
+            for arg in self.args[:-1]:
+                arg.emit_c_code(base, context)
+                context.add_code(", ")
+            self.args[-1].emit_c_code(base, context)
+            context.add_code("}, NULL))")
         else:
             context.add_code("PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(")
             self.base.emit_c_code(base, context)
             context.add_code(", NULL, 0, NULL, NULL))")
-
-    # TODO Rename this here and in `emit_c_code_any_call`
-    def _emit_c_code_any_call_args_resolver(self, intro, temporary, base):
-        intro.add_code(f"PyObjectContainer* {temporary} = ")
-        self.base.emit_c_code(base, intro)
-        intro.add_code(";\n")
-
-        result = base.get_fresh_name("args")
-
-        intro.add_code(f"PyObjectContainer* {result}[{len(self.args)}];\n")
-        for i, arg in enumerate(self.args):
-            intro.add_code(f"{result}[{i}] = ")
-            arg.emit_c_code(base, intro)
-            print(i, arg)
-            intro.add_code(";\n")
-
-        return result
 
 
 class ReturnStatement(AbstractASTNode):

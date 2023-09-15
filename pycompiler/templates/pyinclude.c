@@ -252,7 +252,7 @@ static PyObjectContainer* PY_getObjectAttributeByNameOrStatic_primitive(PyObject
         return obj;  // rethrow the exception
     }
 
-    printf("%s\n", name);
+    printf("Type: %s, Attr: %s\n", PY_getObjectClassName(obj), name);
     PY_THROW_EXCEPTION(NULL);
 }
 
@@ -428,15 +428,13 @@ void PY_setClassAttributeByNameOrCreate(PyClassContainer* cls, char* name, PyObj
     cls->static_attribute_values[i+1] = NULL;
 }
 
-char* PY_getObjectClassName(PyObjectContainer* obj)
-{
+char* PY_getObjectClassName(PyObjectContainer* obj) {
 
-    switch (obj->type)
-    {
+    switch (obj->type) {
         case PY_TYPE_PY_IMPL:
             return obj->py_type->class_name;
         case PY_TYPE_NONE:
-            return "None";
+            return "NoneType";
         case PY_TYPE_BOOL:
             return "bool";
         case PY_TYPE_INT:

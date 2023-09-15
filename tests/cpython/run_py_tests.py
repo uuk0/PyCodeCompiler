@@ -21,3 +21,6 @@ class TestGenerator(unittest.TestCase):
 
     def test_unittest(self):
         self.compile_and_run("unittest")
+
+    def test_itertools(self):
+        self.compile_and_run("itertools")

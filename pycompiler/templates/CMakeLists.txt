@@ -35,6 +35,8 @@ add_library(templates
         standard_library/generator.c
         standard_library/generator.h
         standard_library/config.h
+        standard_library/modules/itertools.c
+        standard_library/modules/itertools.h
 )
 
 add_executable(test
