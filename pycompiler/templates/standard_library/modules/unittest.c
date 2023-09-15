@@ -15,6 +15,9 @@
 PyObjectContainer* PY_MODULE_INSTANCE_unittest;
 PyClassContainer* PY_MODULE_unittest_TestCase;
 PyObjectContainer* PY_MODULE_unittest_TestCase_REGISTERED;
+char* current_test_name;
+
+#define PY_TEST_FAIL() fprintf(stderr, "failed test: %s\n", current_test_name); PY_THROW_EXCEPTION_WITH_MESSAGE(NULL, "test failed");
 
 PyObjectContainer* PY_MODULE_unittest_main(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
 {
@@ -38,6 +41,7 @@ PyObjectContainer* PY_MODULE_unittest_main_fast(void)
         while (cls_instance->static_attribute_names[j] != NULL) {
             if (PY_STD_string_startswith_impl(cls_instance->static_attribute_names[j], "test"))
             {
+                current_test_name = cls_instance->static_attribute_names[j];
                 PyObjectContainer* method = PY_getObjectAttributeByNameOrStatic(obj, cls_instance->static_attribute_names[j]);
                 if (method != NULL)
                 {
@@ -73,7 +77,22 @@ PyObjectContainer* PY_MODULE_unittest_TestCase_assertTrue_fast(PyObjectContainer
 {
     if (!PY_getTruthValueOf(value))
     {
-        PY_THROW_EXCEPTION_WITH_MESSAGE(NULL, "test failed");
+        PY_TEST_FAIL();
+    }
+    return PY_NONE;
+}
+
+PyObjectContainer* PY_MODULE_unittest_TestCase_assertFalse(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
+{
+    assert(argc == 1);
+    return PY_MODULE_unittest_TestCase_assertTrue_fast(self, args[0]);
+}
+
+PyObjectContainer* PY_MODULE_unittest_TestCase_assertFalse_fast(PyObjectContainer* self, PyObjectContainer* value)
+{
+    if (PY_getTruthValueOf(value))
+    {
+        PY_TEST_FAIL();
     }
     return PY_NONE;
 }
@@ -91,6 +110,7 @@ PyObjectContainer* PY_MODULE_unittest_init(void)
 
     PY_setClassAttributeByNameOrCreate(PY_MODULE_unittest_TestCase, "__init_subclass__", PY_createBoxForFunction(PY_MODULE_unittest_TestCase_initsubclass));
     PY_setClassAttributeByNameOrCreate(PY_MODULE_unittest_TestCase, "assertTrue", PY_createBoxForFunction(PY_MODULE_unittest_TestCase_assertTrue));
+    PY_setClassAttributeByNameOrCreate(PY_MODULE_unittest_TestCase, "assertFalse", PY_createBoxForFunction(PY_MODULE_unittest_TestCase_assertFalse));
 
     PY_setObjectAttributeByName(PY_MODULE_INSTANCE_unittest, "main", PY_createBoxForFunction(PY_MODULE_unittest_main));
 

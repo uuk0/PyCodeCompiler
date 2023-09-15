@@ -286,6 +286,12 @@
             "type": "method",
             "arguments": 1,
             "c name": "PY_MODULE_unittest_TestCase_assertTrue_fast"
+          },
+          {
+            "name": "assertFalse",
+            "type": "method",
+            "arguments": 1,
+            "c name": "PY_MODULE_unittest_TestCase_assertFalse_fast"
           }
         ]
       }
