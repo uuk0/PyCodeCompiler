@@ -358,6 +358,9 @@ FLOAT_DATA_TYPE = AbstractDataType()
 
 class ClassOrSubclassDataType(AbstractDataType):
     def __init__(self, ref: ClassDefinitionNode):
+        if isinstance(ref, dict):
+            raise ValueError(ref)
+
         self.ref = ref
         self.generics = []
 
@@ -591,6 +594,7 @@ class GlobalCNameAccessExpression(AbstractASTNodeExpression):
     def __init__(self, name: str):
         super().__init__()
         self.name = self.normal_name = name
+        self.data_type: AbstractDataType | None = None
 
     def copy(self):
         obj = type(self)(self.name)
@@ -598,7 +602,7 @@ class GlobalCNameAccessExpression(AbstractASTNodeExpression):
         return obj
 
     def __eq__(self, other):
-        return type(other) == NameAccessExpression and self.name == other.name
+        return type(other) == GlobalCNameAccessExpression and self.name == other.name
 
     def __repr__(self):
         return f"GLOBAL-C-VARIABLE({self.name})"
@@ -1380,11 +1384,12 @@ class FunctionDefinitionNode(AbstractASTNode):
         self.body = body
         self.normal_name = name.text
         self.is_generator = is_generator
+        self.return_type: AbstractDataType = None
 
         if self.is_generator:
             # is guaranteed to return a generator object
             self.static_value_type = ClassExactDataType(
-                Scope.STANDARD_LIBRARY_VALUES["<generator>"]
+                Scope.STANDARD_LIBRARY_VALUES["<generator>"]["*"]
             )
 
     def __eq__(self, other):
@@ -2601,6 +2606,10 @@ class SyntaxTreeVisitor:
         pass
 
 
+def _parse_data_type(entry: dict) -> AbstractDataType | None:
+    pass  # todo: implement
+
+
 def _parse_std_lib_decl_entry(entry: dict) -> AbstractASTNode:
     if entry["type"] == "class":
         cls = StandardLibraryClass(entry["name"], entry["type variable"])
@@ -2616,7 +2625,14 @@ def _parse_std_lib_decl_entry(entry: dict) -> AbstractASTNode:
         return cls
 
     elif entry["type"] in ("method", "constant"):
-        return GlobalCNameAccessExpression(entry["c name"])
+        obj = GlobalCNameAccessExpression(entry["c name"])
+
+        if entry["type"] == "method" and "return type" in entry:
+            obj.data_type = _parse_data_type(entry["return type"])
+        elif entry["type"] == "constant" and "data type" in entry:
+            obj.data_type = _parse_data_type(entry["data type"])
+
+        return obj
 
     elif entry["type"] == "operator wrapper":
         return StandardLibraryBoundOperator(entry["name"], entry["c name"])

@@ -557,22 +557,35 @@ class ResolveKnownDataTypes(SyntaxTreeVisitor):
             elif isinstance(node.base.value, ClassDefinitionNode):
                 node.static_value_type = ClassExactDataType(node.base.value)
             elif node.base.value == Scope.STANDARD_LIBRARY_VALUES["len"][1]:
-                self.check_for_overload_on_type(node, "__len__", "len")
+                self.check_for_overload_on_type(node, "__len__", "len", 1)
+            elif node.base.value == Scope.STANDARD_LIBRARY_VALUES["next"][1]:
+                self.check_for_overload_on_type(node, "__next__", "next", 1)
+            elif node.base.value == Scope.STANDARD_LIBRARY_VALUES["next"][2]:
+                self.check_for_overload_on_type(node, "__next__", "next", 2)
+            elif isinstance(node.base.value, FunctionDefinitionNode):
+                node.static_value_type = node.base.value.return_type
+            elif isinstance(node.base.value, GlobalCNameAccessExpression):
+                node.static_value_type = node.base.value.data_type
 
-    def check_for_overload_on_type(self, node, bound_name, normal_name):
-        if len(node.args) != 1:
+    def check_for_overload_on_type(self, node, bound_name, normal_name, arg_count: int):
+        if len(node.args) != arg_count:
             raise ValueError(
-                f"{normal_name}(...) expected exactly 1 arg, got {len(node.args)}"
+                f"{normal_name}(...) expected exactly {arg_count} arg, got {len(node.args)}"
             )
 
         arg = node.args[0].value
-        if (
-            arg.static_value_type
-            and isinstance(arg.static_value_type, ClassExactDataType)
-            and bound_name in arg.static_value_type.ref.function_table
+        if arg.static_value_type and isinstance(
+            arg.static_value_type, ClassExactDataType
         ):
-            func = arg.static_value_type.ref.function_table[bound_name]
-            node.base = func
+            if (bound_name, arg_count) in arg.static_value_type.ref.function_table:
+                func = arg.static_value_type.ref.function_table[bound_name, arg_count]
+                node.base = func
+            elif bound_name in arg.static_value_type.ref.function_table:
+                func = arg.static_value_type.ref.function_table[bound_name]
+                node.base = func
+            elif (bound_name, "*") in arg.static_value_type.ref.function_table:
+                func = arg.static_value_type.ref.function_table[bound_name, "*"]
+                node.base = func
 
 
 class ResolveLocalVariableAccessTypes(SyntaxTreeVisitor):
