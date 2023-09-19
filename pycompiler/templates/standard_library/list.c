@@ -146,7 +146,7 @@ PyObjectContainer* PY_STD_list_append(PyObjectContainer* self, uint8_t argc, PyO
     }
     else
     {
-        list->array = realloc(list->array, 2 * list->curr_size * sizeof(PyObjectContainer*));
+        list->array = realloc(list->array, 1.5 * list->curr_size * sizeof(PyObjectContainer*));
         if (list->array == NULL)
         {
             perror("malloc PY_STD_list_append");
@@ -177,7 +177,7 @@ PyObjectContainer* PY_STD_list_append_fast(PyObjectContainer* self, PyObjectCont
     }
     else
     {
-        list->array = realloc(list->array, 2 * list->curr_size * sizeof(PyObjectContainer*));
+        list->array = realloc(list->array, 1.5 * list->curr_size * sizeof(PyObjectContainer*));
         if (list->array == NULL)
         {
             perror("malloc PY_STD_list_append");
@@ -709,6 +709,57 @@ PyObjectContainer* PY_STD_list_sort_fast_arg_0(PyObjectContainer* self)
     return PY_NONE;
 }
 
+PyObjectContainer* PY_STD_list_extend(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
+{
+    assert(argc == 1);
+    return PY_STD_list_extend_fast(self, args[0]);
+}
+
+PyObjectContainer* PY_STD_list_extend_fast(PyObjectContainer* self, PyObjectContainer* other)
+{
+    PyObjectContainer* list = PY_createClassInstance(PY_TYPE_LIST);
+    PY_STD_list_init_fast_arg_1(list, other);
+
+    assert(self != NULL);
+    assert(self->type == PY_TYPE_PY_IMPL);
+    assert(self->py_type == PY_TYPE_LIST);
+    PY_STD_list_container* list_lhs = (PY_STD_list_container*)self->raw_value;
+    PY_STD_list_container* list_rhs = (PY_STD_list_container*)list->raw_value;
+
+    list_lhs->array = realloc(list_lhs->array, (list_lhs->curr_size + list_rhs->curr_size) * sizeof(PyObjectContainer*));
+    if (list_lhs->array == NULL)
+    {
+        perror("malloc extend");
+        exit(EXIT_FAILURE);
+    }
+
+    memcpy(list_lhs->array + list_lhs->curr_size, list_rhs->array, list_rhs->curr_size * sizeof(PyObjectContainer*));
+    list_lhs->rem_size = 0;
+    list_lhs->curr_size += list_rhs->curr_size;
+    return self;
+}
+
+PyObjectContainer* PY_STD_list_add(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
+{
+    assert(argc == 1);
+    return PY_STD_list_add_fast(self, args[0]);
+}
+
+PyObjectContainer* PY_STD_list_add_fast(PyObjectContainer* self, PyObjectContainer* other)
+{
+    assert(self != NULL);
+    assert(self->type == PY_TYPE_PY_IMPL);
+    assert(self->py_type == PY_TYPE_LIST);
+    assert(other != NULL);
+    assert(other->type == PY_TYPE_PY_IMPL);
+    assert(other->py_type == PY_TYPE_LIST);
+
+    PyObjectContainer* new_list = PY_STD_list_CREATE(0);
+    PY_STD_list_extend_fast(new_list, self);
+    PY_STD_list_extend_fast(new_list, other);
+    return new_list;
+}
+
 void PY_STD_initListType(void)
 {
     PY_TYPE_LIST = PY_createClassContainer("list");
@@ -725,6 +776,8 @@ void PY_STD_initListType(void)
     PY_setClassAttributeByNameOrCreate(PY_TYPE_LIST, "clear", PY_createBoxForFunction(PY_STD_list_clear));
     PY_setClassAttributeByNameOrCreate(PY_TYPE_LIST, "__eq__", PY_createBoxForFunction(PY_STD_list_eq));
     PY_setClassAttributeByNameOrCreate(PY_TYPE_LIST, "__len__", PY_createBoxForFunction(PY_STD_list_len));
+    PY_setClassAttributeByNameOrCreate(PY_TYPE_LIST, "extend", PY_createBoxForFunction(PY_STD_list_extend));
+    PY_setClassAttributeByNameOrCreate(PY_TYPE_LIST, "__add__", PY_createBoxForFunction(PY_STD_list_add));
 #ifdef PY_ENABLE_GENERATORS
     PY_setClassAttributeByNameOrCreate(PY_TYPE_LIST, "__iter__", PY_createBoxForFunction(PY_STD_list_iter));
 #endif

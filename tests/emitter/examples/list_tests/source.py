@@ -17,3 +17,9 @@ def test():
     assert len(obj) == 0
     obj.append(10)
     assert len(obj) == 1
+
+    obj.extend([10])
+    assert len(obj) == 2
+
+    obj = obj + [20]
+    assert len(obj) == 3

@@ -65,6 +65,12 @@ PyObjectContainer* PY_STD_list_repr_fast(PyObjectContainer* self);
 PyObjectContainer* PY_STD_list_sort(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info);
 PyObjectContainer* PY_STD_list_sort_fast_arg_0(PyObjectContainer* self);
 
+PyObjectContainer* PY_STD_list_extend(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info);
+PyObjectContainer* PY_STD_list_extend_fast(PyObjectContainer* self, PyObjectContainer* other);
+
+PyObjectContainer* PY_STD_list_add(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info);
+PyObjectContainer* PY_STD_list_add_fast(PyObjectContainer* self, PyObjectContainer* other);
+
 void PY_STD_initListType(void);
 
 #endif //TEMPLATES_LIST_H

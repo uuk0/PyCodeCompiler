@@ -263,6 +263,8 @@ PyObjectContainer* PY_MODULE_{module.replace('.', '___')}_init(void);
             [
                 self.compiler,
                 "-g",
+                "-Wall",
+                "-Wextra",
             ]
             + include_files
             + [
