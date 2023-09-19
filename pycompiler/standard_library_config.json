@@ -84,6 +84,12 @@
             "type": "method",
             "arguments": 1,
             "c name": "PY_STD_list_extend_fast"
+          },
+          {
+            "name": "__iadd__",
+            "type": "method",
+            "arguments": 1,
+            "c name": "PY_STD_list_extend_fast"
           }
         ]
       },

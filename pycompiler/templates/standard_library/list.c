@@ -778,20 +778,18 @@ void PY_STD_initListType(void)
     PY_setClassAttributeByNameOrCreate(PY_TYPE_LIST, "__len__", PY_createBoxForFunction(PY_STD_list_len));
     PY_setClassAttributeByNameOrCreate(PY_TYPE_LIST, "extend", PY_createBoxForFunction(PY_STD_list_extend));
     PY_setClassAttributeByNameOrCreate(PY_TYPE_LIST, "__add__", PY_createBoxForFunction(PY_STD_list_add));
+    PY_setClassAttributeByNameOrCreate(PY_TYPE_LIST, "__iadd__", PY_createBoxForFunction(PY_STD_list_extend));
 #ifdef PY_ENABLE_GENERATORS
     PY_setClassAttributeByNameOrCreate(PY_TYPE_LIST, "__iter__", PY_createBoxForFunction(PY_STD_list_iter));
 #endif
     PY_setClassAttributeByNameOrCreate(PY_TYPE_LIST, "__repr__", PY_createBoxForFunction(PY_STD_list_repr));
     PY_setClassAttributeByNameOrCreate(PY_TYPE_LIST, "__bool__", PY_createBoxForFunction(PY_STD_list_toBool));
-    // __iadd__
-    // __add__
     PY_setClassAttributeByNameOrCreate(PY_TYPE_LIST, "sort", PY_createBoxForFunction(PY_STD_list_sort));
     // copy
     // __sorted__
     // count
     // __contains__
     // pop
-    // copy
     // __mul__
     // __imul__
 }
