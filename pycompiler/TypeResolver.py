@@ -28,6 +28,7 @@ from pycompiler.Parser import (
     DictConstructor,
     ForLoopStatement,
     IfStatement,
+    PrefixOperation,
 )
 
 if typing.TYPE_CHECKING:
@@ -241,9 +242,14 @@ class ResolveParentAttribute(SyntaxTreeVisitor):
     def visit_assert_statement(self, node: AssertStatement):
         super().visit_assert_statement(node)
 
-        node.statement.parent = node
+        node.statement.parent = node, ParentAttributeSection.LHS
         if node.message:
-            node.message.parent = node
+            node.message.parent = node, ParentAttributeSection.RHS
+
+    def visit_prefix_operation(self, operation: PrefixOperation):
+        super().visit_prefix_operation(operation)
+
+        operation.value.parent = operation, ParentAttributeSection.RHS
 
 
 class BinaryOperatorPriorityRewriter(SyntaxTreeVisitor):

@@ -246,6 +246,10 @@ static PyObjectContainer* PY_getObjectAttributeByNameOrStatic_primitive(PyObject
         {
             return PY_STD_string_eq_CONTAINER;
         }
+        if (strcmp(name, "__iter__") == 0)
+        {
+            return PY_STD_string_iter_CONTAINER;
+        }
         printf("%s\n", name);
         PY_THROW_EXCEPTION_WITH_MESSAGE(NULL, "cannot get attribute on type <string>");
     }

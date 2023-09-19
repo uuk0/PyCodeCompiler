@@ -25,10 +25,14 @@ PyObjectContainer* PY_STD_operator_not_contains(PyObjectContainer* lhs, PyObject
 PyObjectContainer* PY_STD_operator_is(PyObjectContainer* lhs, PyObjectContainer* rhs);
 PyObjectContainer* PY_STD_operator_is_not(PyObjectContainer* lhs, PyObjectContainer* rhs);
 
+PyObjectContainer* PY_STD_operator_not(PyObjectContainer* self);
+PyObjectContainer* PY_STD_operator_negate(PyObjectContainer* self);
+PyObjectContainer* PY_STD_operator_positive(PyObjectContainer* self);
+PyObjectContainer* PY_STD_operator_invert(PyObjectContainer* self);
+
 PyObjectContainer* PY_STD_operator_len(PyObjectContainer* value);
 PyObjectContainer* PY_STD_operator_next(PyObjectContainer* value);
 PyObjectContainer* PY_STD_operator_iter(PyObjectContainer* value);  // implementation only provided when generators are enabled!
-// PyObjectContainer* PY_STD_operator_iter_for_yield_from(PyObjectContainer* value, PyObjectContainer* possible_existing);
 PyObjectContainer* PY_STD_operator_next_with_default(PyObjectContainer* value, PyObjectContainer* default_value);
 
 // defined as a macro so we evaluate 'value' only when needed

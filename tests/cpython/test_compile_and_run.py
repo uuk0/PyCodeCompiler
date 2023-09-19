@@ -25,5 +25,5 @@ class TestGenerator(unittest.TestCase):
     def test_itertools(self):
         self.compile_and_run("itertools")
 
-    # def test_list(self):
-    #     self.compile_and_run("list")
+    def test_list(self):
+        self.compile_and_run("list")

@@ -368,6 +368,32 @@ PyObjectContainer* PY_STD_operator_is_not(PyObjectContainer* lhs, PyObjectContai
     return PY_createBoolean(lhs != rhs);
 }
 
+PyObjectContainer* PY_STD_operator_not(PyObjectContainer* self)
+{
+    return PY_getTruthValueOf(self) ? PY_FALSE : PY_TRUE;
+}
+
+PyObjectContainer* PY_STD_operator_negate(PyObjectContainer* self)
+{
+    PyObjectContainer* negate = PY_getObjectAttributeByNameOrStatic(self, "__neg__");
+    PY_THROW_EXCEPTION_IF_WITH_MESSAGE_AND_OBJ(negate == NULL, NULL, "expected <supports __neg__>, got %s\n", self);
+    return PY_invokeBoxedMethod(negate, self, 0, NULL, NULL);
+}
+
+PyObjectContainer* PY_STD_operator_positive(PyObjectContainer* self)
+{
+    PyObjectContainer* negate = PY_getObjectAttributeByNameOrStatic(self, "__pos__");
+    PY_THROW_EXCEPTION_IF_WITH_MESSAGE_AND_OBJ(negate == NULL, NULL, "expected <supports __pos__>, got %s\n", self);
+    return PY_invokeBoxedMethod(negate, self, 0, NULL, NULL);
+}
+
+PyObjectContainer* PY_STD_operator_invert(PyObjectContainer* self)
+{
+    PyObjectContainer* negate = PY_getObjectAttributeByNameOrStatic(self, "__invert__");
+    PY_THROW_EXCEPTION_IF_WITH_MESSAGE_AND_OBJ(negate == NULL, NULL, "expected <supports __invert__>, got %s\n", self);
+    return PY_invokeBoxedMethod(negate, self, 0, NULL, NULL);
+}
+
 PyObjectContainer* PY_STD_operator_len(PyObjectContainer* value)
 {
     PyObjectContainer* len = PY_getObjectAttributeByNameOrStatic(value, "__len__");

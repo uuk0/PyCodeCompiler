@@ -5,6 +5,7 @@
 #include <string.h>
 #include "string.h"
 #include "helpers/hashmap.h"
+#include "generator.h"
 
 PyObjectContainer* PY_STD_string_hash_CONTAINER;
 PyObjectContainer* PY_STD_string_hash(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
@@ -40,6 +41,39 @@ PyObjectContainer* PY_STD_string_eq_fast(PyObjectContainer* lhs, PyObjectContain
     return strcmp(PY_unpackString(lhs), PY_unpackString(rhs)) == 0 ? PY_TRUE : PY_FALSE;
 }
 
+PyObjectContainer* PY_STD_string_iter_CONTAINER;
+
+PyObjectContainer* PY_STD_string_iter(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
+{
+    assert(argc == 0);
+    assert(self != NULL);
+    return PY_STD_string_iter_fast(self);
+}
+
+PyObjectContainer* PY_STD_string_iter_ITERATOR(PyGeneratorContainer* container)
+{
+    PyObjectContainer* string = container->locals[0];
+    size_t len = strlen(string->raw_value);
+    if (len <= container->section_id)
+    {
+        return NULL;
+    }
+    char c[2];
+    c[0] = ((char*)string->raw_value)[container->section_id++];
+    c[1] = 0;
+    return PY_createString(strdup(c));
+}
+
+PyObjectContainer* PY_STD_string_iter_fast(PyObjectContainer* self)
+{
+    PyObjectContainer* container = PY_STD_GENERATOR_create(1);
+    PyGeneratorContainer* generator = container->raw_value;
+    generator->locals[0] = self;
+    generator->section_id = 0;
+    generator->next_section = PY_STD_string_iter_ITERATOR;
+    return container;
+}
+
 PyObjectContainer* PY_STD_string_startswith(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
 {
     assert(argc == 1);
@@ -69,4 +103,5 @@ void PY_STD_initStringType(void)
 {
     PY_STD_string_hash_CONTAINER = PY_createBoxForFunction(PY_STD_string_hash);
     PY_STD_string_eq_CONTAINER = PY_createBoxForFunction(PY_STD_string_eq);
+    PY_STD_string_iter_CONTAINER = PY_createBoxForFunction(PY_STD_string_iter);
 }

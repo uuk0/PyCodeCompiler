@@ -459,7 +459,8 @@ class PyCommentNode(AbstractASTNode):
         return f"COMMENT({self.base_token}|{self.inner_string})"
 
     def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder):
-        context.add_code(f"// SOURCE: {self.inner_string.text}\n")
+        # context.add_code(f"// SOURCE: {self.inner_string.text}\n")
+        pass
 
 
 class PassStatement(AbstractASTNode):
@@ -666,6 +667,7 @@ class ConstantAccessExpression(AbstractASTNodeExpression):
             )
 
         else:
+            print(self.parent)
             raise NotImplementedError(self.value)
 
 
@@ -2263,6 +2265,60 @@ class BinaryOperatorExpression(AbstractASTNodeExpression):
             raise RuntimeError(self.operator)
 
 
+class PrefixOperation(AbstractASTNodeExpression):
+    class PrefixOperator(enum.Enum):
+        NOT = enum.auto()
+        NEGATE = enum.auto()
+        POSITIVE = enum.auto()
+        INVERT = enum.auto()
+
+    OPERATOR_CALL_FUNCTIONS = {
+        PrefixOperator.NOT: "PY_STD_operator_not",
+        PrefixOperator.NEGATE: "PY_STD_operator_negate",
+        PrefixOperator.POSITIVE: "PY_STD_operator_positive",
+        PrefixOperator.INVERT: "PY_STD_operator_invert",
+    }
+
+    def __init__(
+        self, operator: PrefixOperation.PrefixOperator, value: AbstractASTNode
+    ):
+        super().__init__()
+        self.operator = operator
+        self.value = value
+
+    def __eq__(self, other):
+        return (
+            type(other) == PrefixOperation
+            and self.operator == other.operator
+            and self.value == other.value
+        )
+
+    def __repr__(self):
+        return f"OPERATION({self.operator.name}|{self.value})"
+
+    def try_replace_child(
+        self,
+        original: AbstractASTNode | None,
+        replacement: AbstractASTNode,
+        position: ParentAttributeSection,
+    ) -> bool:
+        replacement.parent = self, position
+        if position == ParentAttributeSection.LHS:
+            self.value = replacement
+        else:
+            return False
+        return True
+
+    def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder):
+        if self.operator in self.OPERATOR_CALL_FUNCTIONS:
+            func_name = self.OPERATOR_CALL_FUNCTIONS[self.operator]
+            context.add_code(f"{func_name}(")
+            self.value.emit_c_code(base, context)
+            context.add_code(")")
+        else:
+            raise RuntimeError(self.operator)
+
+
 class WalrusOperatorExpression(AbstractASTNodeExpression):
     def __init__(self, target: AbstractASTNode, value: AbstractASTNode):
         super().__init__()
@@ -2476,6 +2532,8 @@ class SyntaxTreeVisitor:
             return self.visit_name_access(obj)
         elif obj_type == IfStatement:
             return self.visit_if_statement(obj)
+        elif obj_type == PrefixOperation:
+            return self.visit_prefix_operation(obj)
         else:
             print(type(obj))
             raise RuntimeError(obj)
@@ -2615,6 +2673,9 @@ class SyntaxTreeVisitor:
 
     def visit_standard_library_operator(self, instance: StandardLibraryBoundOperator):
         pass
+
+    def visit_prefix_operation(self, operation: PrefixOperation):
+        return (self.visit_any(operation.value),)
 
 
 def _parse_data_type(entry: dict) -> AbstractDataType | None:
@@ -3140,6 +3201,21 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
             if c.isdigit() or c == "-" or c == ".":
                 base = self.try_parse_integer_or_float()
 
+                if base is None:
+                    self.lexer.get_chars(1)
+                    expr = self.try_parse_expression()
+                    return PrefixOperation(PrefixOperation.PrefixOperator.NEGATE, expr)
+
+            elif c == "+":
+                self.lexer.get_chars(1)
+                expr = self.try_parse_expression()
+                return PrefixOperation(PrefixOperation.PrefixOperator.POSITIVE, expr)
+
+            elif c == "~":
+                self.lexer.get_chars(1)
+                expr = self.try_parse_expression()
+                return PrefixOperation(PrefixOperation.PrefixOperator.INVERT, expr)
+
             elif c == "'":
                 base = self.parse_quoted_string("'")
             elif c == '"':
@@ -3180,6 +3256,11 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
             else:
                 return
 
+        elif identifier.text == "not":
+            expr = self.try_parse_expression()
+
+            return PrefixOperation(PrefixOperation.PrefixOperator.NOT, expr)
+
         else:
             base = NameAccessExpression(identifier)
 
@@ -3195,7 +3276,10 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
                 if expression is None or not (
                     closing_bracket := self.lexer.try_parse_closing_square_bracket()
                 ):
-                    raise SyntaxError
+                    print(base)
+                    raise SyntaxError(
+                        f"expected ')', got '{self.lexer.inspect_chars(4)}'"
+                    )
 
                 base = SubscriptionExpression(
                     base,
@@ -3647,7 +3731,7 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
 
         return ConstantAccessExpression(text)
 
-    def try_parse_integer_or_float(self) -> ConstantAccessExpression:
+    def try_parse_integer_or_float(self) -> ConstantAccessExpression | None:
         text = self.lexer.get_chars(1)
 
         while True:
@@ -3659,6 +3743,10 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
                 text += c
             else:
                 break
+
+        if text == "-":
+            self.lexer.give_back("  ")
+            return
 
         self.lexer.give_back(c)
         return ConstantAccessExpression(int(text) if "." not in text else float(text))
