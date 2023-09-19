@@ -16,6 +16,8 @@
 #include "generator.h"
 #endif
 
+void perror(const char* message);
+
 PyClassContainer* PY_TYPE_TUPLE;
 
 struct PY_STD_tuple_container

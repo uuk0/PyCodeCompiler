@@ -1735,7 +1735,6 @@ if ({init_subclass} != NULL) {{
 
         for line in self.body:
             if isinstance(line, FunctionDefinitionNode):
-                print(line)
                 init_class.add_code(
                     f'PY_setClassAttributeByNameOrCreate({variable_name}, "{line.name.text}", PY_createBoxForFunction({line.normal_name}_safeWrap));\n'
                 )
@@ -2920,25 +2919,17 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
 
         if self.indent_markers:
             if not empty or empty.text != self.indent_markers * self.indent_level:
-                print(
-                    "not enough",
-                    repr(empty.text) if empty else None,
-                    repr(self.indent_markers),
-                    self.indent_level,
-                )
                 self.lexer.rollback_state()
                 return
 
         else:
             if not empty or not empty.text:
-                print("no indent")
                 self.lexer.rollback_state()
                 return
 
             self.indent_markers = empty.text[: len(empty.text) // self.indent_level]
 
             if empty.text != self.indent_markers * self.indent_level:
-                print("not enough for level")
                 self.lexer.rollback_state()
                 return
 

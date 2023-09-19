@@ -657,7 +657,6 @@ class ResolveClassFunctionNode(SyntaxTreeVisitor):
 
         if isinstance(expression.parent[0], AssignmentExpression):
             if "__setitem__" in data_type.function_table:
-                print(expression.parent[0].parent[0])
                 expression.parent[0].parent[0].try_replace_child(
                     expression.parent[0],
                     CallExpression(
@@ -708,7 +707,7 @@ class ResolveStaticNames(SyntaxTreeVisitor):
         super().visit_name_access(access)
 
         if access.parent is None:
-            print("error ResolveStaticNames", access)
+            print("error ResolveStaticNames (no parent)", access)
             return
 
         arg_count = -1
