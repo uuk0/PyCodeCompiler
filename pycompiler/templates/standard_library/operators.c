@@ -358,6 +358,16 @@ PyObjectContainer* PY_STD_operator_not_contains(PyObjectContainer* lhs, PyObject
     return PY_STD_operator_apply(lhs, rhs, "__contains__", NULL) == PY_TRUE ? PY_FALSE : PY_TRUE;
 }
 
+PyObjectContainer* PY_STD_operator_is(PyObjectContainer* lhs, PyObjectContainer* rhs)
+{
+    return PY_createBoolean(lhs == rhs);
+}
+
+PyObjectContainer* PY_STD_operator_is_not(PyObjectContainer* lhs, PyObjectContainer* rhs)
+{
+    return PY_createBoolean(lhs != rhs);
+}
+
 PyObjectContainer* PY_STD_operator_len(PyObjectContainer* value)
 {
     PyObjectContainer* len = PY_getObjectAttributeByNameOrStatic(value, "__len__");

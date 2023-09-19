@@ -2127,6 +2127,9 @@ class BinaryOperatorExpression(AbstractASTNodeExpression):
         SMALLER = enum.auto()  # todo
         SMALLER_EQUAL = enum.auto()  # todo
         CONTAINS = enum.auto()
+        CONTAINS_NOT = enum.auto()
+        IS_SAME = enum.auto()
+        IS_SAME_NOT = enum.auto()
 
     String2Type = {
         "+": BinaryOperation.PLUS,
@@ -2147,6 +2150,9 @@ class BinaryOperatorExpression(AbstractASTNodeExpression):
         "<": BinaryOperation.SMALLER,
         "<=": BinaryOperation.SMALLER_EQUAL,
         "in": BinaryOperation.CONTAINS,
+        "not in": BinaryOperation.CONTAINS_NOT,
+        "is": BinaryOperation.IS_SAME,
+        "is not": BinaryOperation.IS_SAME_NOT,
     }
 
     PRIORITIES: typing.Dict[BinaryOperation, int] = {
@@ -2172,6 +2178,9 @@ class BinaryOperatorExpression(AbstractASTNodeExpression):
         BinaryOperation.MATRIX_MULTIPLY: 10,
         BinaryOperation.POW: 20,
         BinaryOperation.CONTAINS: 30,  # warn: rhs is holder of __contains__, not lhs!
+        BinaryOperation.CONTAINS_NOT: 30,
+        BinaryOperation.IS_SAME: 40,
+        BinaryOperation.IS_SAME_NOT: 40,
     }
 
     OPERATOR_CALL_FUNCTIONS = {
@@ -2189,6 +2198,9 @@ class BinaryOperatorExpression(AbstractASTNodeExpression):
         BinaryOperation.EQUALS: "PY_STD_operator_equals",
         BinaryOperation.NOT_EQUALS: "PY_STD_operator_not_equals",
         BinaryOperation.CONTAINS: "PY_STD_operator_contains",
+        BinaryOperation.CONTAINS_NOT: "PY_STD_operator_not_contains",
+        BinaryOperation.IS_SAME: "PY_STD_operator_is",
+        BinaryOperation.IS_SAME_NOT: "PY_STD_operator_is_not",
     }
 
     def __init__(
@@ -3138,6 +3150,10 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
                 self.lexer.get_chars(1)
                 self.lexer.try_parse_whitespaces()
 
+                if self.lexer.inspect_chars(1) == ")":
+                    self.lexer.get_chars(1)
+                    return TupleConstructor([])
+
                 inner = self.try_parse_expression()
                 if inner is None:
                     raise SyntaxError("expected <inner expression>, got 'None'")
@@ -3214,11 +3230,28 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
                 self.lexer.inspect_chars(1)
                 and self.lexer.inspect_chars(1) in "+-*%/&|^@i"
             ):
-                if self.lexer.inspect_chars(2) in ("**", "//", "in"):
+                if self.lexer.inspect_chars(2) in ("**", "//", "in", "is"):
                     operator = self.lexer.get_chars(2)
+
+                    if operator == "is":
+                        self.lexer.try_parse_whitespaces()
+
+                        if self.lexer.inspect_chars(3) == "not":
+                            self.lexer.get_chars(3)
+                            operator = "is not"
                 else:
                     operator = self.lexer.get_chars(1)
 
+                expression = self.try_parse_expression()
+                if expression is None:
+                    raise SyntaxError
+
+                base = BinaryOperatorExpression(
+                    base, BinaryOperatorExpression.String2Type[operator], expression
+                )
+
+            elif self.lexer.inspect_chars(len("not in")) == "not in":
+                operator = "not in"
                 expression = self.try_parse_expression()
                 if expression is None:
                     raise SyntaxError
@@ -3477,7 +3510,10 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
                 if not (
                     closing_bracket := self.lexer.try_parse_closing_round_bracket()
                 ):
-                    raise SyntaxError
+                    print(args)
+                    raise SyntaxError(
+                        f"expected ')', got '{self.lexer.inspect_chars(4)}'"
+                    )
 
                 break
 

@@ -22,6 +22,8 @@ PyObjectContainer* PY_STD_operator_equals(PyObjectContainer* lhs, PyObjectContai
 PyObjectContainer* PY_STD_operator_not_equals(PyObjectContainer* lhs, PyObjectContainer* rhs);
 PyObjectContainer* PY_STD_operator_contains(PyObjectContainer* lhs, PyObjectContainer* rhs);
 PyObjectContainer* PY_STD_operator_not_contains(PyObjectContainer* lhs, PyObjectContainer* rhs);
+PyObjectContainer* PY_STD_operator_is(PyObjectContainer* lhs, PyObjectContainer* rhs);
+PyObjectContainer* PY_STD_operator_is_not(PyObjectContainer* lhs, PyObjectContainer* rhs);
 
 PyObjectContainer* PY_STD_operator_len(PyObjectContainer* value);
 PyObjectContainer* PY_STD_operator_next(PyObjectContainer* value);
