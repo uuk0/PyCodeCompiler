@@ -593,6 +593,40 @@ class ResolveKnownDataTypes(SyntaxTreeVisitor):
                 func = arg.static_value_type.ref.function_table[bound_name, "*"]
                 node.base = func
 
+    def visit_binary_operator(self, operator: BinaryOperatorExpression):
+        super().visit_binary_operator(operator)
+
+        if (
+            operator.lhs.static_value_type
+            and isinstance(operator.lhs.static_value_type, ClassExactDataType)
+            and operator.operator in BinaryOperatorExpression.PYTHON_OPERATOR_REFS
+        ):
+            method_name = BinaryOperatorExpression.PYTHON_OPERATOR_REFS[
+                operator.operator
+            ]
+
+            if method_name in operator.lhs.static_value_type.ref.function_table:
+                operator.parent[0].try_replace_child(
+                    operator,
+                    CallExpression(
+                        operator.lhs.static_value_type.ref.function_table[method_name],
+                        [],
+                        None,
+                        [
+                            CallExpression.CallExpressionArgument(
+                                operator.lhs,
+                                CallExpression.ParameterType.NORMAL,
+                            ),
+                            CallExpression.CallExpressionArgument(
+                                operator.rhs,
+                                CallExpression.ParameterType.NORMAL,
+                            ),
+                        ],
+                        None,
+                    ),
+                    operator.parent[1],
+                )
+
 
 class ResolveLocalVariableAccessTypes(SyntaxTreeVisitor):
     DIRTY = False

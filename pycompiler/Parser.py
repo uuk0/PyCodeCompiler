@@ -2205,6 +2205,22 @@ class BinaryOperatorExpression(AbstractASTNodeExpression):
         BinaryOperation.IS_SAME_NOT: "PY_STD_operator_is_not",
     }
 
+    PYTHON_OPERATOR_REFS = {
+        BinaryOperation.PLUS: "__add__",
+        BinaryOperation.MINUS: "__sub__",
+        BinaryOperation.MULTIPLY: "__mul__",
+        BinaryOperation.TRUE_DIV: "__truediv__",
+        BinaryOperation.FLOOR_DIV: "__floordiv__",
+        BinaryOperation.MODULO: "__mod__",
+        BinaryOperation.POW: "__pow__",
+        BinaryOperation.MATRIX_MULTIPLY: "__matmul__",
+        BinaryOperation.BIN_OR: "__or__",
+        BinaryOperation.BIN_AND: "__and__",
+        BinaryOperation.BIN_XOR: "__xor__",
+        BinaryOperation.EQUALS: "__eq__",
+        BinaryOperation.CONTAINS: "__contains__",
+    }
+
     def __init__(
         self, lhs: AbstractASTNode, operator: BinaryOperation, rhs: AbstractASTNode
     ):
