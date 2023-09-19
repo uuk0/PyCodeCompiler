@@ -19,15 +19,11 @@ static inline PyObjectContainer* PY_STD_operator_apply(PyObjectContainer* lhs, P
 
     if (lop == NULL)
     {
-        assert(ropname != NULL);
-
+        PY_THROW_EXCEPTION_IF_WITH_MESSAGE_AND_OBJ(lop == NULL && ropname == NULL, NULL, "expected supporting operator, got %s\n", lhs);
         PyObjectContainer* rop = PY_getObjectAttributeByNameOrStatic(lhs, ropname);
-
-        assert(rop != NULL);
-
+        PY_THROW_EXCEPTION_IF_WITH_MESSAGE_AND_OBJ(rop == NULL, NULL, "expected supporting operator (or rhs inverse), got %s\n", lhs);
         return PY_invokeBoxedMethod(rop, rhs, 1, &lhs, NULL);
     }
-
     return PY_invokeBoxedMethod(lop, lhs, 1, &rhs, NULL);
 }
 
@@ -365,21 +361,21 @@ PyObjectContainer* PY_STD_operator_not_contains(PyObjectContainer* lhs, PyObject
 PyObjectContainer* PY_STD_operator_len(PyObjectContainer* value)
 {
     PyObjectContainer* len = PY_getObjectAttributeByNameOrStatic(value, "__len__");
-    assert(len != NULL);
+    PY_THROW_EXCEPTION_IF_WITH_MESSAGE_AND_OBJ(len == NULL, NULL, "expected <supports __len__>, got %s\n", value);
     return PY_invokeBoxedMethod(len, value, 0, NULL, NULL);
 }
 
 PyObjectContainer* PY_STD_operator_next(PyObjectContainer* value)
 {
     PyObjectContainer* next = PY_getObjectAttributeByNameOrStatic(value, "__next__");
-    assert(next != NULL);
+    PY_THROW_EXCEPTION_IF_WITH_MESSAGE_AND_OBJ(next == NULL, NULL, "expected <supports __next__>, got %s\n", value);
     return PY_invokeBoxedMethod(next, value, 0, NULL, NULL);
 }
 
 PyObjectContainer* PY_STD_operator_next_with_default(PyObjectContainer* value, PyObjectContainer* default_value)
 {
     PyObjectContainer* next = PY_getObjectAttributeByNameOrStatic(value, "__next__");
-    assert(next != NULL);
+    PY_THROW_EXCEPTION_IF_WITH_MESSAGE_AND_OBJ(next == NULL, NULL, "expected <supports __next__>, got %s\n", value);
     return PY_invokeBoxedMethod(next, value, 1, &default_value, NULL);
 }
 
@@ -387,13 +383,10 @@ PyObjectContainer* PY_STD_operator_next_with_default(PyObjectContainer* value, P
 PyObjectContainer* PY_STD_operator_iter(PyObjectContainer* value)
 {
     PyObjectContainer* iterator = PY_getObjectAttributeByNameOrStatic(value, "__iter__");
-    if (iterator == NULL)
-    {
-        printf("object type: %s\n", PY_getObjectClassName(value));
-        PY_THROW_EXCEPTION_WITH_MESSAGE(NULL, "could not get __iter__ of object");
-    }
-    return PY_invokeBoxedMethod(iterator, value, 0, NULL, NULL);
+    PY_THROW_EXCEPTION_IF_WITH_MESSAGE_AND_OBJ(iterator == NULL, NULL, "expected <supports __iter__>, got %s\n", value);
+    PyObjectContainer* result = PY_invokeBoxedMethod(iterator, value, 0, NULL, NULL);
+    PY_THROW_EXCEPTION_IF_WITH_MESSAGE_AND_OBJ(result->type != PY_TYPE_PY_IMPL || result->py_type != PY_TYPE_GENERATOR, NULL, "invalid result for __iter__, expected <generator>, got %s\n", result);
+    return result;
 }
-
 #endif
 

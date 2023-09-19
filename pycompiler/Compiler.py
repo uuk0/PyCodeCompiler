@@ -176,18 +176,21 @@ int main(int argc, char** args)
 
                     elif p.is_dir():
                         for file in p.glob("**/*.py"):
-                            if file.is_file() and str(file).endswith(".py"):
-                                if (
+                            if (
+                                file.is_file()
+                                and str(file).endswith(".py")
+                                and (
                                     str(file.relative_to(p))
                                     .removesuffix(".py")
                                     .replace("/", ".")
                                     .replace("\\", ".")
                                     == module
-                                ):
-                                    pending_compilation_files.append(
-                                        (str(file.absolute()), module)
-                                    )
-                                    break
+                                )
+                            ):
+                                pending_compilation_files.append(
+                                    (str(file.absolute()), module)
+                                )
+                                break
                         else:
                             continue
                         break

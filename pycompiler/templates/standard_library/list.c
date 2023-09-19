@@ -701,6 +701,14 @@ PyObjectContainer* PY_STD_list_sort(PyObjectContainer* self, uint8_t argc, PyObj
     return PY_NONE;
 }
 
+PyObjectContainer* PY_STD_list_sort_fast_arg_0(PyObjectContainer* self)
+{
+    PY_STD_list_container* list = (PY_STD_list_container*)self->raw_value;
+    qsort(list->array, list->curr_size, sizeof(PyObjectContainer*), PY_STD_list_sort_cmp);
+
+    return PY_NONE;
+}
+
 void PY_STD_initListType(void)
 {
     PY_TYPE_LIST = PY_createClassContainer("list");

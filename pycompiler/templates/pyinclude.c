@@ -650,6 +650,7 @@ PyObjectContainer* PY_createInteger(int64_t value)
 
 int64_t PY_unpackInteger(PyObjectContainer* obj)
 {
+    assert(obj != NULL);
     assert(obj->type == PY_TYPE_INT);
 
     return *((int64_t*)obj->raw_value);
@@ -673,6 +674,7 @@ PyObjectContainer* PY_createFloat(double value)
 
 double PY_unpackFloat(PyObjectContainer* obj)
 {
+    assert(obj != NULL);
     assert(obj->type == PY_TYPE_FLOAT);
 
     return *((double*)obj->raw_value);
@@ -689,7 +691,9 @@ PyObjectContainer* PY_createBoolean(bool value)
 
 bool PY_unpackBoolean(PyObjectContainer* obj)
 {
+    assert(obj != NULL);
     assert(obj->type == PY_TYPE_BOOL);
+
     if (obj == PY_TRUE)
     {
         return true;

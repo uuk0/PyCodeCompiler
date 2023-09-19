@@ -137,3 +137,6 @@ class TestCCodeEmitter(TestCase):
 
     def test_if_statement(self):
         self.run_named_folder_test("if_statement")
+
+    def test_range(self):
+        self.run_named_folder_test("range_tests")

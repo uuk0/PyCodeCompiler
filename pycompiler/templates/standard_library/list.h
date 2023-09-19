@@ -63,6 +63,7 @@ PyObjectContainer* PY_STD_list_repr(PyObjectContainer* self, uint8_t argc, PyObj
 PyObjectContainer* PY_STD_list_repr_fast(PyObjectContainer* self);
 
 PyObjectContainer* PY_STD_list_sort(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info);
+PyObjectContainer* PY_STD_list_sort_fast_arg_0(PyObjectContainer* self);
 
 void PY_STD_initListType(void);
 

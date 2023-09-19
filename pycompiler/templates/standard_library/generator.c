@@ -164,7 +164,7 @@ PyObjectContainer* PY_STD_range_arg_1(PyObjectContainer* end)
     PyObjectContainer* generator = PY_STD_GENERATOR_create(3);
     PyGeneratorContainer* container = generator->raw_value;
     container->next_section = PY_STD_range_iterator;
-    container->locals[0] = 0;
+    container->locals[0] = PY_createInteger(0);
     container->locals[1] = end;
     container->locals[2] = PY_createInteger(1);
     return generator;

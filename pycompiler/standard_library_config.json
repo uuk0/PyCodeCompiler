@@ -44,6 +44,12 @@
             "c name": "PY_STD_list_index_fast"
           },
           {
+            "name": "sort",
+            "type": "method",
+            "arguments": 0,
+            "c name": "PY_STD_list_sort_fast_arg_0"
+          },
+          {
             "name": "__setitem__",
             "type": "method",
             "c name": "PY_STD_list_setAtIndex_fast"
