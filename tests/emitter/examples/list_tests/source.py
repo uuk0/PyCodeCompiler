@@ -23,3 +23,10 @@ def test():
 
     obj = obj + [20]
     assert len(obj) == 3
+
+    obj = [x + 2 for x in obj]
+    assert obj == [12, 12, 22]
+
+    t = 2
+    obj = [x + t for x in obj]
+    assert obj == [14, 14, 24]

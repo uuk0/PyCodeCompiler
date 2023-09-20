@@ -873,6 +873,108 @@ class ListConstructor(AbstractASTNodeExpression):
         raise RuntimeError("not implemented")
 
 
+class ListComprehension(AbstractASTNodeExpression):
+    def __init__(
+        self,
+        base_expression: AbstractASTNodeExpression,
+        target_expression: AssignmentExpression,
+        iterable: AbstractASTNodeExpression,
+        if_node: AbstractASTNodeExpression = None,
+    ):
+        super().__init__()
+        self.base_expression = base_expression
+        self.target_expression = target_expression
+        self.iterable = iterable
+        self.if_node = if_node
+
+    def __repr__(self):
+        return f"LIST-COMPREHENSION({self.base_expression} for {self.target_expression} in {self.iterable}{'' if self.if_node is None else f' if {repr(self.if_node)}'})"
+
+    def __eq__(self, other):
+        return (
+            type(other) == ListComprehension
+            and self.base_expression == other.base_expression
+            and self.target_expression == other.target_expression
+            and self.iterable == other.iterable
+            and self.if_node == other.if_node
+        )
+
+    def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder):
+        from pycompiler.TypeResolver import GetCapturedNames
+
+        declare_locals = list(
+            sorted(list(self.base_expression.scope.variable_name_stack))
+        )
+
+        transfer_name = base.get_fresh_name("comprehension_transfer")
+        base.add_global_variable(
+            "PyObjectContainer*",
+            f"{transfer_name}(PyObjectContainer* value , PyObjectContainer** locals)",
+        )
+        transfer_func = base.CFunctionBuilder(
+            transfer_name,
+            ["PyObjectContainer* value", "PyObjectContainer** locals"],
+            "PyObjectContainer*",
+            base.scope,
+        )
+        base.add_function(transfer_func)
+
+        for local in declare_locals:
+            transfer_func.add_code(
+                f"PyObjectContainer* {self.base_expression.scope.get_remapped_name(local)};\n"
+            )
+
+        local_capture = "NULL"
+        capturing = GetCapturedNames()
+        capturing.visit_any(self.base_expression)
+        capturing.visit_any(self.if_node)
+
+        if capturing.names:
+            local_capture = "(PyObjectContainer*[]) { "
+
+            # todo: this is not enough, we need to do some resoling ahead of time
+            #  to make sure our scope known about it!
+            for name in capturing.names[:-1]:
+                local_capture += f"{self.scope.get_remapped_name(name)}, "
+
+            local_capture += f"{self.scope.get_remapped_name(capturing.names[-1])} }}"
+
+        self.target_expression.emit_c_code_for_write(
+            base, transfer_func, GlobalCNameAccessExpression("value")
+        )
+        transfer_func.add_code(";\nreturn ")
+        self.base_expression.emit_c_code(base, transfer_func)
+        transfer_func.add_code(";")
+
+        condition_name = "NULL"
+        if self.if_node:
+            condition_name = base.get_fresh_name("comprehension_condition")
+            base.add_global_variable(
+                "PyObjectContainer*",
+                f"{condition_name}(PyObjectContainer* value , PyObjectContainer** locals)",
+            )
+            condition_func = base.CFunctionBuilder(
+                condition_name,
+                ["PyObjectContainer* value", "PyObjectContainer** locals"],
+                "PyObjectContainer*",
+                base.scope,
+            )
+            base.add_function(condition_func)
+
+            for local in declare_locals:
+                condition_func.add_code(
+                    f"PyObjectContainer* {self.base_expression.scope.get_remapped_name(local)};\n"
+                )
+
+            condition_func.add_code("return ")
+            self.if_node.emit_c_code(base, condition_func)
+            condition_func.add_code(";")
+
+        context.add_code("PY_STD_list_CONSTRUCT_COMPREHENSION(")
+        self.iterable.emit_c_code(base, context)
+        context.add_code(f", {transfer_name}, {condition_name}, {local_capture})")
+
+
 class DictConstructor(AbstractASTNodeExpression):
     def __init__(
         self,
@@ -2650,6 +2752,9 @@ class StandardLibraryModuleReference(ModuleReference):
 
 class SyntaxTreeVisitor:
     def visit_any(self, obj: AbstractASTNode):
+        if obj is None:
+            return
+
         obj_type = type(obj)
 
         if obj_type == PyNewlineNode:
@@ -2718,6 +2823,8 @@ class SyntaxTreeVisitor:
             return self.visit_if_statement(obj)
         elif obj_type == PrefixOperation:
             return self.visit_prefix_operation(obj)
+        elif obj_type == ListComprehension:
+            return self.visit_list_comprehension(obj)
         else:
             print(type(obj))
             raise RuntimeError(obj)
@@ -2863,6 +2970,14 @@ class SyntaxTreeVisitor:
 
     def visit_prefix_operation(self, operation: PrefixOperation):
         return (self.visit_any(operation.value),)
+
+    def visit_list_comprehension(self, comprehension: ListComprehension):
+        return (
+            self.visit_any(comprehension.base_expression),
+            self.visit_any(comprehension.target_expression),
+            self.visit_any(comprehension.iterable),
+            self.visit_any(comprehension.if_node),
+        )
 
 
 def _parse_data_type(entry: dict) -> AbstractDataType | None:
@@ -3692,20 +3807,81 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
 
         self.lexer.try_parse_whitespaces()
 
-        while self.lexer.inspect_chars(1) != "]":
-            self.lexer.try_parse_whitespaces(include_newline=True)
-            expression = self.try_parse_expression()
+        if self.lexer.inspect_chars(1) == "]":
+            self.lexer.get_chars(1)
+            return ListConstructor([])
+
+        expression = self.try_parse_expression()
+        self.lexer.try_parse_whitespaces()
+
+        if expression is None:
+            raise SyntaxError
+
+        elements.append(expression)
+
+        if self.lexer.inspect_chars(1) == ",":
+            self.lexer.get_chars(1)
+
+            while self.lexer.inspect_chars(1) != "]":
+                self.lexer.try_parse_whitespaces(include_newline=True)
+                expression = self.try_parse_expression()
+                self.lexer.try_parse_whitespaces()
+
+                if expression is None:
+                    raise SyntaxError
+
+                elements.append(expression)
+
+                if self.lexer.inspect_chars(1) != ",":
+                    break
+
+                self.lexer.get_chars(1)
+
+        elif self.lexer.inspect_chars(3) == "for":
+            self.lexer.save_state()
+            self.lexer.get_chars(3)
             self.lexer.try_parse_whitespaces()
 
-            if expression is None:
-                raise SyntaxError
+            target = self.try_parse_assignment_target(
+                tuple_assignment_requires_brackets=False
+            )
 
-            elements.append(expression)
+            if target is None:
+                self.lexer.rollback_state()
+                return
 
-            if self.lexer.inspect_chars(1) != ",":
-                break
+            self.lexer.try_parse_whitespaces()
 
-            self.lexer.get_chars(1)
+            if self.lexer.get_chars(2) != "in":
+                self.lexer.rollback_state()
+                return
+
+            self.lexer.try_parse_whitespaces()
+            iterable = self.try_parse_expression()
+
+            if iterable is None:
+                self.lexer.rollback_state()
+                return
+
+            self.lexer.try_parse_whitespaces()
+
+            if_node = None
+            if self.lexer.inspect_chars(2) == "if":
+                self.lexer.get_chars(2)
+
+                if_node = self.try_parse_expression()
+
+                if if_node is None:
+                    self.lexer.rollback_state()
+                    return
+
+                self.lexer.try_parse_whitespaces()
+
+            if self.lexer.get_chars(1) != "]":
+                raise SyntaxError("expected ']'")
+
+            self.lexer.discard_save_state()
+            return ListComprehension(elements[0], target, iterable, if_node)
 
         self.lexer.try_parse_whitespaces(include_newline=True)
 

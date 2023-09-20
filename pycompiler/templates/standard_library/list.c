@@ -131,6 +131,38 @@ PyObjectContainer* PY_STD_list_init_fast_reserve(PyObjectContainer* self, uint16
     return PY_NONE;
 }
 
+PyObjectContainer* PY_STD_list_CONSTRUCT_COMPREHENSION(PyObjectContainer* iterable, PY_FUNC_GENERATOR_ITEM transfer, PY_FUNC_GENERATOR_ITEM condition, PyObjectContainer** locals)
+{
+    PyObjectContainer* len_method = PY_getObjectAttributeByNameOrStatic(iterable, "__len__");
+    PyObjectContainer* list = PY_createClassInstance(PY_TYPE_LIST);
+
+    // Do we know ahead of time how many elements we will get?
+    if (len_method != NULL)
+    {
+        int64_t len = PY_unpackInteger(PY_invokeBoxedMethod(len_method, iterable, 0, NULL, NULL));
+        assert(len >= 0);
+        PY_STD_list_init_fast_reserve(list, len);
+    }
+    else
+    {
+        PY_STD_list_init_fast_arg_0(list);
+    }
+
+    PyObjectContainer* iterator = PY_STD_operator_iter(iterable);
+
+    PyObjectContainer* value;
+    while ((value = PY_STD_operator_next_with_default(iterator, NULL)) != NULL)
+    {
+        PY_CHECK_EXCEPTION(value);
+        if (condition == NULL || PY_getTruthValueOf(PY_CHECK_EXCEPTION(condition(value, locals))))
+        {
+            PY_CHECK_EXCEPTION(PY_STD_list_append_fast(list, transfer(value, locals)));
+        }
+    }
+
+    return list;
+}
+
 PyObjectContainer* PY_STD_list_CONSTRUCT(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
 {
     assert(self->type == PY_TYPE_PY_IMPL);

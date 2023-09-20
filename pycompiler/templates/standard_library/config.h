@@ -9,5 +9,6 @@
 #define PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE  // when disabled, this has the affect of making imports not work!
 // #define PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTES_FOR_ALL
 #define PY_ENABLE_GENERATORS
+#define PY_ENABLE_EXCEPTIONS
 
 #endif //PYCCOMPILER_CONFIG_H

@@ -22,6 +22,12 @@ PyObjectContainer* PY_MODULE_INSTANCE_source;
 
 
 
+// Global Variables
+PyObjectContainer* comprehension_transfer_8(PyObjectContainer* value , PyObjectContainer** locals);
+PyObjectContainer* value;
+PyObjectContainer* comprehension_transfer_10(PyObjectContainer* value , PyObjectContainer** locals);
+
+
 
 // implementations
 
@@ -40,6 +46,7 @@ PyObjectContainer* PY_MODULE_source_init(void) {
 
 PyObjectContainer* test_0(void) {
     PyObjectContainer* obj_1;
+    PyObjectContainer* t_2;
 
     PyObjectContainer* obj_instance_0 = PY_createClassInstance(PY_TYPE_LIST);
     PY_CHECK_EXCEPTION(PY_STD_list_init_fast_arg_0(obj_instance_0));
@@ -91,7 +98,33 @@ PyObjectContainer* test_0(void) {
 
     PyObjectContainer* assert_target_7 = PY_CHECK_EXCEPTION(PY_STD_operator_equals(PY_CHECK_EXCEPTION(PY_STD_list_len_fast (obj_1)), PY_createInteger(3)));
     assert(PY_getTruthValueOf(assert_target_7));
+
+
+    obj_1 = PY_STD_list_CONSTRUCT_COMPREHENSION(obj_1, comprehension_transfer_8, NULL, NULL);
+
+    PyObjectContainer* assert_target_9 = PY_CHECK_EXCEPTION(PY_STD_operator_equals(obj_1, PY_STD_list_CREATE(3, PY_createInteger(12), PY_createInteger(12), PY_createInteger(22))));
+    assert(PY_getTruthValueOf(assert_target_9));
+
+
+    t_2 = PY_createInteger(2);
+
+    obj_1 = PY_STD_list_CONSTRUCT_COMPREHENSION(obj_1, comprehension_transfer_10, NULL, (PyObjectContainer*[]) { t_2 });
+
+    PyObjectContainer* assert_target_11 = PY_CHECK_EXCEPTION(PY_STD_operator_equals(obj_1, PY_STD_list_CREATE(3, PY_createInteger(14), PY_createInteger(14), PY_createInteger(24))));
+    assert(PY_getTruthValueOf(assert_target_11));
     return PY_NONE;
+}
+
+PyObjectContainer* comprehension_transfer_8(PyObjectContainer* value , PyObjectContainer** locals) {
+    PyObjectContainer* x_3;
+    x_3 = value;
+    return PY_STD_operator_add(x_3, PY_createInteger(2));
+}
+
+PyObjectContainer* comprehension_transfer_10(PyObjectContainer* value , PyObjectContainer** locals) {
+    PyObjectContainer* x_4;
+    x_4 = value;
+    return PY_STD_operator_add(x_4, locals[0]);
 }
 
 PyObjectContainer* test_0_safeWrap(PyObjectContainer* self , uint8_t argc , PyObjectContainer** args , CallStructureInfo* info) {

@@ -92,6 +92,7 @@ typedef struct CallStructureInfo CallStructureInfo;
 
 
 typedef PyObjectContainer* PY_FUNC_UNBOXED(PyObjectContainer* self, uint8_t param_count, PyObjectContainer** args, CallStructureInfo* info);
+typedef PyObjectContainer* PY_FUNC_GENERATOR_ITEM(PyObjectContainer* value, PyObjectContainer** locals);
 
 
 struct PyFunctionContext

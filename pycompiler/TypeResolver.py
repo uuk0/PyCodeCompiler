@@ -30,6 +30,7 @@ from pycompiler.Parser import (
     IfStatement,
     PrefixOperation,
     InplaceOperator,
+    ListComprehension,
 )
 
 if typing.TYPE_CHECKING:
@@ -83,6 +84,25 @@ class GetHeaderRelatedInfo(SyntaxTreeVisitor):
             f"PyObjectContainer* PY_CLASS_INIT_PY_CLASS_{node.normal_name}(void)"
         )
         self.global_variables.append(f"PyClassContainer* PY_CLASS_{node.normal_name}")
+
+
+class GetCapturedNames(SyntaxTreeVisitor):
+    def __init__(self):
+        self.names: typing.List[str] = []
+
+    def visit_name_access(self, access: NameAccessExpression):
+        if access.name.text not in access.scope.variable_name_stack:
+            if access.name.text not in self.names:
+                index = len(access.name.text)
+                self.names.append(access.name.text)
+            else:
+                index = self.names.index(access.name.text)
+
+            access.parent[0].try_replace_child(
+                access,
+                GlobalCNameAccessExpression(f"locals[{index - 1}]"),  # todo: why -1?
+                access.parent[1],
+            )
 
 
 class ModuleReferencesResolver(SyntaxTreeVisitor):
@@ -258,6 +278,24 @@ class ResolveParentAttribute(SyntaxTreeVisitor):
 
         operation.value.parent = operation, ParentAttributeSection.RHS
 
+    def visit_list_comprehension(self, comprehension: ListComprehension):
+        super().visit_list_comprehension(comprehension)
+
+        comprehension.base_expression.parent = (
+            comprehension,
+            ParentAttributeSection.BODY,
+        )
+        comprehension.target_expression.parent = (
+            comprehension,
+            ParentAttributeSection.LHS,
+        )
+        comprehension.iterable.parent = comprehension, ParentAttributeSection.RHS
+        if comprehension.if_node:
+            comprehension.if_node.parent = (
+                comprehension,
+                ParentAttributeSection.ELSE_BRANCH,
+            )
+
 
 class BinaryOperatorPriorityRewriter(SyntaxTreeVisitor):
     def visit_binary_operator(self, operator: BinaryOperatorExpression):
@@ -420,6 +458,21 @@ class ScopeGeneratorVisitor(SyntaxTreeVisitor):
 
         self.visit_any_list(for_statement.body)
         self.visit_any_list(for_statement.else_block)
+
+        self.scope.close()
+        self.scope = outer_scope
+
+    def visit_list_comprehension(self, comprehension: ListComprehension):
+        self.visit_any(comprehension.iterable)
+
+        outer_scope = self.scope
+        self.scope = self.scope.copy()
+
+        self.visit_any(
+            AssignmentExpression([comprehension.target_expression], None, None)
+        )
+        self.visit_any(comprehension.base_expression)
+        self.visit_any(comprehension.if_node)
 
         self.scope.close()
         self.scope = outer_scope
