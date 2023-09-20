@@ -3363,7 +3363,9 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
 
             self.lexer.get_chars(1)
 
-    def try_parse_expression(self) -> AbstractASTNode | None:
+    def try_parse_expression(
+        self, generators_require_brackets=True
+    ) -> AbstractASTNode | None:
         self.lexer.try_parse_whitespaces()
         identifier = self.lexer.try_parse_identifier()
 
@@ -3423,7 +3425,9 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
                     self.lexer.get_chars(3)
                     self.lexer.try_parse_whitespaces()
 
-                    target = self.try_parse_assignment_target(tuple_assignment_requires_brackets=False)
+                    target = self.try_parse_assignment_target(
+                        tuple_assignment_requires_brackets=False
+                    )
 
                     if target is None:
                         self.lexer.rollback_state()
@@ -3452,6 +3456,7 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
                             self.lexer.rollback_state()
                             return
 
+                    self.lexer.discard_save_state()
                     return GeneratorExpression(inner, target, iterable, if_node)
 
                 else:
@@ -3627,6 +3632,46 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
                 break
 
         self.lexer.try_parse_whitespaces()
+
+        if not generators_require_brackets and self.lexer.inspect_chars(2) == "for":
+            self.lexer.save_state()
+            self.lexer.get_chars(3)
+            self.lexer.try_parse_whitespaces()
+
+            target = self.try_parse_assignment_target(
+                tuple_assignment_requires_brackets=False
+            )
+
+            if target is None:
+                self.lexer.rollback_state()
+                return base
+
+            self.lexer.try_parse_whitespaces()
+
+            if self.lexer.get_chars(2) != "in":
+                self.lexer.rollback_state()
+                return base
+
+            self.lexer.try_parse_whitespaces()
+            iterable = self.try_parse_expression()
+
+            if iterable is None:
+                self.lexer.rollback_state()
+                return base
+
+            if_node = None
+            if self.lexer.inspect_chars(2) == "if":
+                self.lexer.get_chars(2)
+
+                if_node = self.try_parse_expression()
+
+                if if_node is None:
+                    self.lexer.rollback_state()
+                    return base
+
+            self.lexer.discard_save_state()
+            return GeneratorExpression(base, target, iterable, if_node)
+
         return base
 
     def try_pase_expression_list_like(self):
