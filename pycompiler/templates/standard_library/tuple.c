@@ -254,7 +254,7 @@ PyObjectContainer* PY_STD_tuple_repr_fast(PyObjectContainer* self)
         buffer = realloc(buffer, size);
         if (buffer == NULL)
         {
-            perror("realloc repr fast");
+            perror("realloc tuple repr fast");
             exit(EXIT_FAILURE);
         }
         if (!is_first_entry)

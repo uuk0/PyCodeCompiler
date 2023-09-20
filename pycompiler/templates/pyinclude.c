@@ -203,6 +203,11 @@ PyObjectContainer* PY_getObjectAttributeByName(PyObjectContainer* obj, char* nam
 
 static PyObjectContainer* PY_getObjectAttributeByNameOrStatic_StaticTransformer(PyObjectContainer* obj, PyObjectContainer* attr)
 {
+    if (attr == NULL)
+    {
+        return NULL;
+    }
+
     // todo: handle more edge cases
     if (attr->type == PY_TYPE_FUNC_POINTER)
     {
@@ -228,13 +233,9 @@ static PyObjectContainer* PY_getObjectAttributeByNameOrStatic_primitive(PyObject
         {
             return PY_builtin_int_hash_container;
         }
-        printf("%s\n", name);
-        PY_THROW_EXCEPTION_WITH_MESSAGE(NULL, "cannot get attribute on type <int>");
     }
     if (obj->type == PY_TYPE_FLOAT)
     {
-        printf("%s\n", name);
-        PY_THROW_EXCEPTION_WITH_MESSAGE(NULL, "cannot get attribute on type <float>");
     }
     else if (obj->type == PY_TYPE_STRING)
     {
@@ -250,8 +251,6 @@ static PyObjectContainer* PY_getObjectAttributeByNameOrStatic_primitive(PyObject
         {
             return PY_STD_string_iter_CONTAINER;
         }
-        printf("%s\n", name);
-        PY_THROW_EXCEPTION_WITH_MESSAGE(NULL, "cannot get attribute on type <string>");
     }
     else if (obj->type == PY_EXCEPTION)
     {
@@ -259,7 +258,7 @@ static PyObjectContainer* PY_getObjectAttributeByNameOrStatic_primitive(PyObject
     }
 
     printf("Type: %s, Attr: %s\n", PY_getObjectClassName(obj), name);
-    PY_THROW_EXCEPTION(NULL);
+    return NULL;
 }
 
 PyObjectContainer* PY_getObjectAttributeByNameOrStatic(PyObjectContainer* obj, char* name)

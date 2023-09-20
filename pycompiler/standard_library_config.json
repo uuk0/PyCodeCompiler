@@ -90,6 +90,18 @@
             "type": "method",
             "arguments": 1,
             "c name": "PY_STD_list_extend_fast"
+          },
+          {
+            "name": "__mul__",
+            "type": "method",
+            "arguments": 1,
+            "c name": "PY_STD_list_mul_fast"
+          },
+          {
+            "name": "__imul__",
+            "type": "method",
+            "arguments": 1,
+            "c name": "PY_STD_list_imul_fast"
           }
         ]
       },

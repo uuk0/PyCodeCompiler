@@ -60,7 +60,22 @@ PyObjectContainer* PY_STD_list_init_fast_arg_0(PyObjectContainer* self)
 
 PyObjectContainer* PY_STD_list_init_fast_arg_1(PyObjectContainer* self, PyObjectContainer* source)
 {
-    PY_STD_list_init_fast_arg_0(self);
+    PyObjectContainer* len_method = PY_getObjectAttributeByNameOrStatic(source, "__len__");
+
+    bool flag = false;
+    if (len_method != NULL)
+    {
+        PyObjectContainer* size = PY_invokeBoxedMethod(len_method, source, 0, NULL, NULL);
+        if (size != NULL)
+        {
+            PY_STD_list_init_fast_reserve(self, PY_unpackInteger(size));
+            flag = true;
+        }
+    }
+    if (!flag)
+    {
+        PY_STD_list_init_fast_arg_0(self);
+    }
 
     PyObjectContainer* iter_method = PY_getObjectAttributeByNameOrStatic(source, "__iter__");
     if (iter_method == NULL)
@@ -77,6 +92,40 @@ PyObjectContainer* PY_STD_list_init_fast_arg_1(PyObjectContainer* self, PyObject
     {
         PY_STD_list_append_fast(self, value);
         value = PY_STD_operator_next_with_default(iterator, NULL);
+    }
+
+    return PY_NONE;
+}
+
+PyObjectContainer* PY_STD_list_init_fast_reserve(PyObjectContainer* self, uint16_t size)
+{
+    assert(self != NULL);
+    assert(self->type == PY_TYPE_PY_IMPL);
+    assert(self->py_type == PY_TYPE_LIST);
+    assert(self->raw_value == NULL);
+
+    if (size < PY_STD_LIST_START_SIZE)
+    {
+        size = PY_STD_LIST_START_SIZE;
+    }
+
+    PY_STD_list_container* list = malloc(sizeof(PY_STD_list_container));
+
+    if (list == NULL)
+    {
+        perror("malloc PY_STD_list_init container");
+        exit(EXIT_FAILURE);
+    }
+
+    self->raw_value = list;
+    list->curr_size = 0;
+    list->rem_size = size;
+    list->array = malloc(size * sizeof(PyObjectContainer*));
+
+    if (list->array == NULL)
+    {
+        perror("malloc PY_STD_list_init_fast_reserve array");
+        exit(EXIT_FAILURE);
     }
 
     return PY_NONE;
@@ -128,6 +177,28 @@ PyObjectContainer* PY_STD_list_CREATE(uint8_t argc, ...)
     return list;
 }
 
+void PY_STD_list_ensure_size(PyObjectContainer* self, uint64_t size)
+{
+    assert(self != NULL);
+    assert(self->type == PY_TYPE_PY_IMPL);
+    assert(self->py_type == PY_TYPE_LIST);
+    PY_STD_list_container* list = (PY_STD_list_container*)self->raw_value;
+
+    if (size < list->curr_size + list->rem_size)
+    {
+        return;
+    }
+
+    list->array = realloc(list->array, size * sizeof(PyObjectContainer*));
+    if (list->array == NULL)
+    {
+        perror("realloc PY_STD_list_ensure_size");
+        exit(EXIT_FAILURE);
+    }
+
+    list->rem_size = size - list->curr_size;
+}
+
 // <list>.append(<item>)
 PyObjectContainer* PY_STD_list_append(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
 {
@@ -146,7 +217,7 @@ PyObjectContainer* PY_STD_list_append(PyObjectContainer* self, uint8_t argc, PyO
     }
     else
     {
-        list->array = realloc(list->array, 1.5 * list->curr_size * sizeof(PyObjectContainer*));
+        list->array = realloc(list->array, 2 * list->curr_size * sizeof(PyObjectContainer*));
         if (list->array == NULL)
         {
             perror("malloc PY_STD_list_append");
@@ -177,7 +248,7 @@ PyObjectContainer* PY_STD_list_append_fast(PyObjectContainer* self, PyObjectCont
     }
     else
     {
-        list->array = realloc(list->array, 1.5 * list->curr_size * sizeof(PyObjectContainer*));
+        list->array = realloc(list->array, 2 * list->curr_size * sizeof(PyObjectContainer*));
         if (list->array == NULL)
         {
             perror("malloc PY_STD_list_append");
@@ -630,7 +701,7 @@ PyObjectContainer* PY_STD_list_repr_fast(PyObjectContainer* self)
         buffer = realloc(buffer, size);
         if (buffer == NULL)
         {
-            perror("realloc repr fast");
+            perror("realloc list repr fast");
             exit(EXIT_FAILURE);
         }
         if (!is_first_entry)
@@ -717,25 +788,50 @@ PyObjectContainer* PY_STD_list_extend(PyObjectContainer* self, uint8_t argc, PyO
 
 PyObjectContainer* PY_STD_list_extend_fast(PyObjectContainer* self, PyObjectContainer* other)
 {
-    PyObjectContainer* list = PY_createClassInstance(PY_TYPE_LIST);
-    PY_STD_list_init_fast_arg_1(list, other);
-
     assert(self != NULL);
     assert(self->type == PY_TYPE_PY_IMPL);
     assert(self->py_type == PY_TYPE_LIST);
+
+    PyObjectContainer* list;
+    if (other != NULL && other->type == PY_TYPE_PY_IMPL && other->py_type == PY_TYPE_LIST)
+    {
+        list = other;
+    }
+    else
+    {
+        list = PY_createClassInstance(PY_TYPE_LIST);
+        PY_STD_list_init_fast_arg_1(list, other);
+    }
+
+   return PY_STD_list_extend_fast_with_list(self, list);
+}
+
+PyObjectContainer* PY_STD_list_extend_fast_with_list(PyObjectContainer* self, PyObjectContainer* list)
+{
+    assert(self != NULL);
+    assert(self->type == PY_TYPE_PY_IMPL);
+    assert(self->py_type == PY_TYPE_LIST);
+
     PY_STD_list_container* list_lhs = (PY_STD_list_container*)self->raw_value;
     PY_STD_list_container* list_rhs = (PY_STD_list_container*)list->raw_value;
 
-    list_lhs->array = realloc(list_lhs->array, (list_lhs->curr_size + list_rhs->curr_size) * sizeof(PyObjectContainer*));
-    if (list_lhs->array == NULL)
+    if (list_lhs->rem_size >= list_rhs->curr_size)
     {
-        perror("malloc extend");
-        exit(EXIT_FAILURE);
+        memcpy(list_lhs->array + list_lhs->curr_size, list_rhs->array, list_rhs->curr_size * sizeof(PyObjectContainer *));
+        list_lhs->curr_size += list_rhs->curr_size;
     }
+    else
+    {
+        list_lhs->array = realloc(list_lhs->array, (list_lhs->curr_size + list_rhs->curr_size) * sizeof(PyObjectContainer *));
+        if (list_lhs->array == NULL) {
+            perror("malloc extend");
+            exit(EXIT_FAILURE);
+        }
 
-    memcpy(list_lhs->array + list_lhs->curr_size, list_rhs->array, list_rhs->curr_size * sizeof(PyObjectContainer*));
-    list_lhs->rem_size = 0;
-    list_lhs->curr_size += list_rhs->curr_size;
+        memcpy(list_lhs->array + list_lhs->curr_size, list_rhs->array, list_rhs->curr_size * sizeof(PyObjectContainer *));
+        list_lhs->rem_size = 0;
+        list_lhs->curr_size += list_rhs->curr_size;
+    }
     return self;
 }
 
@@ -760,6 +856,82 @@ PyObjectContainer* PY_STD_list_add_fast(PyObjectContainer* self, PyObjectContain
     return new_list;
 }
 
+PyObjectContainer* PY_STD_list_mul(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
+{
+    assert(argc == 1);
+    return PY_STD_list_mul_fast(self, args[0]);
+}
+
+PyObjectContainer* PY_STD_list_mul_fast(PyObjectContainer* self, PyObjectContainer* times)
+{
+    assert(self != NULL);
+    assert(self->type == PY_TYPE_PY_IMPL);
+    assert(self->py_type == PY_TYPE_LIST);
+    assert(times != NULL);
+    assert(times->type == PY_TYPE_INT);
+    int64_t factor = PY_unpackInteger(times);
+    assert(factor >= 0);
+    PY_STD_list_container* list_lhs = (PY_STD_list_container*)self->raw_value;
+
+    if (factor == 0)
+    {
+        PyObjectContainer* list = PY_createClassInstance(PY_TYPE_LIST);
+        PY_STD_list_init_fast_arg_0(list);
+        return list;
+    }
+
+    // Create the new list to be returned
+    // TODO: incref all references!
+    PyObjectContainer* list = PY_createClassInstance(PY_TYPE_LIST);
+    PY_STD_list_init_fast_reserve(list, list_lhs->curr_size * factor);
+    PY_STD_list_container* new_list = list->raw_value;
+
+    for (int64_t i = 0; i < factor; i++)
+    {
+        memcpy(new_list->array + new_list->curr_size, list_lhs->array, list_lhs->curr_size * sizeof(PyObjectContainer *));
+        new_list->curr_size += list_lhs->curr_size;
+    }
+
+    return list;
+}
+
+PyObjectContainer* PY_STD_list_imul(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
+{
+    assert(argc == 1);
+    return PY_STD_list_imul_fast(self, args[0]);
+}
+
+PyObjectContainer* PY_STD_list_imul_fast(PyObjectContainer* self, PyObjectContainer* times)
+{
+    assert(self != NULL);
+    assert(self->type == PY_TYPE_PY_IMPL);
+    assert(self->py_type == PY_TYPE_LIST);
+    assert(times != NULL);
+    assert(times->type == PY_TYPE_INT);
+    int64_t factor = PY_unpackInteger(times);
+    assert(factor >= 0);
+    PY_STD_list_container* list_lhs = (PY_STD_list_container*)self->raw_value;
+    uint16_t original_size = list_lhs->curr_size;
+
+    if (factor == 0)
+    {
+        PY_STD_list_clear_fast(self);
+        return self;
+    }
+
+    // Ensure that the array is big enough, so we can copy over the data
+    // TODO: incref all references!
+    PY_STD_list_ensure_size(self, list_lhs->curr_size * factor);
+
+    for (int64_t i = 0; i < factor; i++)
+    {
+        memcpy(list_lhs->array + list_lhs->curr_size, list_lhs->array, original_size * sizeof(PyObjectContainer *));
+        list_lhs->curr_size += original_size;
+    }
+
+    return self;
+}
+
 void PY_STD_initListType(void)
 {
     PY_TYPE_LIST = PY_createClassContainer("list");
@@ -779,6 +951,7 @@ void PY_STD_initListType(void)
     PY_setClassAttributeByNameOrCreate(PY_TYPE_LIST, "extend", PY_createBoxForFunction(PY_STD_list_extend));
     PY_setClassAttributeByNameOrCreate(PY_TYPE_LIST, "__add__", PY_createBoxForFunction(PY_STD_list_add));
     PY_setClassAttributeByNameOrCreate(PY_TYPE_LIST, "__iadd__", PY_createBoxForFunction(PY_STD_list_extend));
+    PY_setClassAttributeByNameOrCreate(PY_TYPE_LIST, "__mul__", PY_createBoxForFunction(PY_STD_list_mul));
 #ifdef PY_ENABLE_GENERATORS
     PY_setClassAttributeByNameOrCreate(PY_TYPE_LIST, "__iter__", PY_createBoxForFunction(PY_STD_list_iter));
 #endif
@@ -790,6 +963,5 @@ void PY_STD_initListType(void)
     // count
     // __contains__
     // pop
-    // __mul__
     // __imul__
 }

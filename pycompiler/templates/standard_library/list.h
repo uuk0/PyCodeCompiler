@@ -19,8 +19,11 @@ extern PyClassContainer* PY_TYPE_LIST;
 PyObjectContainer* PY_STD_list_init(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info);
 PyObjectContainer* PY_STD_list_init_fast_arg_0(PyObjectContainer* self);
 PyObjectContainer* PY_STD_list_init_fast_arg_1(PyObjectContainer* self, PyObjectContainer* source);
+PyObjectContainer* PY_STD_list_init_fast_reserve(PyObjectContainer* self, uint16_t size);
 PyObjectContainer* PY_STD_list_CONSTRUCT(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info);
 PyObjectContainer* PY_STD_list_CREATE(uint8_t argc, ...);
+
+void PY_STD_list_ensure_size(PyObjectContainer* self, uint64_t size);
 
 PyObjectContainer* PY_STD_list_append(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info);
 PyObjectContainer* PY_STD_list_append_fast(PyObjectContainer* self, PyObjectContainer* param);
@@ -67,9 +70,16 @@ PyObjectContainer* PY_STD_list_sort_fast_arg_0(PyObjectContainer* self);
 
 PyObjectContainer* PY_STD_list_extend(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info);
 PyObjectContainer* PY_STD_list_extend_fast(PyObjectContainer* self, PyObjectContainer* other);
+PyObjectContainer* PY_STD_list_extend_fast_with_list(PyObjectContainer* self, PyObjectContainer* other);
 
 PyObjectContainer* PY_STD_list_add(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info);
 PyObjectContainer* PY_STD_list_add_fast(PyObjectContainer* self, PyObjectContainer* other);
+
+PyObjectContainer* PY_STD_list_mul(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info);
+PyObjectContainer* PY_STD_list_mul_fast(PyObjectContainer* self, PyObjectContainer* times);
+
+PyObjectContainer* PY_STD_list_imul(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info);
+PyObjectContainer* PY_STD_list_imul_fast(PyObjectContainer* self, PyObjectContainer* times);
 
 void PY_STD_initListType(void);
 
