@@ -767,6 +767,53 @@ class TupleConstructor(AbstractASTNodeExpression):
             context.add_code(";\n")
 
 
+class GeneratorExpression(AbstractASTNodeExpression):
+    def __init__(
+        self,
+        base_expression: AbstractASTNodeExpression,
+        target_expression: AssignmentExpression,
+        iterable: AbstractASTNodeExpression,
+        if_node: AbstractASTNodeExpression = None,
+    ):
+        super().__init__()
+        self.base_expression = base_expression
+        self.target_expression = target_expression
+        self.iterable = iterable
+        self.if_node = if_node
+
+    def __repr__(self):
+        return f"GENERATOR({self.base_expression} for {self.target_expression} in {self.iterable}{'' if self.if_node is None else ' if ' + repr(self.if_node)})"
+
+    def __eq__(self, other):
+        return (
+            type(other) == GeneratorExpression
+            and self.base_expression == other.base_expression
+            and self.target_expression == other.target_expression
+            and self.iterable == other.iterable
+            and self.if_node == other.if_node
+        )
+
+    def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder):
+        """
+        <result> = PY_STD_GENERATOR_CREATE_FILLED(<target>, <count>, <iterator-instance>, <local vars>)
+
+        PyObjectContainer* <target>(GENERATOR gen)
+        {
+            value = next(iterator)
+            while (!<if_node or TRUE>)
+            {
+                value = next(iterator, NULL)
+                if (value == NULL)
+                {
+                    return NULL;
+                }
+            }
+            return value;
+        }
+        """
+        raise NotImplementedError("code emitted for generator expressions")
+
+
 class ListConstructor(AbstractASTNodeExpression):
     def __init__(self, items: typing.List[AbstractASTNode]):
         super().__init__()
@@ -3365,11 +3412,47 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
                 self.lexer.try_parse_whitespaces()
                 if self.lexer.inspect_chars(1) == ",":  # TUPLE
                     base = self.try_parse_expression_tuple_like(inner)
+
                 elif self.lexer.inspect_chars(1) == ")":  # PriorityBracket
                     self.lexer.get_chars(1)
                     self.lexer.discard_save_state()
 
                     base = PriorityBrackets(inner)
+
+                elif self.lexer.inspect_chars(3) == "for":
+                    self.lexer.get_chars(3)
+                    self.lexer.try_parse_whitespaces()
+
+                    target = self.try_parse_assignment_target(tuple_assignment_requires_brackets=False)
+
+                    if target is None:
+                        self.lexer.rollback_state()
+                        return
+
+                    self.lexer.try_parse_whitespaces()
+
+                    if self.lexer.get_chars(2) != "in":
+                        self.lexer.rollback_state()
+                        return
+
+                    self.lexer.try_parse_whitespaces()
+                    iterable = self.try_parse_expression()
+
+                    if iterable is None:
+                        self.lexer.rollback_state()
+                        return
+
+                    if_node = None
+                    if self.lexer.inspect_chars(2) == "if":
+                        self.lexer.get_chars(2)
+
+                        if_node = self.try_parse_expression()
+
+                        if if_node is None:
+                            self.lexer.rollback_state()
+                            return
+
+                    return GeneratorExpression(inner, target, iterable, if_node)
 
                 else:
                     self.lexer.rollback_state()

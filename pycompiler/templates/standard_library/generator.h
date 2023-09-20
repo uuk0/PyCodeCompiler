@@ -25,6 +25,8 @@ PyObjectContainer* PY_STD_GENERATOR_next(PyObjectContainer* self, uint8_t argc, 
 PyObjectContainer* PY_STD_GENERATOR_next_fast_arg_0(PyObjectContainer* self);
 PyObjectContainer* PY_STD_GENERATOR_next_fast_arg_1(PyObjectContainer* self, PyObjectContainer* default_value);
 
+PyObjectContainer* PY_STD_GENERATOR_CREATE_FILLED(PY_GENERATOR_FRAGMENT target, uint16_t local_count, ...);
+
 PyObjectContainer* PY_STD_GENERATOR_iter(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info);
 
 PyObjectContainer* PY_STD_NEXT_FORWARD_arg_0(PyObjectContainer* self);

@@ -3,6 +3,7 @@
 //
 
 #include <assert.h>
+#include <stdarg.h>
 #include "generator.h"
 #include "exceptions.h"
 #include "config.h"
@@ -94,6 +95,29 @@ PyObjectContainer* PY_STD_GENERATOR_next_fast_arg_1(PyObjectContainer* self, PyO
 
     PyObjectContainer* result = container->next_section(container);
     return result != NULL ? result : default_value;
+}
+
+PyObjectContainer* PY_STD_GENERATOR_CREATE_FILLED(PY_GENERATOR_FRAGMENT target, uint16_t local_count, ...)
+{
+#ifndef PY_ENABLE_GENERATORS
+    assert(0 && "generators are not enabled!");
+#endif
+
+    PyObjectContainer* generator = PY_STD_GENERATOR_create(local_count);
+    PyGeneratorContainer* container = generator->raw_value;
+    container->next_section = target;
+    container->section_id = 0;
+
+    va_list ap;
+    va_start(ap, local_count);
+    for(int i = 0; i < local_count; i++){
+        PyObjectContainer* t = va_arg(ap, PyObjectContainer*);
+        INCREF(t);
+        container->locals[i] = t;
+    }
+    va_end(ap);
+
+    return generator;
 }
 
 PyObjectContainer* PY_STD_GENERATOR_iter(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
