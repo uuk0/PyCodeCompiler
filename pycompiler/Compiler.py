@@ -69,6 +69,7 @@ class Project:
     def add_file(self, path: str, is_entry=False):
         if not os.path.isfile(path):
             raise ValueError(path)
+
         self.path.append(path)
         if is_entry:
             self.add_entry_point(path)

@@ -26,13 +26,13 @@ enum PyObjectType
 {
     PY_TYPE_NONE,           // -                                             See: PY_NONE
     PY_TYPE_BOOL,           // 0 = False, 1 = True                           See: PY_TRUE, PY_FALSE
-    PY_TYPE_INT,            // int64_t
-    PY_TYPE_STRING,         // char*
+    PY_TYPE_INT,            // int64_t   todo: improve as python int has no limits
+    PY_TYPE_STRING,         // char*     todo: make real class, so we can allow \0 chars in it!
     PY_TYPE_FLOAT,          // double precision
-    PY_TYPE_PY_IMPL,        // a class implemented in python
-    PY_TYPE_PY_TYPE,        // a type reference to a PyClassContainer
+    PY_TYPE_PY_IMPL,        // a class implemented in python, the py_type field MUST be set
+    PY_TYPE_PY_TYPE,        // a type reference to a PyClassContainer, raw_type is a PyClassContainer*
     PY_TYPE_FUNC_POINTER,   // a c function pointer (boxed)
-    PY_EXCEPTION,           // an exception thrown
+    PY_EXCEPTION,           // an exception thrown; use PY_CHECK_EXCEPTION and related to auto-fwd the exception
 };
 typedef enum PyObjectType PyObjectType;
 

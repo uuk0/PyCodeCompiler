@@ -932,6 +932,28 @@ PyObjectContainer* PY_STD_list_imul_fast(PyObjectContainer* self, PyObjectContai
     return self;
 }
 
+PyObjectContainer* PY_STD_list_copy(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
+{
+    assert(argc == 0);
+    return PY_STD_list_copy_fast(self);
+}
+
+PyObjectContainer* PY_STD_list_copy_fast(PyObjectContainer* self)
+{
+    assert(self != NULL);
+    assert(self->type == PY_TYPE_PY_IMPL);
+    assert(self->py_type == PY_TYPE_LIST);
+    PY_STD_list_container* list_lhs = (PY_STD_list_container*)self->raw_value;
+    PyObjectContainer* result = PY_createClassInstance(PY_TYPE_LIST);
+    PY_STD_list_container* new_list = result->raw_value;
+    PY_CHECK_EXCEPTION(PY_STD_list_init_fast_reserve(result, list_lhs->curr_size + list_lhs->rem_size));
+    memcpy(new_list->array, list_lhs->array, sizeof(PyObjectContainer*) * list_lhs->curr_size);
+    new_list->curr_size = list_lhs->curr_size;
+    new_list->rem_size = list_lhs->rem_size;
+
+    return result;
+}
+
 void PY_STD_initListType(void)
 {
     PY_TYPE_LIST = PY_createClassContainer("list");
@@ -958,7 +980,8 @@ void PY_STD_initListType(void)
     PY_setClassAttributeByNameOrCreate(PY_TYPE_LIST, "__repr__", PY_createBoxForFunction(PY_STD_list_repr));
     PY_setClassAttributeByNameOrCreate(PY_TYPE_LIST, "__bool__", PY_createBoxForFunction(PY_STD_list_toBool));
     PY_setClassAttributeByNameOrCreate(PY_TYPE_LIST, "sort", PY_createBoxForFunction(PY_STD_list_sort));
-    // copy
+    PY_setClassAttributeByNameOrCreate(PY_TYPE_LIST, "__copy__", PY_createBoxForFunction(PY_STD_list_copy));
+    PY_setClassAttributeByNameOrCreate(PY_TYPE_LIST, "copy", PY_createBoxForFunction(PY_STD_list_copy));
     // __sorted__
     // count
     // __contains__

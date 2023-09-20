@@ -102,6 +102,18 @@
             "type": "method",
             "arguments": 1,
             "c name": "PY_STD_list_imul_fast"
+          },
+          {
+            "name": "__copy__",
+            "type": "method",
+            "arguments": 0,
+            "c name": "PY_STD_list_copy_fast"
+          },
+          {
+            "name": "copy",
+            "type": "method",
+            "arguments": 0,
+            "c name": "PY_STD_list_copy_fast"
           }
         ]
       },
