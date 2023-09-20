@@ -102,6 +102,16 @@
             "name": "__iter__",
             "type": "method",
             "c name": "PY_STD_tuple_iter_fast"
+          },
+          {
+            "name": "__repr__",
+            "type": "method",
+            "c name": "PY_STD_tuple_repr_fast"
+          },
+          {
+            "name": "__len__",
+            "type": "method",
+            "c name": "PY_STD_tuple_len_fast"
           }
         ]
       },

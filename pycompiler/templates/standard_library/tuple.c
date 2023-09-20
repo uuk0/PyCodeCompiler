@@ -7,6 +7,7 @@
 #include <errno.h>
 #include <memory.h>
 #include <stdarg.h>
+#include <string.h>
 #include "tuple.h"
 #include "config.h"
 #include "operators.h"
@@ -211,6 +212,80 @@ PyObjectContainer* PY_STD_tuple_iter_fast(PyObjectContainer* self)
     return generator;
 }
 
+PyObjectContainer* PY_STD_tuple_repr(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
+{
+    assert(argc == 0);
+    return PY_STD_tuple_repr_fast(self);
+}
+
+PyObjectContainer* PY_STD_tuple_repr_fast(PyObjectContainer* self)
+{
+    assert(self != NULL);
+    assert(self->type == PY_TYPE_PY_IMPL);
+    assert(self->py_type == PY_TYPE_TUPLE);
+
+    PY_STD_tuple_container* tuple = (PY_STD_tuple_container*)self->raw_value;
+
+    if (tuple->curr_size == 0)
+    {
+        return PY_createString("()");
+    }
+
+    char* buffer = strdup("()");
+    buffer[1] = '\0';
+    if (buffer == NULL)
+    {
+        perror("strdup tuple repr");
+        exit(EXIT_FAILURE);
+    }
+    size_t size = 3;
+    bool is_first_entry = true;
+
+    for (int i = 0; i < tuple->curr_size; i++) {
+        char *frag_repr = PY_getObjectRepr(tuple->array[i]);
+        if (!is_first_entry)
+        {
+            size = size + 2 + strlen(frag_repr);
+        }
+        else
+        {
+            size = size + strlen(frag_repr);
+        }
+        buffer = realloc(buffer, size);
+        if (buffer == NULL)
+        {
+            perror("realloc repr fast");
+            exit(EXIT_FAILURE);
+        }
+        if (!is_first_entry)
+        {
+            strcat(buffer, ", ");
+        }
+        strcat(buffer, frag_repr);
+        is_first_entry = false;
+    }
+    buffer[strlen(buffer)] = ')';
+
+    return PY_createString(buffer);
+}
+
+
+PyObjectContainer* PY_STD_tuple_len(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
+{
+    assert(argc == 0);
+    return PY_STD_tuple_len_fast(self);
+}
+
+PyObjectContainer* PY_STD_tuple_len_fast(PyObjectContainer* self)
+{
+    assert(self != NULL);
+    assert(self->type == PY_TYPE_PY_IMPL);
+    assert(self->py_type == PY_TYPE_TUPLE);
+
+    PY_STD_tuple_container* tuple = (PY_STD_tuple_container*)self->raw_value;
+    return PY_createInteger(tuple->curr_size);
+}
+
 
 void PY_STD_initTupleType(void)
 {
@@ -225,6 +300,8 @@ void PY_STD_initTupleType(void)
     PY_setClassAttributeByNameOrCreate(PY_TYPE_TUPLE, "__iter__", PY_createBoxForFunction(PY_STD_tuple_iter));
 #endif
     PY_setClassAttributeByNameOrCreate(PY_TYPE_TUPLE, "__bool__", PY_createBoxForFunction(PY_STD_tuple_toBool));
+    PY_setClassAttributeByNameOrCreate(PY_TYPE_TUPLE, "__repr__", PY_createBoxForFunction(PY_STD_tuple_repr));
+    PY_setClassAttributeByNameOrCreate(PY_TYPE_TUPLE, "__len__", PY_createBoxForFunction(PY_STD_tuple_len));
     // __iadd__
     // __add__
     // __hash__
@@ -232,6 +309,5 @@ void PY_STD_initTupleType(void)
     // __contains__
     // __mul__
     // __imul__
-    // __iter__
 }
 

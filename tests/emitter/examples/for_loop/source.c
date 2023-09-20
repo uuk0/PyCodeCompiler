@@ -84,7 +84,7 @@ PyObjectContainer* test2_1(void) {
     PyObjectContainer* x_7;
     PyObjectContainer* y_8;
 
-    l_5 = PY_STD_list_CREATE(3, PY_STD_tuple_CREATE(2, PY_createInteger(1), PY_createInteger(3)), PY_STD_tuple_CREATE(2, PY_createInteger(7), PY_createInteger(9)), PY_STD_tuple_CREATE(2, PY_createInteger(2), PY_createInteger(3)));
+    l_5 = PY_STD_list_CREATE(3, PY_STD_tuple_CREATE(2, PY_createInteger(1), PY_createInteger(3)), PY_STD_tuple_CREATE(2, PY_createInteger(7), PY_createInteger(9)), PY_STD_tuple_CREATE(2, PY_createInteger(3), PY_createInteger(2)));
 
     s_6 = PY_createInteger(0);
 
@@ -98,7 +98,7 @@ PyObjectContainer* test2_1(void) {
         x_7 = PY_GetSubscriptionValue(temporary_tuple_4, PY_createInteger(0));
         y_8 = PY_GetSubscriptionValue(temporary_tuple_4, PY_createInteger(1));
         ;
-        s_6 = PY_STD_operator_floordiv(x_7, y_8);
+        s_6 = PY_CHECK_EXCEPTION(PY_STD_operator_inplace_add (s_6 , PY_STD_operator_floordiv(x_7, y_8)));
 
 
         value_3 = PY_STD_NEXT_FORWARD_arg_1(iterator_2, NULL);

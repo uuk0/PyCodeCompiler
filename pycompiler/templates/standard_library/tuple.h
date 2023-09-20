@@ -21,4 +21,10 @@ PyObjectContainer* PY_STD_tuple_toBool(PyObjectContainer* self, uint8_t argc, Py
 PyObjectContainer* PY_STD_tuple_iter(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info);
 PyObjectContainer* PY_STD_tuple_iter_fast(PyObjectContainer* self);
 
+PyObjectContainer* PY_STD_tuple_repr(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info);
+PyObjectContainer* PY_STD_tuple_repr_fast(PyObjectContainer* self);
+
+PyObjectContainer* PY_STD_tuple_len(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info);
+PyObjectContainer* PY_STD_tuple_len_fast(PyObjectContainer* self);
+
 #endif //TEMPLATES_TUPLE_H

@@ -6,7 +6,13 @@
 
 int main()
 {
+    PyObjectContainer* result;
+
     PY_MODULE_source_init();
-    PyObjectContainer* result = PY_CHECK_EXCEPTION_AND_EXIT(test_0());
+
+    result = PY_CHECK_EXCEPTION_AND_EXIT(test_0());
     assert(PY_unpackInteger(result) == 6);
+
+    result = PY_CHECK_EXCEPTION_AND_EXIT(test2_1());
+    assert(PY_unpackInteger(result) == 1);
 }

@@ -29,6 +29,7 @@ from pycompiler.Parser import (
     ForLoopStatement,
     IfStatement,
     PrefixOperation,
+    InplaceOperator,
 )
 
 if typing.TYPE_CHECKING:
@@ -208,6 +209,12 @@ class ResolveParentAttribute(SyntaxTreeVisitor):
 
     def visit_binary_operator(self, operator: BinaryOperatorExpression):
         super().visit_binary_operator(operator)
+
+        operator.lhs.parent = operator, ParentAttributeSection.LHS
+        operator.rhs.parent = operator, ParentAttributeSection.RHS
+
+    def visit_inplace_operator(self, operator: InplaceOperator):
+        super().visit_inplace_operator(operator)
 
         operator.lhs.parent = operator, ParentAttributeSection.LHS
         operator.rhs.parent = operator, ParentAttributeSection.RHS
@@ -623,6 +630,46 @@ class ResolveKnownDataTypes(SyntaxTreeVisitor):
                             ),
                         ],
                         None,
+                    ),
+                    operator.parent[1],
+                )
+
+    def visit_inplace_operator(self, operator: BinaryOperatorExpression):
+        super().visit_inplace_operator(operator)
+
+        if (
+            operator.lhs.static_value_type
+            and isinstance(operator.lhs.static_value_type, ClassExactDataType)
+            and operator.operator in BinaryOperatorExpression.PYTHON_OPERATOR_REFS
+        ):
+            method_name = BinaryOperatorExpression.PYTHON_OPERATOR_REFS[
+                operator.operator
+            ]
+
+            if method_name in operator.lhs.static_value_type.ref.function_table:
+                operator.parent[0].try_replace_child(
+                    operator,
+                    AssignmentExpression(
+                        [operator.lhs],
+                        None,
+                        CallExpression(
+                            operator.lhs.static_value_type.ref.function_table[
+                                method_name
+                            ],
+                            [],
+                            None,
+                            [
+                                CallExpression.CallExpressionArgument(
+                                    operator.lhs,
+                                    CallExpression.ParameterType.NORMAL,
+                                ),
+                                CallExpression.CallExpressionArgument(
+                                    operator.rhs,
+                                    CallExpression.ParameterType.NORMAL,
+                                ),
+                            ],
+                            None,
+                        ),
                     ),
                     operator.parent[1],
                 )

@@ -2335,6 +2335,113 @@ class PrefixOperation(AbstractASTNodeExpression):
             raise RuntimeError(self.operator)
 
 
+class InplaceOperator(AbstractASTNode):
+    class InplaceOperation(enum.Enum):
+        PLUS = enum.auto()
+        MINUS = enum.auto()
+        MULTIPLY = enum.auto()
+        FLOOR_DIV = enum.auto()
+        TRUE_DIV = enum.auto()
+        MODULO = enum.auto()
+        POW = enum.auto()
+        MATRIX_MULTIPLY = enum.auto()
+        BIN_OR = enum.auto()
+        BIN_AND = enum.auto()
+        BIN_XOR = enum.auto()
+        SHL = enum.auto()  # todo
+        SHR = enum.auto()  # todo
+
+    OPERATOR_CALL_FUNCTIONS = {
+        InplaceOperation.PLUS: "PY_STD_operator_inplace_add",
+        InplaceOperation.MINUS: "PY_STD_operator_inplace_sub",
+        InplaceOperation.MULTIPLY: "PY_STD_operator_inplace_mul",
+        InplaceOperation.TRUE_DIV: "PY_STD_operator_inplace_truediv",
+        InplaceOperation.FLOOR_DIV: "PY_STD_operator_inplace_floordiv",
+        InplaceOperation.MODULO: "PY_STD_operator_inplace_modulo",
+        InplaceOperation.POW: "PY_STD_operator_inplace_pow",
+        InplaceOperation.MATRIX_MULTIPLY: "PY_STD_operator_inplace_matrix_multiply",
+        InplaceOperation.BIN_OR: "PY_STD_operator_inplace_bin_or",
+        InplaceOperation.BIN_AND: "PY_STD_operator_inplace_bin_and",
+        InplaceOperation.BIN_XOR: "PY_STD_operator_inplace_bin_xor",
+    }
+
+    PYTHON_OPERATOR_REFS = {
+        InplaceOperation.PLUS: "__iadd__",
+        InplaceOperation.MINUS: "__isub__",
+        InplaceOperation.MULTIPLY: "__imul__",
+        InplaceOperation.TRUE_DIV: "__itruediv__",
+        InplaceOperation.FLOOR_DIV: "__ifloordiv__",
+        InplaceOperation.MODULO: "__imod__",
+        InplaceOperation.POW: "__ipow__",
+        InplaceOperation.MATRIX_MULTIPLY: "__imatmul__",
+        InplaceOperation.BIN_OR: "__ior__",
+        InplaceOperation.BIN_AND: "__iand__",
+        InplaceOperation.BIN_XOR: "__ixor__",
+    }
+
+    def __init__(
+        self, lhs: AbstractASTNode, operator: InplaceOperation, rhs: AbstractASTNode
+    ):
+        super().__init__()
+        self.lhs = lhs
+        self.operator = operator
+        self.rhs = rhs
+
+    def __eq__(self, other):
+        return (
+            type(other) == BinaryOperatorExpression
+            and self.lhs == other.lhs
+            and self.operator == other.operator
+            and self.rhs == other.rhs
+        )
+
+    def __repr__(self):
+        return f"INPLACE-OPERATION({self.lhs}|{self.operator.name}|{self.rhs})"
+
+    def try_replace_child(
+        self,
+        original: AbstractASTNode | None,
+        replacement: AbstractASTNode,
+        position: ParentAttributeSection,
+    ) -> bool:
+        replacement.parent = self, position
+        if position == ParentAttributeSection.LHS:
+            self.lhs = replacement
+        elif position == ParentAttributeSection.RHS:
+            self.rhs = replacement
+        else:
+            return False
+        return True
+
+    def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder):
+        if self.operator in self.OPERATOR_CALL_FUNCTIONS:
+            func_name = self.OPERATOR_CALL_FUNCTIONS[self.operator]
+
+            self.lhs.emit_c_code_for_write(
+                base,
+                context,
+                CallExpression(
+                    GlobalCNameAccessExpression(func_name),
+                    [],
+                    None,
+                    [
+                        CallExpression.CallExpressionArgument(
+                            self.lhs,
+                            CallExpression.ParameterType.NORMAL,
+                        ),
+                        CallExpression.CallExpressionArgument(
+                            self.rhs,
+                            CallExpression.ParameterType.NORMAL,
+                        ),
+                    ],
+                    None,
+                ),
+            )
+            context.add_code(";")
+        else:
+            raise RuntimeError(self.operator)
+
+
 class WalrusOperatorExpression(AbstractASTNodeExpression):
     def __init__(self, target: AbstractASTNode, value: AbstractASTNode):
         super().__init__()
@@ -2532,6 +2639,8 @@ class SyntaxTreeVisitor:
             return self.visit_pass_statement(obj)
         elif obj_type == BinaryOperatorExpression:
             return self.visit_binary_operator(obj)
+        elif obj_type == InplaceOperator:
+            return self.visit_inplace_operator(obj)
         elif obj_type == AssertStatement:
             return self.visit_assert_statement(obj)
         elif obj_type == ModuleReference:
@@ -2648,6 +2757,9 @@ class SyntaxTreeVisitor:
         )
 
     def visit_binary_operator(self, operator: BinaryOperatorExpression):
+        return self.visit_any(operator.lhs), self.visit_any(operator.rhs)
+
+    def visit_inplace_operator(self, operator: InplaceOperator):
         return self.visit_any(operator.lhs), self.visit_any(operator.rhs)
 
     def visit_walrus_operator(self, operator: WalrusOperatorExpression):
@@ -3771,7 +3883,7 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
         if comment_start := self.lexer.try_parse_hashtag():
             return PyCommentNode(comment_start, self.lexer.parse_until_newline())
 
-    def try_parse_assignment(self) -> AssignmentExpression | None:
+    def try_parse_assignment(self) -> AssignmentExpression | InplaceOperator | None:
         self.lexer.save_state()
         assigned_variables = [
             self.try_parse_assignment_target(tuple_assignment_requires_brackets=False)
@@ -3786,6 +3898,54 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
         eq_sign = self.lexer.try_parse_equal_sign()
 
         if eq_sign is None:
+            prefix = self.lexer.inspect_chars(2)
+
+            operator: InplaceOperator.InplaceOperation | None = None
+            count = 2
+
+            if prefix == "+=":
+                operator = InplaceOperator.InplaceOperation.PLUS
+            elif prefix == "-=":
+                operator = InplaceOperator.InplaceOperation.MINUS
+            elif prefix == "*=":
+                operator = InplaceOperator.InplaceOperation.MULTIPLY
+            elif self.lexer.inspect_chars(3) == "**=":
+                operator = InplaceOperator.InplaceOperation.POW
+                count = 3
+            elif prefix == "/=":
+                operator = InplaceOperator.InplaceOperation.TRUE_DIV
+            elif self.lexer.inspect_chars(3) == "//=":
+                operator = InplaceOperator.InplaceOperation.FLOOR_DIV
+                count = 3
+            elif prefix == "%=":
+                operator = InplaceOperator.InplaceOperation.MODULO
+            elif prefix == "@=":
+                operator = InplaceOperator.InplaceOperation.MATRIX_MULTIPLY
+            elif prefix == "|=":
+                operator = InplaceOperator.InplaceOperation.BIN_OR
+            elif prefix == "&=":
+                operator = InplaceOperator.InplaceOperation.BIN_AND
+            elif prefix == "^=":
+                operator = InplaceOperator.InplaceOperation.BIN_XOR
+            elif self.lexer.inspect_chars(3) == "<<=":
+                operator = InplaceOperator.InplaceOperation.SHL
+                count = 3
+            elif self.lexer.inspect_chars(3) == ">>=":
+                operator = InplaceOperator.InplaceOperation.SHR
+                count = 3
+
+            if operator:
+                self.lexer.get_chars(count)
+                self.lexer.try_parse_whitespaces()
+                rhs = self.try_parse_expression()
+
+                if rhs:
+                    return InplaceOperator(
+                        assigned_variables[0],
+                        operator,
+                        rhs,
+                    )
+
             self.lexer.rollback_state()
             return
 

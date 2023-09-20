@@ -35,6 +35,18 @@ PyObjectContainer* PY_STD_operator_next(PyObjectContainer* value);
 PyObjectContainer* PY_STD_operator_iter(PyObjectContainer* value);  // implementation only provided when generators are enabled!
 PyObjectContainer* PY_STD_operator_next_with_default(PyObjectContainer* value, PyObjectContainer* default_value);
 
+PyObjectContainer* PY_STD_operator_inplace_add(PyObjectContainer* lhs, PyObjectContainer* rhs);
+PyObjectContainer* PY_STD_operator_inplace_sub(PyObjectContainer* lhs, PyObjectContainer* rhs);
+PyObjectContainer* PY_STD_operator_inplace_mul(PyObjectContainer* lhs, PyObjectContainer* rhs);
+PyObjectContainer* PY_STD_operator_inplace_truediv(PyObjectContainer* lhs, PyObjectContainer* rhs);
+PyObjectContainer* PY_STD_operator_inplace_floordiv(PyObjectContainer* lhs, PyObjectContainer* rhs);
+PyObjectContainer* PY_STD_operator_inplace_modulo(PyObjectContainer* lhs, PyObjectContainer* rhs);
+PyObjectContainer* PY_STD_operator_inplace_pow(PyObjectContainer* lhs, PyObjectContainer* rhs);
+PyObjectContainer* PY_STD_operator_inplace_matrix_multiply(PyObjectContainer* lhs, PyObjectContainer* rhs);
+PyObjectContainer* PY_STD_operator_inplace_bin_or(PyObjectContainer* lhs, PyObjectContainer* rhs);
+PyObjectContainer* PY_STD_operator_inplace_bin_and(PyObjectContainer* lhs, PyObjectContainer* rhs);
+PyObjectContainer* PY_STD_operator_inplace_bin_xor(PyObjectContainer* lhs, PyObjectContainer* rhs);
+
 // defined as a macro so we evaluate 'value' only when needed
 #define PY_STD_operator_iter_for_yield_from(value, possible_existing) (possible_existing != NULL ? possible_existing : PY_STD_operator_iter(value))
 

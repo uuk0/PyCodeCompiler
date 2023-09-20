@@ -401,6 +401,7 @@ PyObjectContainer* PY_STD_operator_len(PyObjectContainer* value)
     return PY_invokeBoxedMethod(len, value, 0, NULL, NULL);
 }
 
+#ifdef PY_ENABLE_GENERATORS
 PyObjectContainer* PY_STD_operator_next(PyObjectContainer* value)
 {
     PyObjectContainer* next = PY_getObjectAttributeByNameOrStatic(value, "__next__");
@@ -415,7 +416,6 @@ PyObjectContainer* PY_STD_operator_next_with_default(PyObjectContainer* value, P
     return PY_invokeBoxedMethod(next, value, 1, &default_value, NULL);
 }
 
-#ifdef PY_ENABLE_GENERATORS
 PyObjectContainer* PY_STD_operator_iter(PyObjectContainer* value)
 {
     PyObjectContainer* iterator = PY_getObjectAttributeByNameOrStatic(value, "__iter__");
@@ -425,4 +425,85 @@ PyObjectContainer* PY_STD_operator_iter(PyObjectContainer* value)
     return result;
 }
 #endif
+
+
+PyObjectContainer* PY_STD_operator_apply_inplace(PyObjectContainer* lhs, char* name, PyObjectContainer* rhs)
+{
+    PY_THROW_EXCEPTION_IF_WITH_MESSAGE_AND_OBJ(lhs->type != PY_TYPE_PY_IMPL, NULL, "expected <py impl object>, got %s\n", lhs);
+    PyObjectContainer* method = PY_getObjectAttributeByNameOrStatic(lhs, name);
+    PY_THROW_EXCEPTION_IF_WITH_MESSAGE_AND_OBJ(method == NULL, NULL, "expected <supports operation>, got %s\n", lhs);
+    PyObjectContainer* result = PY_invokeBoxedMethod(method, lhs, 1, &rhs, NULL);
+    return result ? result : lhs;
+}
+
+PyObjectContainer* PY_STD_operator_inplace_add(PyObjectContainer* lhs, PyObjectContainer* rhs)
+{
+    if (lhs->type == PY_TYPE_INT)
+    {
+        if (rhs->type == PY_TYPE_INT)
+        {
+            return PY_createInteger(PY_unpackInteger(lhs) + PY_unpackInteger(rhs));
+        }
+        else if (rhs->type == PY_TYPE_FLOAT)
+        {
+            return PY_createFloat(((double)PY_unpackInteger(lhs)) + PY_unpackFloat(rhs));
+        }
+
+        printf("rhs: %s\n", PY_getObjectRepr(rhs));
+        PY_THROW_EXCEPTION(NULL);
+    }
+
+    return PY_STD_operator_apply_inplace(lhs, "__iadd__", rhs);
+}
+
+PyObjectContainer* PY_STD_operator_inplace_sub(PyObjectContainer* lhs, PyObjectContainer* rhs)
+{
+    return PY_STD_operator_apply_inplace(lhs, "__isub__", rhs);
+}
+
+PyObjectContainer* PY_STD_operator_inplace_mul(PyObjectContainer* lhs, PyObjectContainer* rhs)
+{
+    return PY_STD_operator_apply_inplace(lhs, "__imul__", rhs);
+}
+
+PyObjectContainer* PY_STD_operator_inplace_truediv(PyObjectContainer* lhs, PyObjectContainer* rhs)
+{
+    return PY_STD_operator_apply_inplace(lhs, "__itruediv__", rhs);
+}
+
+PyObjectContainer* PY_STD_operator_inplace_floordiv(PyObjectContainer* lhs, PyObjectContainer* rhs)
+{
+    return PY_STD_operator_apply_inplace(lhs, "__ifloordiv__", rhs);
+}
+
+PyObjectContainer* PY_STD_operator_inplace_modulo(PyObjectContainer* lhs, PyObjectContainer* rhs)
+{
+    return PY_STD_operator_apply_inplace(lhs, "__imod__", rhs);
+}
+
+PyObjectContainer* PY_STD_operator_inplace_pow(PyObjectContainer* lhs, PyObjectContainer* rhs)
+{
+    return PY_STD_operator_apply_inplace(lhs, "__ipow__", rhs);
+}
+
+PyObjectContainer* PY_STD_operator_inplace_matrix_multiply(PyObjectContainer* lhs, PyObjectContainer* rhs)
+{
+    return PY_STD_operator_apply_inplace(lhs, "__imatmul__", rhs);
+}
+
+PyObjectContainer* PY_STD_operator_inplace_bin_or(PyObjectContainer* lhs, PyObjectContainer* rhs)
+{
+    return PY_STD_operator_apply_inplace(lhs, "__ior__", rhs);
+}
+
+PyObjectContainer* PY_STD_operator_inplace_bin_and(PyObjectContainer* lhs, PyObjectContainer* rhs)
+{
+    return PY_STD_operator_apply_inplace(lhs, "__iand__", rhs);
+}
+
+PyObjectContainer* PY_STD_operator_inplace_bin_xor(PyObjectContainer* lhs, PyObjectContainer* rhs)
+{
+    return PY_STD_operator_apply_inplace(lhs, "__ixor__", rhs);
+}
+
 
