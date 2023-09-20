@@ -458,16 +458,61 @@ PyObjectContainer* PY_STD_operator_inplace_add(PyObjectContainer* lhs, PyObjectC
 
 PyObjectContainer* PY_STD_operator_inplace_sub(PyObjectContainer* lhs, PyObjectContainer* rhs)
 {
+    if (lhs->type == PY_TYPE_INT)
+    {
+        if (rhs->type == PY_TYPE_INT)
+        {
+            return PY_createInteger(PY_unpackInteger(lhs) - PY_unpackInteger(rhs));
+        }
+        else if (rhs->type == PY_TYPE_FLOAT)
+        {
+            return PY_createFloat(((double)PY_unpackInteger(lhs)) - PY_unpackFloat(rhs));
+        }
+
+        printf("rhs: %s\n", PY_getObjectRepr(rhs));
+        PY_THROW_EXCEPTION(NULL);
+    }
+
     return PY_STD_operator_apply_inplace(lhs, "__isub__", rhs);
 }
 
 PyObjectContainer* PY_STD_operator_inplace_mul(PyObjectContainer* lhs, PyObjectContainer* rhs)
 {
+    if (lhs->type == PY_TYPE_INT)
+    {
+        if (rhs->type == PY_TYPE_INT)
+        {
+            return PY_createInteger(PY_unpackInteger(lhs) * PY_unpackInteger(rhs));
+        }
+        else if (rhs->type == PY_TYPE_FLOAT)
+        {
+            return PY_createFloat(((double)PY_unpackInteger(lhs)) * PY_unpackFloat(rhs));
+        }
+
+        printf("rhs: %s\n", PY_getObjectRepr(rhs));
+        PY_THROW_EXCEPTION(NULL);
+    }
+
     return PY_STD_operator_apply_inplace(lhs, "__imul__", rhs);
 }
 
 PyObjectContainer* PY_STD_operator_inplace_truediv(PyObjectContainer* lhs, PyObjectContainer* rhs)
 {
+    if (lhs->type == PY_TYPE_INT)
+    {
+        if (rhs->type == PY_TYPE_INT)
+        {
+            return PY_createFloat((double)PY_unpackInteger(lhs) / (double)PY_unpackInteger(rhs));
+        }
+        else if (rhs->type == PY_TYPE_FLOAT)
+        {
+            return PY_createFloat(((double)PY_unpackInteger(lhs)) / PY_unpackFloat(rhs));
+        }
+
+        printf("rhs: %s\n", PY_getObjectRepr(rhs));
+        PY_THROW_EXCEPTION(NULL);
+    }
+
     return PY_STD_operator_apply_inplace(lhs, "__itruediv__", rhs);
 }
 
@@ -493,16 +538,49 @@ PyObjectContainer* PY_STD_operator_inplace_matrix_multiply(PyObjectContainer* lh
 
 PyObjectContainer* PY_STD_operator_inplace_bin_or(PyObjectContainer* lhs, PyObjectContainer* rhs)
 {
+    if (lhs->type == PY_TYPE_INT)
+    {
+        if (rhs->type == PY_TYPE_INT)
+        {
+            return PY_createInteger(PY_unpackInteger(lhs) | PY_unpackInteger(rhs));
+        }
+
+        printf("rhs: %s\n", PY_getObjectRepr(rhs));
+        PY_THROW_EXCEPTION(NULL);
+    }
+
     return PY_STD_operator_apply_inplace(lhs, "__ior__", rhs);
 }
 
 PyObjectContainer* PY_STD_operator_inplace_bin_and(PyObjectContainer* lhs, PyObjectContainer* rhs)
 {
+    if (lhs->type == PY_TYPE_INT)
+    {
+        if (rhs->type == PY_TYPE_INT)
+        {
+            return PY_createInteger(PY_unpackInteger(lhs) & PY_unpackInteger(rhs));
+        }
+
+        printf("rhs: %s\n", PY_getObjectRepr(rhs));
+        PY_THROW_EXCEPTION(NULL);
+    }
+
     return PY_STD_operator_apply_inplace(lhs, "__iand__", rhs);
 }
 
 PyObjectContainer* PY_STD_operator_inplace_bin_xor(PyObjectContainer* lhs, PyObjectContainer* rhs)
 {
+    if (lhs->type == PY_TYPE_INT)
+    {
+        if (rhs->type == PY_TYPE_INT)
+        {
+            return PY_createInteger(PY_unpackInteger(lhs) ^ PY_unpackInteger(rhs));
+        }
+
+        printf("rhs: %s\n", PY_getObjectRepr(rhs));
+        PY_THROW_EXCEPTION(NULL);
+    }
+
     return PY_STD_operator_apply_inplace(lhs, "__ixor__", rhs);
 }
 

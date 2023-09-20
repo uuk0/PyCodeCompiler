@@ -28,6 +28,9 @@ PyObjectContainer* PY_MODULE_unittest_main(PyObjectContainer* self, uint8_t argc
 PyObjectContainer* PY_MODULE_unittest_main_fast(void)
 {
     PY_STD_list_container* container = PY_MODULE_unittest_TestCase_REGISTERED->raw_value;
+    bool has_failed = false;
+    int count = 0;
+    int failed = 0;
 
     for (int i = 0; i < container->curr_size; i++)
     {
@@ -41,18 +44,38 @@ PyObjectContainer* PY_MODULE_unittest_main_fast(void)
         while (cls_instance->static_attribute_names[j] != NULL) {
             if (PY_STD_string_startswith_impl(cls_instance->static_attribute_names[j], "test"))
             {
+                fprintf(stderr, "running test %s.%s...", cls_instance->class_name, cls_instance->static_attribute_names[j]);
+
                 current_test_name = cls_instance->static_attribute_names[j];
                 PyObjectContainer* method = PY_getObjectAttributeByNameOrStatic(obj, cls_instance->static_attribute_names[j]);
                 if (method != NULL)
                 {
-                    PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(method, obj, 0, NULL, NULL));
+                    count++;
+                    PyObjectContainer* result = PY_invokeBoxedMethod(method, obj, 0, NULL, NULL);
+
+                    if (result->type == PY_EXCEPTION)
+                    {
+                        fprintf(stderr, "\rtest %s.%s failed: %s\n", cls_instance->class_name, cls_instance->static_attribute_names[j],
+                               PY_getObjectRepr(result));
+                        has_failed = true;
+                        j++;
+                        failed++;
+                        continue;
+                    }
+                    fprintf(stderr, "\rtest %s.%s completed successfully!\n", cls_instance->class_name, cls_instance->static_attribute_names[j]);
                 }
                 j++;
             }
         }
     }
 
-    return PY_NONE;
+    if (has_failed)
+    {
+        fprintf(stderr, "%i out of %i tests failed!\n", failed, count);
+        exit(EXIT_FAILURE);
+    }
+    fprintf(stderr, "all %i test(s) where successful\n", count);
+    exit(EXIT_SUCCESS);
 }
 
 PyObjectContainer* PY_MODULE_unittest_TestCase_initsubclass(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)

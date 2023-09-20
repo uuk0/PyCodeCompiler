@@ -782,7 +782,7 @@ class GeneratorExpression(AbstractASTNodeExpression):
         self.if_node = if_node
 
     def __repr__(self):
-        return f"GENERATOR({self.base_expression} for {self.target_expression} in {self.iterable}{'' if self.if_node is None else ' if ' + repr(self.if_node)})"
+        return f"GENERATOR({self.base_expression} for {self.target_expression} in {self.iterable}{'' if self.if_node is None else f' if {repr(self.if_node)}'})"
 
     def __eq__(self, other):
         return (
@@ -811,6 +811,18 @@ class GeneratorExpression(AbstractASTNodeExpression):
             return value;
         }
         """
+        target_name = base.get_fresh_name("generator_target")
+
+        inner_func = base.CFunctionBuilder(
+            target_name,
+            ["PyGeneratorContainer* generator"],
+            "PyObjectContainer*",
+            base.scope,
+        )
+
+        # todo: decide which locals to capture & rewrite them here!
+        locals = []
+
         raise NotImplementedError("code emitted for generator expressions")
 
 
