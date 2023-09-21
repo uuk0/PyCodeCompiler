@@ -733,6 +733,13 @@ class ResolveKnownDataTypes(SyntaxTreeVisitor):
         if comprehension.iterable.static_value_type is not None and isinstance(
             comprehension.iterable.static_value_type, ClassExactDataType
         ):
+            if (
+                comprehension.iterable.static_value_type.ref
+                == Scope.STANDARD_LIBRARY_VALUES["list"]["*"]
+            ):
+                comprehension.variant = "PY_STD_list_CONSTRUCT_COMPREHENSION_on_list"
+                return
+
             table = comprehension.iterable.static_value_type.ref.function_table
             method = table.get(
                 ("__len__", 0), table.get(("__len__", "*"), table.get("__len__", None))

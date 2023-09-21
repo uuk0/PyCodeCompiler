@@ -895,6 +895,7 @@ class ListComprehension(AbstractASTNodeExpression):
         self.if_node = if_node
         self.len_hint: AbstractASTNode | None = None
         self.iter_hint: AbstractASTNode | None = None
+        self.variant: str | None = None
 
     def __repr__(self):
         return f"LIST-COMPREHENSION({self.base_expression} for {self.target_expression} in {self.iterable}{'' if self.if_node is None else f' if {repr(self.if_node)}'})"
@@ -981,26 +982,30 @@ class ListComprehension(AbstractASTNodeExpression):
             self.if_node.emit_c_code(base, condition_func)
             condition_func.add_code(";")
 
-        context.add_code("PY_STD_list_CONSTRUCT_COMPREHENSION")
+        if self.variant:
+            context.add_code(self.variant + "(")
+        else:
+            context.add_code("PY_STD_list_CONSTRUCT_COMPREHENSION")
 
-        if self.len_hint is not None:
-            context.add_code("_with_len_hint")
+            if self.len_hint is not None:
+                context.add_code("_with_len_hint")
 
-        if self.iter_hint is not None:
-            context.add_code("_with_iter_hint")
+            if self.iter_hint is not None:
+                context.add_code("_with_iter_hint")
 
-        context.add_code("(")
+            context.add_code("(")
 
         self.iterable.emit_c_code(base, context)
         context.add_code(f", {transfer_name}, {condition_name}, {local_capture}")
 
-        if self.len_hint is not None:
-            context.add_code(", ")
-            self.len_hint.emit_c_code(base, context)
+        if self.variant is None:
+            if self.len_hint is not None:
+                context.add_code(", ")
+                self.len_hint.emit_c_code(base, context)
 
-        if self.iter_hint is not None:
-            context.add_code(", ")
-            self.iter_hint.emit_c_code(base, context)
+            if self.iter_hint is not None:
+                context.add_code(", ")
+                self.iter_hint.emit_c_code(base, context)
 
         context.add_code(")")
 

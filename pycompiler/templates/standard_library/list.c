@@ -163,6 +163,29 @@ PyObjectContainer* PY_STD_list_CONSTRUCT_COMPREHENSION(PyObjectContainer* iterab
     return list;
 }
 
+PyObjectContainer* PY_STD_list_CONSTRUCT_COMPREHENSION_on_list(PyObjectContainer* iterable, PY_FUNC_GENERATOR_ITEM transfer, PY_FUNC_GENERATOR_ITEM condition, PyObjectContainer** locals)
+{
+    assert(iterable != NULL);
+    assert(iterable->type == PY_TYPE_PY_IMPL);
+    assert(iterable->py_type == PY_TYPE_LIST);
+
+    PY_STD_list_container* source_list = iterable->raw_value;
+    
+    PyObjectContainer* list = PY_createClassInstance(PY_TYPE_LIST);
+    PY_STD_list_init_fast_reserve(list, source_list->curr_size);
+
+    for (uint16_t i = 0; i < source_list->curr_size; i++)
+    {
+        PyObjectContainer* value = source_list->array[i];
+        if (condition == NULL || PY_getTruthValueOf(PY_CHECK_EXCEPTION(condition(value, locals))))
+        {
+            PY_CHECK_EXCEPTION(PY_STD_list_append_fast(list, transfer(value, locals)));
+        }
+    }
+
+    return list;
+}
+
 PyObjectContainer* PY_STD_list_CONSTRUCT_COMPREHENSION_with_len_hint(PyObjectContainer* iterable, PY_FUNC_GENERATOR_ITEM transfer, PY_FUNC_GENERATOR_ITEM condition, PyObjectContainer** locals, PY_FUNC_UNBOXED len_hint)
 {
     PyObjectContainer* list = PY_createClassInstance(PY_TYPE_LIST);
