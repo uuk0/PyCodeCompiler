@@ -232,6 +232,18 @@
             "type": "method",
             "c name": "PY_STD_dict_items_fast",
             "parameters": 0
+          },
+          {
+            "name": "__or__",
+            "type": "method",
+            "c name": "PY_STD_dict_concat_fast",
+            "parameters": 1
+          },
+          {
+            "name": "__ior__",
+            "type": "method",
+            "c name": "PY_STD_dict_concat_fast_inplace",
+            "parameters": 1
           }
         ]
       },

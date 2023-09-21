@@ -170,7 +170,7 @@ PyObjectContainer* PY_STD_list_CONSTRUCT_COMPREHENSION_on_list(PyObjectContainer
     assert(iterable->py_type == PY_TYPE_LIST);
 
     PY_STD_list_container* source_list = iterable->raw_value;
-    
+
     PyObjectContainer* list = PY_createClassInstance(PY_TYPE_LIST);
     PY_STD_list_init_fast_reserve(list, source_list->curr_size);
 
@@ -205,6 +205,7 @@ PyObjectContainer* PY_STD_list_CONSTRUCT_COMPREHENSION_with_len_hint(PyObjectCon
             PY_CHECK_EXCEPTION(PY_STD_list_append_fast(list, transfer(value, locals)));
         }
     }
+    DECREF(iterator);
 
     return list;
 }
@@ -237,6 +238,7 @@ PyObjectContainer* PY_STD_list_CONSTRUCT_COMPREHENSION_with_iter_hint(PyObjectCo
             PY_CHECK_EXCEPTION(PY_STD_list_append_fast(list, transfer(value, locals)));
         }
     }
+    DECREF(iterator);
 
     return list;
 }

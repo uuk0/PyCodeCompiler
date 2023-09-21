@@ -295,6 +295,86 @@ PyObjectContainer* PY_STD_dict_copy_fast(PyObjectContainer* self)
     return copy;
 }
 
+PyObjectContainer* PY_STD_dict_concat(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
+{
+    assert(argc == 1);
+    return PY_STD_dict_concat_fast(self, args[0]);
+}
+
+PyObjectContainer* PY_STD_dict_concat_fast(PyObjectContainer* self, PyObjectContainer* other)
+{
+    assert(self->type == PY_TYPE_PY_IMPL);
+    assert(self->py_type == PY_TYPE_DICT);
+    assert(self->raw_value != NULL);
+
+    assert(other->type == PY_TYPE_PY_IMPL);
+    assert(other->py_type == PY_TYPE_DICT);
+    assert(other->raw_value != NULL);
+
+    PyObjectContainer* new_map = PY_STD_dict_CREATE(0);
+
+    HashMapContainer* this_container = self->raw_value;
+    for (uint64_t i = 0; i < this_container->alloc_size; i++)
+    {
+        PyObjectContainer* key = this_container->key_memory[i];
+
+        if (key == NULL || key == (PyObjectContainer*)&HASHMAP_MARKER_UNSET)
+        {
+            continue;
+        }
+
+        PY_STD_dict_setitem_fast(new_map, key, this_container->value_memory[i]);
+    }
+
+    HashMapContainer* other_container = other->raw_value;
+    for (uint64_t i = 0; i < other_container->alloc_size; i++)
+    {
+        PyObjectContainer* key = other_container->key_memory[i];
+
+        if (key == NULL || key == (PyObjectContainer*)&HASHMAP_MARKER_UNSET)
+        {
+            continue;
+        }
+
+        PY_STD_dict_setitem_fast(new_map, key, other_container->value_memory[i]);
+    }
+
+    return self;
+}
+
+PyObjectContainer* PY_STD_dict_concat_inplace(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
+{
+    assert(argc == 1);
+    return PY_STD_dict_concat_inplace_fast(self, args[0]);
+}
+
+PyObjectContainer* PY_STD_dict_concat_inplace_fast(PyObjectContainer* self, PyObjectContainer* other)
+{
+    assert(self->type == PY_TYPE_PY_IMPL);
+    assert(self->py_type == PY_TYPE_DICT);
+    assert(self->raw_value != NULL);
+
+    assert(other->type == PY_TYPE_PY_IMPL);
+    assert(other->py_type == PY_TYPE_DICT);
+    assert(other->raw_value != NULL);
+
+    HashMapContainer* other_container = other->raw_value;
+
+    for (uint64_t i = 0; i < other_container->alloc_size; i++)
+    {
+        PyObjectContainer* key = other_container->key_memory[i];
+
+        if (key == NULL || key == (PyObjectContainer*)&HASHMAP_MARKER_UNSET)
+        {
+            continue;
+        }
+
+        PY_STD_dict_setitem_fast(self, key, other_container->value_memory[i]);
+    }
+
+    return self;
+}
+
 #ifdef PY_ENABLE_GENERATORS
 PyObjectContainer* PY_STD_dict_keys_iterator(PyGeneratorContainer* generator)
 {
@@ -393,6 +473,7 @@ PyObjectContainer* PY_STD_dict_items_iterator(PyGeneratorContainer* generator)
             return NULL;
         }
 
+        // is is a valid key?
         PyObjectContainer* key = dict->key_memory[generator->section_id++];
         if (key == NULL || key == (PyObjectContainer*)&HASHMAP_MARKER_UNSET)
         {
@@ -440,6 +521,8 @@ void PY_STD_initDictType(void)
     PY_setClassAttributeByNameOrCreate(PY_TYPE_DICT, "setdefault", PY_createBoxForFunction(PY_STD_dict_setdefault));
     PY_setClassAttributeByNameOrCreate(PY_TYPE_DICT, "clear", PY_createBoxForFunction(PY_STD_dict_clear));
     PY_setClassAttributeByNameOrCreate(PY_TYPE_DICT, "copy", PY_createBoxForFunction(PY_STD_dict_copy));
+    PY_setClassAttributeByNameOrCreate(PY_TYPE_DICT, "__or__", PY_createBoxForFunction(PY_STD_dict_concat));
+    PY_setClassAttributeByNameOrCreate(PY_TYPE_DICT, "__or__", PY_createBoxForFunction(PY_STD_dict_concat_inplace));
 
 #ifdef PY_ENABLE_GENERATORS
     PY_setClassAttributeByNameOrCreate(PY_TYPE_DICT, "__iter__", PY_createBoxForFunction(PY_STD_dict_keys));
