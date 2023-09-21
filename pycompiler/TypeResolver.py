@@ -741,6 +741,13 @@ class ResolveKnownDataTypes(SyntaxTreeVisitor):
             if method is not None:
                 comprehension.len_hint = method
 
+            method = table.get(
+                ("__iter__", 0),
+                table.get(("__iter__", "*"), table.get("__iter__", None)),
+            )
+            if method is not None:
+                comprehension.iter_hint = method
+
 
 class ResolveLocalVariableAccessTypes(SyntaxTreeVisitor):
     DIRTY = False

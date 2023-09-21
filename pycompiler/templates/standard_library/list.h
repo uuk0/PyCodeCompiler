@@ -25,6 +25,8 @@ PyObjectContainer* PY_STD_list_CREATE(uint8_t argc, ...);
 
 PyObjectContainer* PY_STD_list_CONSTRUCT_COMPREHENSION(PyObjectContainer* iterable, PY_FUNC_GENERATOR_ITEM transfer, PY_FUNC_GENERATOR_ITEM condition, PyObjectContainer** locals);
 PyObjectContainer* PY_STD_list_CONSTRUCT_COMPREHENSION_with_len_hint(PyObjectContainer* iterable, PY_FUNC_GENERATOR_ITEM transfer, PY_FUNC_GENERATOR_ITEM condition, PyObjectContainer** locals, PY_FUNC_UNBOXED len_hint);
+PyObjectContainer* PY_STD_list_CONSTRUCT_COMPREHENSION_with_iter_hint(PyObjectContainer* iterable, PY_FUNC_GENERATOR_ITEM transfer, PY_FUNC_GENERATOR_ITEM condition, PyObjectContainer** locals, PyObjectContainer* iter_hint(PyObjectContainer*));
+PyObjectContainer* PY_STD_list_CONSTRUCT_COMPREHENSION_with_len_hint_with_iter_hint(PyObjectContainer* iterable, PY_FUNC_GENERATOR_ITEM transfer, PY_FUNC_GENERATOR_ITEM condition, PyObjectContainer** locals, PY_FUNC_UNBOXED len_hint, PyObjectContainer* iter_hint(PyObjectContainer*));
 
 void PY_STD_list_ensure_size(PyObjectContainer* self, uint64_t size);
 
