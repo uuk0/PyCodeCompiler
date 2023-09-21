@@ -727,6 +727,20 @@ class ResolveKnownDataTypes(SyntaxTreeVisitor):
                     operator.parent[1],
                 )
 
+    def visit_list_comprehension(self, comprehension: ListComprehension):
+        super().visit_list_comprehension(comprehension)
+
+        if comprehension.iterable.static_value_type is not None and isinstance(
+            comprehension.iterable.static_value_type, ClassExactDataType
+        ):
+            table = comprehension.iterable.static_value_type.ref.function_table
+            method = table.get(
+                ("__len__", 0), table.get(("__len__", "*"), table.get("__len__", None))
+            )
+
+            if method is not None:
+                comprehension.len_hint = method
+
 
 class ResolveLocalVariableAccessTypes(SyntaxTreeVisitor):
     DIRTY = False

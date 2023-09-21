@@ -100,7 +100,7 @@ PyObjectContainer* test_0(void) {
     assert(PY_getTruthValueOf(assert_target_7));
 
 
-    obj_1 = PY_STD_list_CONSTRUCT_COMPREHENSION(obj_1, comprehension_transfer_8, NULL, NULL);
+    obj_1 = PY_STD_list_CONSTRUCT_COMPREHENSION_with_len_hint(obj_1, comprehension_transfer_8, NULL, NULL, PY_STD_list_len_fast);
 
     PyObjectContainer* assert_target_9 = PY_CHECK_EXCEPTION(PY_STD_operator_equals(obj_1, PY_STD_list_CREATE(3, PY_createInteger(12), PY_createInteger(12), PY_createInteger(22))));
     assert(PY_getTruthValueOf(assert_target_9));
@@ -108,7 +108,7 @@ PyObjectContainer* test_0(void) {
 
     t_2 = PY_createInteger(2);
 
-    obj_1 = PY_STD_list_CONSTRUCT_COMPREHENSION(obj_1, comprehension_transfer_10, NULL, (PyObjectContainer*[]) { t_2 });
+    obj_1 = PY_STD_list_CONSTRUCT_COMPREHENSION_with_len_hint(obj_1, comprehension_transfer_10, NULL, (PyObjectContainer*[]) { t_2 }, PY_STD_list_len_fast);
 
     PyObjectContainer* assert_target_11 = PY_CHECK_EXCEPTION(PY_STD_operator_equals(obj_1, PY_STD_list_CREATE(3, PY_createInteger(14), PY_createInteger(14), PY_createInteger(24))));
     assert(PY_getTruthValueOf(assert_target_11));

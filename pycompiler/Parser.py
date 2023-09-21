@@ -332,7 +332,13 @@ class CCodeEmitter:
         if target not in self.includes:
             self.includes.append(target)
 
-    def add_global_variable(self, var_type: str, var_name: str):
+    def add_global_variable(self, var_type: str, var_name: str, ignore_error=False):
+        if not ignore_error and not var_name.isidentifier():
+            raise ValueError(var_name)
+
+        if "len" in var_name:
+            raise RuntimeError
+
         if (var_type, var_name) in self.global_variables:
             return
 
@@ -592,9 +598,10 @@ class GeneratorNameAccessExpression(NameAccessExpression):
 
 
 class GlobalCNameAccessExpression(AbstractASTNodeExpression):
-    def __init__(self, name: str):
+    def __init__(self, name: str, declare=True):
         super().__init__()
         self.name = self.normal_name = name
+        self.declare = declare
         self.data_type: AbstractDataType | None = None
 
     def copy(self):
@@ -609,7 +616,7 @@ class GlobalCNameAccessExpression(AbstractASTNodeExpression):
         return f"GLOBAL-C-VARIABLE({self.name})"
 
     def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder):
-        if self.name.isidentifier():
+        if self.name.isidentifier() and self.declare:
             base.add_global_variable("PyObjectContainer*", self.name)
 
         context.add_code(self.name)
@@ -886,6 +893,7 @@ class ListComprehension(AbstractASTNodeExpression):
         self.target_expression = target_expression
         self.iterable = iterable
         self.if_node = if_node
+        self.len_hint: AbstractASTNode | None = None
 
     def __repr__(self):
         return f"LIST-COMPREHENSION({self.base_expression} for {self.target_expression} in {self.iterable}{'' if self.if_node is None else f' if {repr(self.if_node)}'})"
@@ -910,6 +918,7 @@ class ListComprehension(AbstractASTNodeExpression):
         base.add_global_variable(
             "PyObjectContainer*",
             f"{transfer_name}(PyObjectContainer* value , PyObjectContainer** locals)",
+            ignore_error=True,
         )
         transfer_func = base.CFunctionBuilder(
             transfer_name,
@@ -952,6 +961,7 @@ class ListComprehension(AbstractASTNodeExpression):
             base.add_global_variable(
                 "PyObjectContainer*",
                 f"{condition_name}(PyObjectContainer* value , PyObjectContainer** locals)",
+                ignore_error=True,
             )
             condition_func = base.CFunctionBuilder(
                 condition_name,
@@ -970,9 +980,19 @@ class ListComprehension(AbstractASTNodeExpression):
             self.if_node.emit_c_code(base, condition_func)
             condition_func.add_code(";")
 
-        context.add_code("PY_STD_list_CONSTRUCT_COMPREHENSION(")
+        context.add_code(
+            "PY_STD_list_CONSTRUCT_COMPREHENSION("
+            if self.len_hint is None
+            else "PY_STD_list_CONSTRUCT_COMPREHENSION_with_len_hint("
+        )
         self.iterable.emit_c_code(base, context)
-        context.add_code(f", {transfer_name}, {condition_name}, {local_capture})")
+        context.add_code(f", {transfer_name}, {condition_name}, {local_capture}")
+
+        if self.len_hint is not None:
+            context.add_code(", ")
+            self.len_hint.emit_c_code(base, context)
+
+        context.add_code(")")
 
 
 class DictConstructor(AbstractASTNodeExpression):
@@ -2999,7 +3019,7 @@ def _parse_std_lib_decl_entry(entry: dict) -> AbstractASTNode:
         return cls
 
     elif entry["type"] in ("method", "constant"):
-        obj = GlobalCNameAccessExpression(entry["c name"])
+        obj = GlobalCNameAccessExpression(entry["c name"], declare=False)
 
         if entry["type"] == "method" and "return type" in entry:
             obj.data_type = _parse_data_type(entry["return type"])
