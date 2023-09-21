@@ -66,7 +66,7 @@ PyObjectContainer* PY_STD_list_init_fast_arg_1(PyObjectContainer* self, PyObject
         PY_STD_list_container* source_container = source->raw_value;
         PY_STD_list_init_fast_reserve(self, source_container->curr_size + source_container->rem_size);
         PY_STD_list_container* self_container = self->raw_value;
-        memcpy(self_container->array, source_container->array, source_container->curr_size);
+        memcpy(self_container->array, source_container->array, source_container->curr_size * sizeof(PyObjectContainer*));
         self_container->curr_size = source_container->curr_size;
         self_container->rem_size = source_container->rem_size;
         return PY_NONE;

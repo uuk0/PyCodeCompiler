@@ -30,3 +30,9 @@ def test():
     t = 2
     obj = [x + t for x in obj]
     assert obj == [14, 14, 24]
+
+    t = 2
+    m = 0
+    obj = [x + (m := t) for x in obj]
+    assert obj == [16, 16, 26]
+    assert m == 0  # current limit of the implementation

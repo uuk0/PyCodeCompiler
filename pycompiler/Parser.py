@@ -2860,6 +2860,8 @@ class SyntaxTreeVisitor:
             return self.visit_prefix_operation(obj)
         elif obj_type == ListComprehension:
             return self.visit_list_comprehension(obj)
+        elif obj_type == WalrusOperatorExpression:
+            return self.visit_walrus_operator(obj)
         else:
             print(type(obj))
             raise RuntimeError(obj)
