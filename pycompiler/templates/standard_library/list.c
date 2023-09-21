@@ -60,6 +60,18 @@ PyObjectContainer* PY_STD_list_init_fast_arg_0(PyObjectContainer* self)
 
 PyObjectContainer* PY_STD_list_init_fast_arg_1(PyObjectContainer* self, PyObjectContainer* source)
 {
+    // Case where we can be a lot faster
+    if (source->type == PY_TYPE_PY_IMPL && source->py_type == PY_TYPE_LIST)
+    {
+        PY_STD_list_container* source_container = source->raw_value;
+        PY_STD_list_init_fast_reserve(self, source_container->curr_size + source_container->rem_size);
+        PY_STD_list_container* self_container = self->raw_value;
+        memcpy(self_container->array, source_container->array, source_container->curr_size);
+        self_container->curr_size = source_container->curr_size;
+        self_container->rem_size = source_container->rem_size;
+        return PY_NONE;
+    }
+
     PyObjectContainer* len_method = PY_getObjectAttributeByNameOrStatic(source, "__len__");
 
     bool flag = false;

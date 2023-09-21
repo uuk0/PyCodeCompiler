@@ -339,7 +339,7 @@ PyObjectContainer* PY_STD_dict_concat_fast(PyObjectContainer* self, PyObjectCont
         PY_STD_dict_setitem_fast(new_map, key, other_container->value_memory[i]);
     }
 
-    return self;
+    return new_map;
 }
 
 PyObjectContainer* PY_STD_dict_concat_inplace(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
