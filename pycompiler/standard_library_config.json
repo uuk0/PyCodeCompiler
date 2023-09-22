@@ -272,6 +272,18 @@
         "arguments": 1
       },
       {
+        "name": "repr",
+        "type": "operator wrapper",
+        "c name": "PY_getObjectRepr_wrapper",
+        "arguments": 1
+      },
+      {
+        "name": "str",
+        "type": "operator wrapper",
+        "c name": "PY_getObjectStr_wrapper",
+        "arguments": 1
+      },
+      {
         "name": "True",
         "type": "constant",
         "c name": "PY_TRUE"

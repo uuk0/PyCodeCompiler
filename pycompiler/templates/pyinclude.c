@@ -536,6 +536,22 @@ char* PY_getObjectRepr(PyObjectContainer* obj)
     assert(0);
 }
 
+PyObjectContainer* PY_getObjectRepr_wrapper(PyObjectContainer* obj)
+{
+    return PY_createString(PY_getObjectRepr(obj));
+}
+
+PyObjectContainer* PY_getObjectStr_wrapper(PyObjectContainer* obj)
+{
+    PyObjectContainer* method = PY_getObjectAttributeByNameOrStatic(obj, "__str__");
+
+    if (method == NULL)
+    {
+        return PY_createString(PY_getObjectRepr(obj));
+    }
+    return PY_invokeBoxedMethod(method, obj, 0, NULL, NULL);
+}
+
 PyObjectContainer* PY_invokeBoxedMethod(PyObjectContainer* method, PyObjectContainer* self, uint8_t param_count, PyObjectContainer** args, CallStructureInfo* info)
 {
     assert(method != NULL);

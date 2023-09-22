@@ -131,6 +131,8 @@ void PY_setClassAttributeByName(PyClassContainer* cls, char* name, PyObjectConta
 void PY_setClassAttributeByNameOrCreate(PyClassContainer* cls, char* name, PyObjectContainer* value);
 char* PY_getObjectClassName(PyObjectContainer* obj);
 char* PY_getObjectRepr(PyObjectContainer* obj);
+PyObjectContainer* PY_getObjectRepr_wrapper(PyObjectContainer* obj);
+PyObjectContainer* PY_getObjectStr_wrapper(PyObjectContainer* obj);
 
 PyObjectContainer* PY_invokeBoxedMethod(PyObjectContainer* method, PyObjectContainer* self, uint8_t param_count, PyObjectContainer** args, CallStructureInfo* info);
 
