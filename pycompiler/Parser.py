@@ -1786,8 +1786,19 @@ container->next_section = {func_name}_ENTRY;
         unbox_2 = " , ".join(arg_unbox_2)
 
         if len(self.parameters) > 0:
-            safe_func.add_code(
-                f"""
+            has_keyword = False
+            for param in self.parameters:
+                if param.mode != FunctionDefinitionNode.ParameterType.NORMAL:
+                    has_keyword = True
+                    break
+
+            if has_keyword:
+                self.emit_safe_wrap_with_keywords(
+                    base, func_name, safe_func, unbox, unbox_2
+                )
+            else:
+                safe_func.add_code(
+                    f"""
 PyObjectContainer** new_args = PY_ARGS_unpackPositionalArgs(args, info, &argc);
 PyObjectContainer* result;
 
@@ -1804,7 +1815,7 @@ if (info) free(new_args);
 return result;
 
 """
-            )
+                )
         else:
             safe_func.add_code(
                 f"""
@@ -1813,6 +1824,45 @@ assert(argc == {len(self.parameters)});
 return {func_name}({unbox});
 """
             )
+
+    def emit_safe_wrap_with_keywords(self, base, func_name, safe_func, unbox, unbox_2):
+        positional_count = 0
+        keyword_keys = []
+        keyword_default_names = []
+
+        for arg in self.parameters:
+            if arg.mode == FunctionDefinitionNode.ParameterType.NORMAL:
+                positional_count += 1
+            elif arg.mode == FunctionDefinitionNode.ParameterType.KEYWORD:
+                keyword_keys.append(arg.name)
+                default_var = base.get_fresh_name(f"default_keyword_{arg.name}")
+                keyword_default_names.append(default_var)
+                base.add_global_variable("PyObjectContainer*", default_var)
+                base.init_function.add_code(f"{default_var} = ")
+                arg.default.emit_c_code(base, base.init_function)
+            else:
+                raise RuntimeError(f"{arg} not implemented!")
+
+        # todo: handle star and star-star args!
+        safe_func.add_code(
+            f"""
+PyObjectContainer** new_args = PY_ARGS_unpackArgTableForUnsafeCall({positional_count}, args, info, &argc, {len(keyword_keys)}, (char*[]){{{repr(keyword_keys)[1:-1]}}}, (PyObjectContainer*[]) {{{', '.join(keyword_default_names)}}});
+PyObjectContainer* result;
+
+if (self == NULL) {{
+    assert(argc == {len(self.parameters)});
+    result = {func_name}({unbox});
+}}
+else {{
+    assert(argc == {len(self.parameters) - 1});
+    result = {func_name}(self{f' , {unbox_2}' if unbox_2 else ''});
+}}
+
+if (info) free(new_args);
+return result;
+
+"""
+        )
 
 
 class ClassDefinitionNode(AbstractASTNode):

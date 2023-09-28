@@ -29,7 +29,7 @@ PyObjectContainer** PY_ARGS_unpackPositionalArgs(PyObjectContainer** args, CallS
 
     int j = 0;
     uint8_t table_index = 0;
-    uint64_t bitmask = 0b10;
+    uint64_t bitmask = CALL_STRUCTURE_KEYWORD;
     uint64_t flag = info->bitmask[0];
 
     for (int i = 0; i < info->count; i++) {
@@ -73,7 +73,7 @@ PyObjectContainer* PY_ARGS_getKeywordParameter(PyObjectContainer** args, CallStr
 
     int j = 0;
     uint8_t table_index = 0;
-    uint64_t bitmask = 0b10;
+    uint64_t bitmask = CALL_STRUCTURE_KEYWORD;
     uint64_t flag = info->bitmask[0];
 
     for (int i = 0; i < info->count; i++) {
@@ -109,4 +109,24 @@ PyObjectContainer* PY_ARGS_getKeywordParameter(PyObjectContainer** args, CallStr
 PyObjectContainer* PY_ARGS_getKeywordParameterOrDefault(PyObjectContainer** args, CallStructureInfo* info, char* name, PyObjectContainer* default_value) {
     PyObjectContainer* value = PY_ARGS_getKeywordParameter(args, info, name);
     return value == NULL ? default_value : value;
+}
+
+PyObjectContainer** PY_ARGS_unpackArgTableForUnsafeCall(uint8_t positional_count, PyObjectContainer** args, CallStructureInfo* info, uint8_t* count_ref, uint8_t keyword_count, char** keywords, PyObjectContainer** defaults) {
+    PyObjectContainer** new_args = malloc((positional_count + keyword_count) * sizeof(PyObjectContainer*));
+    memcpy(new_args, args, *count_ref * sizeof(PyObjectContainer*));
+    uint8_t rem = keyword_count;
+    if (*count_ref > positional_count) rem -= *count_ref - positional_count;
+
+    if (info == NULL) {
+        memcpy(new_args + *count_ref, defaults + (keyword_count - rem), rem * sizeof(PyObjectContainer*));
+        return new_args;
+    }
+
+    for (int i = (keyword_count - rem); i < rem; i++) {
+        char* key = keywords[i];
+        PyObjectContainer* value = PY_ARGS_getKeywordParameterOrDefault(args, info, key, defaults[i]);
+        new_args[positional_count + keyword_count - rem + i] = value;
+    }
+
+    return new_args;
 }
