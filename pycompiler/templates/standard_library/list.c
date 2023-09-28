@@ -911,7 +911,7 @@ PyObjectContainer* PY_STD_list_sort(PyObjectContainer* self, uint8_t argc, PyObj
 
     PY_STD_list_container* list = (PY_STD_list_container*)self->raw_value;
 
-    PyObjectContainer* sort_key = PY_ARGUMENT_getKeywordArgumentOrNull(argc, args, info, "key");
+    PyObjectContainer* sort_key = PY_ARGS_getKeywordParameter(args, info, "key");
     // todo: use sort_key if provided
 
     qsort(list->array, list->curr_size, sizeof(PyObjectContainer*), PY_STD_list_sort_cmp);
