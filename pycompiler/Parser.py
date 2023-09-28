@@ -1245,7 +1245,6 @@ class CallExpression(AbstractASTNodeExpression):
         def emit_c_code(
             self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder
         ):
-            assert self.mode == CallExpression.ParameterType.NORMAL
             self.value.emit_c_code(base, context)
 
     def __init__(
