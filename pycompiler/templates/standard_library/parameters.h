@@ -24,6 +24,8 @@ struct CallStructureInfo
 };
 typedef struct CallStructureInfo CallStructureInfo;
 
+CallStructureInfo* PY_ARGS_createCallInfo(uint8_t offset, uint8_t count, uint64_t bitmask[8], char** keyword_names);
+
 struct PyObjectContainer** PY_ARGS_unpackPositionalArgs(struct PyObjectContainer** args, CallStructureInfo* info, uint8_t* count_ref);
 struct PyObjectContainer* PY_ARGS_getKeywordParameter(struct PyObjectContainer** args, CallStructureInfo* info, char* name);
 struct PyObjectContainer* PY_ARGS_getKeywordParameterOrDefault(struct PyObjectContainer** args, CallStructureInfo* info, char* name, struct PyObjectContainer* default_value);

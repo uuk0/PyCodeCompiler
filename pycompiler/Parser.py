@@ -1196,10 +1196,13 @@ class SubscriptionExpression(AbstractASTNodeExpression):
 
 class CallExpression(AbstractASTNodeExpression):
     class ParameterType(enum.Enum):
-        NORMAL = enum.auto()
-        KEYWORD = enum.auto()
-        STAR = enum.auto()
-        STAR_STAR = enum.auto()
+        NORMAL = "CALL_STRUCTURE_NORMAL"
+        KEYWORD = "CALL_STRUCTURE_KEYWORD"
+        STAR = "CALL_STRUCTURE_STAR"
+        STAR_STAR = "CALL_STRUCTURE_STAR_STAR"
+
+        def __init__(self, c_name: str):
+            self.c_name = c_name
 
     class CallExpressionArgument(AbstractASTNode):
         def __init__(
@@ -1362,6 +1365,7 @@ class CallExpression(AbstractASTNodeExpression):
                     context.parent.add_code(";\n")
 
             # todo: set exception type for attribute error
+            # todo: allow keyword args and similar by treating this like a normal function call
             context.parent.add_code(
                 f"""
 PyObjectContainer* {temporary} = PY_createClassInstance({'' if isinstance(cls, StandardLibraryClass) else 'PY_CLASS_'}{cls.normal_name});
@@ -1391,6 +1395,16 @@ DECREF({constructor});
     def emit_c_code_any_call(
         self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder
     ):
+        is_special = False
+        for arg in self.args:
+            if arg.mode != CallExpression.ParameterType.NORMAL:
+                is_special = True
+                break
+
+        call_info = "NULL"
+        if is_special:
+            call_info = self.emit_c_code_any_special(base, context)
+
         if len(self.args) == 1:
             temporary = base.get_fresh_name("temporary")
 
@@ -1401,7 +1415,7 @@ DECREF({constructor});
 
             context.add_code("PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(")
             self.base.emit_c_code(base, context)
-            context.add_code(f", NULL, {len(self.args)}, &{temporary}, NULL))")
+            context.add_code(f", NULL, {len(self.args)}, &{temporary}, {call_info}))")
 
         elif self.args:
             temporary = base.get_fresh_name("temporary")
@@ -1413,11 +1427,41 @@ DECREF({constructor});
                 arg.emit_c_code(base, context)
                 context.add_code(", ")
             self.args[-1].emit_c_code(base, context)
-            context.add_code("}, NULL))")
+            context.add_code(f"}}, {call_info}))")
         else:
             context.add_code("PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(")
             self.base.emit_c_code(base, context)
             context.add_code(", NULL, 0, NULL, NULL))")
+
+    def emit_c_code_any_special(
+        self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder
+    ):
+        offset = 0
+        entries = []
+        keys = []
+
+        for arg in self.args:
+            if arg.mode == CallExpression.ParameterType.NORMAL and not entries:
+                offset += 1
+            else:
+                entries.append(arg.c_name)
+                keys.append(
+                    arg.key
+                    if arg.mode == CallExpression.ParameterType.KEYWORD
+                    else None
+                )
+
+        merged_entries = entries[::32]
+        merged_entries += ["0"] * (8 - len(entries))
+
+        keyword_data = "NULL"
+
+        if any(keys):
+            keyword_data = (
+                f"(char*[]) {{{', '.join(e if e else 'NULL' for e in keys)}}}"
+            )
+
+        return f"PY_ARGS_createCallInfo({offset}, {len(entries)}, (uint64_t[]) {{{', '.join(' | '.join(e) for e in merged_entries)}}}, {keyword_data})"
 
 
 class ReturnStatement(AbstractASTNode):

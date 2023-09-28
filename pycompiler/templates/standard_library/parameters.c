@@ -11,6 +11,16 @@
 #include "dict.h"
 #include "standard_library/helpers/hashmap.h"
 
+CallStructureInfo* PY_ARGS_createCallInfo(uint8_t offset, uint8_t count, uint64_t bitmask[8], char** keyword_names)
+{
+    CallStructureInfo* mem = malloc(sizeof(CallStructureInfo));
+    mem->offset = offset;
+    mem->count = count;
+    memcpy(mem->bitmask, bitmask, 8 * sizeof(uint64_t));
+    mem->keyword_names = keyword_names;
+    return mem;
+}
+
 PyObjectContainer** PY_ARGS_unpackPositionalArgs(PyObjectContainer** args, CallStructureInfo* info, uint8_t* count_ref) {
     if (info == NULL) {
         return args;
