@@ -62,16 +62,20 @@ PyObjectContainer* target_1(PyObjectContainer* self_0) {
 }
 
 PyObjectContainer* target_1_safeWrap(PyObjectContainer* self , uint8_t argc , PyObjectContainer** args , CallStructureInfo* info) {
-    if (self == NULL)
-    {
+    PyObjectContainer** new_args = PY_ARGS_unpackPositionalArgs(args, info, &argc);
+    PyObjectContainer* result;
+
+    if (self == NULL) {
         assert(argc == 1);
-        return target_1(args[0]);
+        result = target_1(new_args[0]);
     }
-    else
-    {
+    else {
         assert(argc == 0);
-        return target_1(self);
+        result = target_1(self);
     }
+
+    if (info) free(new_args);
+    return result;
 }
 
 PyObjectContainer* testtarget_3(PyObjectContainer* self_2) {
@@ -79,15 +83,19 @@ PyObjectContainer* testtarget_3(PyObjectContainer* self_2) {
 }
 
 PyObjectContainer* testtarget_3_safeWrap(PyObjectContainer* self , uint8_t argc , PyObjectContainer** args , CallStructureInfo* info) {
-    if (self == NULL)
-    {
+    PyObjectContainer** new_args = PY_ARGS_unpackPositionalArgs(args, info, &argc);
+    PyObjectContainer* result;
+
+    if (self == NULL) {
         assert(argc == 1);
-        return testtarget_3(args[0]);
+        result = testtarget_3(new_args[0]);
     }
-    else
-    {
+    else {
         assert(argc == 0);
-        return testtarget_3(self);
+        result = testtarget_3(self);
     }
+
+    if (info) free(new_args);
+    return result;
 }
 

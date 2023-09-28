@@ -1779,8 +1779,8 @@ container->next_section = {func_name}_ENTRY;
 
         # todo: there are other arg types!
 
-        arg_unbox = [f"args[{i}]" for i, param in enumerate(self.parameters)]
-        arg_unbox_2 = [f"args[{i}]" for i, param in enumerate(self.parameters[1:])]
+        arg_unbox = [f"new_args[{i}]" for i, param in enumerate(self.parameters)]
+        arg_unbox_2 = [f"new_args[{i}]" for i, param in enumerate(self.parameters[1:])]
 
         unbox = " , ".join(arg_unbox)
         unbox_2 = " , ".join(arg_unbox_2)
@@ -1788,16 +1788,20 @@ container->next_section = {func_name}_ENTRY;
         if len(self.parameters) > 0:
             safe_func.add_code(
                 f"""
-if (self == NULL)
-{{
+PyObjectContainer** new_args = PY_ARGS_unpackPositionalArgs(args, info, &argc);
+PyObjectContainer* result;
+
+if (self == NULL) {{
     assert(argc == {len(self.parameters)});
-    return {func_name}({unbox});
+    result = {func_name}({unbox});
 }}
-else
-{{
+else {{
     assert(argc == {len(self.parameters) - 1});
-    return {func_name}(self{f' , {unbox_2}' if unbox_2 else ''});
+    result = {func_name}(self{f' , {unbox_2}' if unbox_2 else ''});
 }}
+
+if (info) free(new_args);
+return result;
 
 """
             )

@@ -425,16 +425,20 @@ PyObjectContainer* generator7_10_ENTRY(PyGeneratorContainer* generator) {
 }
 
 PyObjectContainer* generator7_10_safeWrap(PyObjectContainer* self , uint8_t argc , PyObjectContainer** args , CallStructureInfo* info) {
-    if (self == NULL)
-    {
+    PyObjectContainer** new_args = PY_ARGS_unpackPositionalArgs(args, info, &argc);
+    PyObjectContainer* result;
+
+    if (self == NULL) {
         assert(argc == 1);
-        return generator7_10(args[0]);
+        result = generator7_10(new_args[0]);
     }
-    else
-    {
+    else {
         assert(argc == 0);
-        return generator7_10(self);
+        result = generator7_10(self);
     }
+
+    if (info) free(new_args);
+    return result;
 }
 
 PyObjectContainer* generator8_12(void) {
