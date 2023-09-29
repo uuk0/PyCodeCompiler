@@ -50,7 +50,8 @@ PyObjectContainer** PY_ARGS_unpackPositionalArgs(PyObjectContainer** args, CallS
         // Is it to be unpacked
         if (flag & (bitmask >> 1)) {
             PyObjectContainer* list = PY_createClassInstance(PY_TYPE_LIST);
-            list = PY_STD_list_init_fast_arg_1(list, args[info->offset + i]);
+            PY_STD_list_init_fast_arg_1(list, args[info->offset + i]);
+            assert(list->raw_value != NULL && "this should not be able to happen!");
             PY_STD_list_container* list_container = list->raw_value;
             new_args = realloc(new_args, ((*count_ref) + list_container->curr_size) * sizeof(PyObjectContainer*));
             memcpy(new_args + *count_ref, list_container->array, list_container->curr_size * sizeof(PyObjectContainer*));

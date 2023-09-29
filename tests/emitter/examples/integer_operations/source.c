@@ -22,6 +22,13 @@ PyObjectContainer* PY_MODULE_INSTANCE_source;
 
 
 
+// Global Variables
+PyObjectContainer* function_container_test_one_0;
+PyObjectContainer* function_container_test_two_1;
+PyObjectContainer* function_container_test_three_2;
+PyObjectContainer* function_container_test_four_3;
+
+
 
 // implementations
 
@@ -36,10 +43,10 @@ PyObjectContainer* PY_MODULE_source_init(void) {
 
 
     #ifdef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE
-    PY_setObjectAttributeByName(PY_MODULE_INSTANCE_source, "test_one", PY_createBoxForFunction(testone_0_safeWrap));
-    PY_setObjectAttributeByName(PY_MODULE_INSTANCE_source, "test_two", PY_createBoxForFunction(testtwo_1_safeWrap));
-    PY_setObjectAttributeByName(PY_MODULE_INSTANCE_source, "test_three", PY_createBoxForFunction(testthree_2_safeWrap));
-    PY_setObjectAttributeByName(PY_MODULE_INSTANCE_source, "test_four", PY_createBoxForFunction(testfour_3_safeWrap));
+    PY_setObjectAttributeByName(PY_MODULE_INSTANCE_source, "test_one", (function_container_test_one_0 = PY_createBoxForFunction(testone_0_safeWrap)));
+    PY_setObjectAttributeByName(PY_MODULE_INSTANCE_source, "test_two", (function_container_test_two_1 = PY_createBoxForFunction(testtwo_1_safeWrap)));
+    PY_setObjectAttributeByName(PY_MODULE_INSTANCE_source, "test_three", (function_container_test_three_2 = PY_createBoxForFunction(testthree_2_safeWrap)));
+    PY_setObjectAttributeByName(PY_MODULE_INSTANCE_source, "test_four", (function_container_test_four_3 = PY_createBoxForFunction(testfour_3_safeWrap)));
     PY_exposeModuleObject(PY_MODULE_INSTANCE_source);
     #endif
 }

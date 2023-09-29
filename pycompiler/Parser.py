@@ -3,6 +3,7 @@ from __future__ import annotations
 import abc
 import enum
 import json
+import math
 import os.path
 import string
 import typing
@@ -673,6 +674,9 @@ class ConstantAccessExpression(AbstractASTNodeExpression):
                 f"PY_MODULE_INSTANCE_{self.value.name.replace('.', '___')}"
             )
 
+        elif isinstance(self.value, FunctionDefinitionNode):
+            context.add_code(self.value.global_container_name)
+
         else:
             print(self.parent)
             raise NotImplementedError(self.value)
@@ -1331,6 +1335,16 @@ class CallExpression(AbstractASTNodeExpression):
     def emit_c_code_constructor(
         self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder
     ):
+        is_special = False
+        for arg in self.args:
+            if arg.mode != CallExpression.ParameterType.NORMAL:
+                is_special = True
+                break
+
+        call_info = "NULL"
+        if is_special:
+            call_info = self.emit_c_code_any_special(base, context)
+
         temporary = base.get_fresh_name("obj_instance")
         constructor = base.get_fresh_name("constructor")
         cls: ClassDefinitionNode = typing.cast(
@@ -1340,10 +1354,10 @@ class CallExpression(AbstractASTNodeExpression):
         is_direct_ref = False
         func_decl = None
 
-        if "__init__" in cls.function_table:
+        if "__init__" in cls.function_table and not is_special:
             func_decl = cls.function_table["__init__"].normal_name
             is_direct_ref = True
-        elif ("__init__", len(self.args)) in cls.function_table:
+        elif ("__init__", len(self.args)) in cls.function_table and not is_special:
             func_decl = cls.function_table["__init__", len(self.args)].normal_name
             is_direct_ref = True
         else:
@@ -1371,7 +1385,7 @@ PyObjectContainer* {temporary} = PY_createClassInstance({'' if isinstance(cls, S
 PyObjectContainer* {constructor} = PY_getObjectAttributeByNameOrStatic({temporary}, "__init__");
 
 PY_THROW_EXCEPTION_IF({constructor} == NULL, NULL);
-PY_CHECK_EXCEPTION(PY_invokeBoxedMethod({constructor}, NULL, {len(self.args)}, {args if self.args else 'NULL'}, NULL));
+PY_CHECK_EXCEPTION(PY_invokeBoxedMethod({constructor}, NULL, {len(self.args)}, {args if self.args else 'NULL'}, {call_info}));
 DECREF({constructor});
 """
             )
@@ -1443,14 +1457,17 @@ DECREF({constructor});
             if arg.mode == CallExpression.ParameterType.NORMAL and not entries:
                 offset += 1
             else:
-                entries.append(arg.c_name)
+                entries.append(arg.mode.c_name)
                 keys.append(
                     arg.key
                     if arg.mode == CallExpression.ParameterType.KEYWORD
                     else None
                 )
 
-        merged_entries = entries[::32]
+        merged_entries = [
+            entries[32 * i : min(32 * (i + 1), len(entries))]
+            for i in range(math.ceil(len(entries) / 32))
+        ]
         merged_entries += ["0"] * (8 - len(entries))
 
         keyword_data = "NULL"
@@ -1626,6 +1643,7 @@ class FunctionDefinitionNode(AbstractASTNode):
         self.normal_name = name.text
         self.is_generator = is_generator
         self.return_type: AbstractDataType = None
+        self.global_container_name = None
 
         if self.is_generator:
             # is guaranteed to return a generator object
@@ -3342,6 +3360,14 @@ class Parser:
             main.add_code(f"PyObjectContainer* {scope.get_remapped_name(var)};\n")
 
         for line in expr:
+            if isinstance(line, FunctionDefinitionNode):
+                global_name = builder.get_fresh_name(
+                    f"function_container_{line.name.text}"
+                )
+                builder.add_global_variable("PyObjectContainer*", global_name)
+                line.global_container_name = global_name
+
+        for line in expr:
             inner_block = main.get_statement_builder(indent=False)
 
             line.emit_c_code(builder, inner_block)
@@ -3362,7 +3388,7 @@ class Parser:
         for line in expr:
             if isinstance(line, FunctionDefinitionNode):
                 main.add_code(
-                    f'PY_setObjectAttributeByName(PY_MODULE_INSTANCE_{normal_module_name}, "{line.name.text}", PY_createBoxForFunction({line.normal_name}_safeWrap));\n'
+                    f'PY_setObjectAttributeByName(PY_MODULE_INSTANCE_{normal_module_name}, "{line.name.text}", ({line.global_container_name} = PY_createBoxForFunction({line.normal_name}_safeWrap)));\n'
                 )
 
         main.add_code(

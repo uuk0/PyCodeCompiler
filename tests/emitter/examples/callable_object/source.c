@@ -23,6 +23,7 @@ PyObjectContainer* PY_MODULE_INSTANCE_source;
 
 
 // Global Variables
+PyObjectContainer* function_container_test_0;
 PyClassContainer* PY_CLASS_Test_4;
 
 
@@ -38,7 +39,7 @@ PyObjectContainer* PY_MODULE_source_init(void) {
     PY_CLASS_INIT_PY_CLASS_Test_4();
 
     #ifdef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE
-    PY_setObjectAttributeByName(PY_MODULE_INSTANCE_source, "test", PY_createBoxForFunction(test_5_safeWrap));
+    PY_setObjectAttributeByName(PY_MODULE_INSTANCE_source, "test", (function_container_test_0 = PY_createBoxForFunction(test_5_safeWrap)));
     PY_exposeModuleObject(PY_MODULE_INSTANCE_source);
     #endif
 }
@@ -108,10 +109,10 @@ PyObjectContainer* call_3_safeWrap(PyObjectContainer* self , uint8_t argc , PyOb
 PyObjectContainer* test_5(void) {
     PyObjectContainer* obj_6;
 
-    PyObjectContainer* obj_instance_0 = PY_createClassInstance(PY_CLASS_Test_4);
-    PY_CHECK_EXCEPTION(init_1(obj_instance_0));
+    PyObjectContainer* obj_instance_1 = PY_createClassInstance(PY_CLASS_Test_4);
+    PY_CHECK_EXCEPTION(init_1(obj_instance_1));
 
-    obj_6 = obj_instance_0;
+    obj_6 = obj_instance_1;
 
     return PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(obj_6, NULL, 0, NULL, NULL));
 }

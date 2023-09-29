@@ -23,8 +23,10 @@ PyObjectContainer* PY_MODULE_INSTANCE_source;
 
 
 // Global Variables
-PyObjectContainer* value_1;
+PyObjectContainer* function_container_test_0;
+PyObjectContainer* function_container_test_2_1;
 PyObjectContainer* value_3;
+PyObjectContainer* value_5;
 
 
 
@@ -39,8 +41,8 @@ PyObjectContainer* PY_MODULE_source_init(void) {
 
 
     #ifdef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE
-    PY_setObjectAttributeByName(PY_MODULE_INSTANCE_source, "test", PY_createBoxForFunction(test_0_safeWrap));
-    PY_setObjectAttributeByName(PY_MODULE_INSTANCE_source, "test_2", PY_createBoxForFunction(test2_1_safeWrap));
+    PY_setObjectAttributeByName(PY_MODULE_INSTANCE_source, "test", (function_container_test_0 = PY_createBoxForFunction(test_0_safeWrap)));
+    PY_setObjectAttributeByName(PY_MODULE_INSTANCE_source, "test_2", (function_container_test_2_1 = PY_createBoxForFunction(test2_1_safeWrap)));
     PY_exposeModuleObject(PY_MODULE_INSTANCE_source);
     #endif
 }
@@ -55,15 +57,15 @@ PyObjectContainer* test_0(void) {
     s_3 = PY_createInteger(0);
 
 
-    PyObjectContainer* iterator_0 = PY_CHECK_EXCEPTION(PY_STD_operator_iter(l_2));
-    PyObjectContainer* value_1 = PY_STD_NEXT_FORWARD_arg_1(iterator_0, NULL);
-    while (value_1 != NULL) {
-        PY_CHECK_EXCEPTION(value_1);
-        x_4 = value_1;
+    PyObjectContainer* iterator_2 = PY_CHECK_EXCEPTION(PY_STD_operator_iter(l_2));
+    PyObjectContainer* value_3 = PY_STD_NEXT_FORWARD_arg_1(iterator_2, NULL);
+    while (value_3 != NULL) {
+        PY_CHECK_EXCEPTION(value_3);
+        x_4 = value_3;
         s_3 = PY_STD_operator_add(s_3, x_4);
 
 
-        value_1 = PY_STD_NEXT_FORWARD_arg_1(iterator_0, NULL);
+        value_3 = PY_STD_NEXT_FORWARD_arg_1(iterator_2, NULL);
     }
     return s_3;
 
@@ -89,19 +91,19 @@ PyObjectContainer* test2_1(void) {
     s_6 = PY_createInteger(0);
 
 
-    PyObjectContainer* iterator_2 = PY_CHECK_EXCEPTION(PY_STD_operator_iter(l_5));
-    PyObjectContainer* value_3 = PY_STD_NEXT_FORWARD_arg_1(iterator_2, NULL);
-    while (value_3 != NULL) {
-        PY_CHECK_EXCEPTION(value_3);
-        PyObjectContainer* temporary_tuple_4 = value_3;
-        assert(PY_unpackInteger(PY_STD_operator_len(temporary_tuple_4)) == 2);
-        x_7 = PY_GetSubscriptionValue(temporary_tuple_4, PY_createInteger(0));
-        y_8 = PY_GetSubscriptionValue(temporary_tuple_4, PY_createInteger(1));
+    PyObjectContainer* iterator_4 = PY_CHECK_EXCEPTION(PY_STD_operator_iter(l_5));
+    PyObjectContainer* value_5 = PY_STD_NEXT_FORWARD_arg_1(iterator_4, NULL);
+    while (value_5 != NULL) {
+        PY_CHECK_EXCEPTION(value_5);
+        PyObjectContainer* temporary_tuple_6 = value_5;
+        assert(PY_unpackInteger(PY_STD_operator_len(temporary_tuple_6)) == 2);
+        x_7 = PY_GetSubscriptionValue(temporary_tuple_6, PY_createInteger(0));
+        y_8 = PY_GetSubscriptionValue(temporary_tuple_6, PY_createInteger(1));
         ;
         s_6 = PY_CHECK_EXCEPTION(PY_STD_operator_inplace_add (s_6 , PY_STD_operator_floordiv(x_7, y_8)));
 
 
-        value_3 = PY_STD_NEXT_FORWARD_arg_1(iterator_2, NULL);
+        value_5 = PY_STD_NEXT_FORWARD_arg_1(iterator_4, NULL);
     }
     return s_6;
 }

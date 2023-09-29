@@ -22,6 +22,11 @@ PyObjectContainer* PY_MODULE_INSTANCE_source;
 
 
 
+// Global Variables
+PyObjectContainer* function_container_test_0;
+PyObjectContainer* function_container_test_2_1;
+
+
 
 // implementations
 
@@ -34,15 +39,15 @@ PyObjectContainer* PY_MODULE_source_init(void) {
 
 
     #ifdef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE
-    PY_setObjectAttributeByName(PY_MODULE_INSTANCE_source, "test", PY_createBoxForFunction(test_0_safeWrap));
-    PY_setObjectAttributeByName(PY_MODULE_INSTANCE_source, "test_2", PY_createBoxForFunction(test2_1_safeWrap));
+    PY_setObjectAttributeByName(PY_MODULE_INSTANCE_source, "test", (function_container_test_0 = PY_createBoxForFunction(test_0_safeWrap)));
+    PY_setObjectAttributeByName(PY_MODULE_INSTANCE_source, "test_2", (function_container_test_2_1 = PY_createBoxForFunction(test2_1_safeWrap)));
     PY_exposeModuleObject(PY_MODULE_INSTANCE_source);
     #endif
 }
 
 PyObjectContainer* test_0(void) {
-    PyObjectContainer* assert_target_0 = PY_CHECK_EXCEPTION(PY_createInteger(1));
-    assert(PY_getTruthValueOf(assert_target_0) && PY_createString("hello world!"));
+    PyObjectContainer* assert_target_2 = PY_CHECK_EXCEPTION(PY_createInteger(1));
+    assert(PY_getTruthValueOf(assert_target_2) && PY_createString("hello world!"));
 
 
 
@@ -56,8 +61,8 @@ PyObjectContainer* test_0_safeWrap(PyObjectContainer* self , uint8_t argc , PyOb
 }
 
 PyObjectContainer* test2_1(void) {
-    PyObjectContainer* assert_target_1 = PY_CHECK_EXCEPTION(PY_createInteger(0));
-    assert(PY_getTruthValueOf(assert_target_1) && PY_createString("exception!"));
+    PyObjectContainer* assert_target_3 = PY_CHECK_EXCEPTION(PY_createInteger(0));
+    assert(PY_getTruthValueOf(assert_target_3) && PY_createString("exception!"));
     return PY_NONE;
 }
 

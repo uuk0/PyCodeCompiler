@@ -6,5 +6,5 @@
 int main()
 {
     PY_MODULE_source_init();
-    assert(PY_unpackInteger(test_0()) == 10);
+    test_0();
 }

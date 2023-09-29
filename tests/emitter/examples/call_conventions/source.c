@@ -22,6 +22,12 @@ PyObjectContainer* PY_MODULE_INSTANCE_source;
 
 
 
+// Global Variables
+PyObjectContainer* function_container_test_0;
+PyObjectContainer* function_container_simple_target_1;
+PyObjectContainer* function_container_test_simple_2;
+
+
 
 // implementations
 
@@ -35,15 +41,15 @@ PyObjectContainer* PY_MODULE_source_init(void) {
 
 
     #ifdef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE
-    PY_setObjectAttributeByName(PY_MODULE_INSTANCE_source, "test", PY_createBoxForFunction(test_0_safeWrap));
-    PY_setObjectAttributeByName(PY_MODULE_INSTANCE_source, "simple_target", PY_createBoxForFunction(simpletarget_2_safeWrap));
-    PY_setObjectAttributeByName(PY_MODULE_INSTANCE_source, "test_simple", PY_createBoxForFunction(testsimple_3_safeWrap));
+    PY_setObjectAttributeByName(PY_MODULE_INSTANCE_source, "test", (function_container_test_0 = PY_createBoxForFunction(test_0_safeWrap)));
+    PY_setObjectAttributeByName(PY_MODULE_INSTANCE_source, "simple_target", (function_container_simple_target_1 = PY_createBoxForFunction(simpletarget_2_safeWrap)));
+    PY_setObjectAttributeByName(PY_MODULE_INSTANCE_source, "test_simple", (function_container_test_simple_2 = PY_createBoxForFunction(testsimple_4_safeWrap)));
     PY_exposeModuleObject(PY_MODULE_INSTANCE_source);
     #endif
 }
 
 PyObjectContainer* test_0(void) {
-    PY_CHECK_EXCEPTION(testsimple_3 ());
+    PY_CHECK_EXCEPTION(testsimple_4 (function_container_simple_target_1));
 
 
 
@@ -81,15 +87,27 @@ PyObjectContainer* simpletarget_2_safeWrap(PyObjectContainer* self , uint8_t arg
     return result;
 }
 
-PyObjectContainer* testsimple_3(void) {
-    PyObjectContainer* assert_target_0 = PY_CHECK_EXCEPTION(PY_STD_operator_equals(PY_CHECK_EXCEPTION(simpletarget_2 (PY_STD_list_CREATE(1, PY_createInteger(10)))), PY_createInteger(10)));
-    assert(PY_getTruthValueOf(assert_target_0));
+PyObjectContainer* testsimple_4(PyObjectContainer* f_3) {
+    PyObjectContainer* temporary_4 = PY_STD_list_CREATE(1, PY_createInteger(10));
+    PyObjectContainer* assert_target_3 = PY_CHECK_EXCEPTION(PY_STD_operator_equals(PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(f_3, NULL, 1, &temporary_4, PY_ARGS_createCallInfo(0, 1, (uint64_t[]) {CALL_STRUCTURE_STAR, 0, 0, 0, 0, 0, 0, 0}, NULL))), PY_createInteger(10)));
+    assert(PY_getTruthValueOf(assert_target_3));
     return PY_NONE;
 }
 
-PyObjectContainer* testsimple_3_safeWrap(PyObjectContainer* self , uint8_t argc , PyObjectContainer** args , CallStructureInfo* info) {
-    assert(self == NULL);
-    assert(argc == 0);
-    return testsimple_3();
+PyObjectContainer* testsimple_4_safeWrap(PyObjectContainer* self , uint8_t argc , PyObjectContainer** args , CallStructureInfo* info) {
+    PyObjectContainer** new_args = PY_ARGS_unpackPositionalArgs(args, info, &argc);
+    PyObjectContainer* result;
+
+    if (self == NULL) {
+        assert(argc == 1);
+        result = testsimple_4(new_args[0]);
+    }
+    else {
+        assert(argc == 0);
+        result = testsimple_4(self);
+    }
+
+    if (info) free(new_args);
+    return result;
 }
 

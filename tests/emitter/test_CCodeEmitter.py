@@ -55,6 +55,7 @@ class TestCCodeEmitter(TestCase):
 
             # with open(f"{folder}/source.c", mode="w") as f:
             #     f.write(c_compare)
+            # c = c_compare
 
             self.assertEqual(c, c_compare, "c source")
         else:
@@ -141,5 +142,5 @@ class TestCCodeEmitter(TestCase):
     def test_range(self):
         self.run_named_folder_test("range_tests")
 
-    # def test_call_conventions(self):
-    #     self.run_named_folder_test("call_conventions")
+    def test_call_conventions(self):
+        self.run_named_folder_test("call_conventions")

@@ -23,6 +23,18 @@ PyObjectContainer* PY_MODULE_INSTANCE_source;
 
 
 
+// Global Variables
+PyObjectContainer* function_container_test_0;
+PyObjectContainer* function_container_generator_1_1;
+PyObjectContainer* function_container_generator_2_2;
+PyObjectContainer* function_container_generator_3_3;
+PyObjectContainer* function_container_generator_4_4;
+PyObjectContainer* function_container_generator_5_5;
+PyObjectContainer* function_container_generator_6_6;
+PyObjectContainer* function_container_generator_7_7;
+PyObjectContainer* function_container_generator_8_8;
+
+
 
 // implementations
 
@@ -42,15 +54,15 @@ PyObjectContainer* PY_MODULE_source_init(void) {
 
 
     #ifdef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE
-    PY_setObjectAttributeByName(PY_MODULE_INSTANCE_source, "test", PY_createBoxForFunction(test_0_safeWrap));
-    PY_setObjectAttributeByName(PY_MODULE_INSTANCE_source, "generator_1", PY_createBoxForFunction(generator1_1_safeWrap));
-    PY_setObjectAttributeByName(PY_MODULE_INSTANCE_source, "generator_2", PY_createBoxForFunction(generator2_2_safeWrap));
-    PY_setObjectAttributeByName(PY_MODULE_INSTANCE_source, "generator_3", PY_createBoxForFunction(generator3_3_safeWrap));
-    PY_setObjectAttributeByName(PY_MODULE_INSTANCE_source, "generator_4", PY_createBoxForFunction(generator4_4_safeWrap));
-    PY_setObjectAttributeByName(PY_MODULE_INSTANCE_source, "generator_5", PY_createBoxForFunction(generator5_6_safeWrap));
-    PY_setObjectAttributeByName(PY_MODULE_INSTANCE_source, "generator_6", PY_createBoxForFunction(generator6_8_safeWrap));
-    PY_setObjectAttributeByName(PY_MODULE_INSTANCE_source, "generator_7", PY_createBoxForFunction(generator7_10_safeWrap));
-    PY_setObjectAttributeByName(PY_MODULE_INSTANCE_source, "generator_8", PY_createBoxForFunction(generator8_12_safeWrap));
+    PY_setObjectAttributeByName(PY_MODULE_INSTANCE_source, "test", (function_container_test_0 = PY_createBoxForFunction(test_0_safeWrap)));
+    PY_setObjectAttributeByName(PY_MODULE_INSTANCE_source, "generator_1", (function_container_generator_1_1 = PY_createBoxForFunction(generator1_1_safeWrap)));
+    PY_setObjectAttributeByName(PY_MODULE_INSTANCE_source, "generator_2", (function_container_generator_2_2 = PY_createBoxForFunction(generator2_2_safeWrap)));
+    PY_setObjectAttributeByName(PY_MODULE_INSTANCE_source, "generator_3", (function_container_generator_3_3 = PY_createBoxForFunction(generator3_3_safeWrap)));
+    PY_setObjectAttributeByName(PY_MODULE_INSTANCE_source, "generator_4", (function_container_generator_4_4 = PY_createBoxForFunction(generator4_4_safeWrap)));
+    PY_setObjectAttributeByName(PY_MODULE_INSTANCE_source, "generator_5", (function_container_generator_5_5 = PY_createBoxForFunction(generator5_6_safeWrap)));
+    PY_setObjectAttributeByName(PY_MODULE_INSTANCE_source, "generator_6", (function_container_generator_6_6 = PY_createBoxForFunction(generator6_8_safeWrap)));
+    PY_setObjectAttributeByName(PY_MODULE_INSTANCE_source, "generator_7", (function_container_generator_7_7 = PY_createBoxForFunction(generator7_10_safeWrap)));
+    PY_setObjectAttributeByName(PY_MODULE_INSTANCE_source, "generator_8", (function_container_generator_8_8 = PY_createBoxForFunction(generator8_12_safeWrap)));
     PY_exposeModuleObject(PY_MODULE_INSTANCE_source);
     #endif
 }
@@ -60,80 +72,44 @@ PyObjectContainer* test_0(void) {
 
     gen_13 = PY_CHECK_EXCEPTION(generator1_1 ());
 
-    PyObjectContainer* assert_target_0 = PY_CHECK_EXCEPTION(PY_STD_operator_equals(PY_CHECK_EXCEPTION(PY_STD_GENERATOR_next_fast_arg_0 (gen_13)), PY_createInteger(1)));
-    assert(PY_getTruthValueOf(assert_target_0));
+    PyObjectContainer* assert_target_9 = PY_CHECK_EXCEPTION(PY_STD_operator_equals(PY_CHECK_EXCEPTION(PY_STD_GENERATOR_next_fast_arg_0 (gen_13)), PY_createInteger(1)));
+    assert(PY_getTruthValueOf(assert_target_9));
 
 
     gen_13 = PY_CHECK_EXCEPTION(generator2_2 ());
 
-    PyObjectContainer* assert_target_1 = PY_CHECK_EXCEPTION(PY_STD_operator_equals(PY_CHECK_EXCEPTION(PY_STD_GENERATOR_next_fast_arg_0 (gen_13)), PY_createInteger(1)));
-    assert(PY_getTruthValueOf(assert_target_1));
+    PyObjectContainer* assert_target_10 = PY_CHECK_EXCEPTION(PY_STD_operator_equals(PY_CHECK_EXCEPTION(PY_STD_GENERATOR_next_fast_arg_0 (gen_13)), PY_createInteger(1)));
+    assert(PY_getTruthValueOf(assert_target_10));
 
-    PyObjectContainer* assert_target_2 = PY_CHECK_EXCEPTION(PY_STD_operator_equals(PY_CHECK_EXCEPTION(PY_STD_GENERATOR_next_fast_arg_0 (gen_13)), PY_createInteger(2)));
-    assert(PY_getTruthValueOf(assert_target_2));
+    PyObjectContainer* assert_target_11 = PY_CHECK_EXCEPTION(PY_STD_operator_equals(PY_CHECK_EXCEPTION(PY_STD_GENERATOR_next_fast_arg_0 (gen_13)), PY_createInteger(2)));
+    assert(PY_getTruthValueOf(assert_target_11));
 
-    PyObjectContainer* assert_target_3 = PY_CHECK_EXCEPTION(PY_STD_operator_equals(PY_CHECK_EXCEPTION(PY_STD_GENERATOR_next_fast_arg_0 (gen_13)), PY_createInteger(4)));
-    assert(PY_getTruthValueOf(assert_target_3));
+    PyObjectContainer* assert_target_12 = PY_CHECK_EXCEPTION(PY_STD_operator_equals(PY_CHECK_EXCEPTION(PY_STD_GENERATOR_next_fast_arg_0 (gen_13)), PY_createInteger(4)));
+    assert(PY_getTruthValueOf(assert_target_12));
 
 
     gen_13 = PY_CHECK_EXCEPTION(generator3_3 ());
 
-    PyObjectContainer* assert_target_4 = PY_CHECK_EXCEPTION(PY_STD_operator_equals(PY_CHECK_EXCEPTION(PY_STD_GENERATOR_next_fast_arg_0 (gen_13)), PY_createInteger(1)));
-    assert(PY_getTruthValueOf(assert_target_4));
+    PyObjectContainer* assert_target_13 = PY_CHECK_EXCEPTION(PY_STD_operator_equals(PY_CHECK_EXCEPTION(PY_STD_GENERATOR_next_fast_arg_0 (gen_13)), PY_createInteger(1)));
+    assert(PY_getTruthValueOf(assert_target_13));
 
-    PyObjectContainer* assert_target_5 = PY_CHECK_EXCEPTION(PY_STD_operator_equals(PY_CHECK_EXCEPTION(PY_STD_GENERATOR_next_fast_arg_0 (gen_13)), PY_createInteger(2)));
-    assert(PY_getTruthValueOf(assert_target_5));
+    PyObjectContainer* assert_target_14 = PY_CHECK_EXCEPTION(PY_STD_operator_equals(PY_CHECK_EXCEPTION(PY_STD_GENERATOR_next_fast_arg_0 (gen_13)), PY_createInteger(2)));
+    assert(PY_getTruthValueOf(assert_target_14));
 
-    PyObjectContainer* assert_target_6 = PY_CHECK_EXCEPTION(PY_STD_operator_equals(PY_CHECK_EXCEPTION(PY_STD_GENERATOR_next_fast_arg_1 (gen_13 , PY_NONE)), PY_NONE));
-    assert(PY_getTruthValueOf(assert_target_6));
+    PyObjectContainer* assert_target_15 = PY_CHECK_EXCEPTION(PY_STD_operator_equals(PY_CHECK_EXCEPTION(PY_STD_GENERATOR_next_fast_arg_1 (gen_13 , PY_NONE)), PY_NONE));
+    assert(PY_getTruthValueOf(assert_target_15));
 
 
     gen_13 = PY_CHECK_EXCEPTION(generator4_4 ());
 
-    PyObjectContainer* assert_target_7 = PY_CHECK_EXCEPTION(PY_STD_operator_equals(PY_CHECK_EXCEPTION(PY_STD_GENERATOR_next_fast_arg_0 (gen_13)), PY_createInteger(5)));
-    assert(PY_getTruthValueOf(assert_target_7));
-
-    PyObjectContainer* assert_target_8 = PY_CHECK_EXCEPTION(PY_STD_operator_equals(PY_CHECK_EXCEPTION(PY_STD_GENERATOR_next_fast_arg_0 (gen_13)), PY_createInteger(10)));
-    assert(PY_getTruthValueOf(assert_target_8));
-
-
-    gen_13 = PY_CHECK_EXCEPTION(generator5_6 ());
-
-    PyObjectContainer* assert_target_9 = PY_CHECK_EXCEPTION(PY_STD_operator_equals(PY_CHECK_EXCEPTION(PY_STD_GENERATOR_next_fast_arg_0 (gen_13)), PY_createInteger(1)));
-    assert(PY_getTruthValueOf(assert_target_9));
-
-    PyObjectContainer* assert_target_10 = PY_CHECK_EXCEPTION(PY_STD_operator_equals(PY_CHECK_EXCEPTION(PY_STD_GENERATOR_next_fast_arg_0 (gen_13)), PY_createInteger(2)));
-    assert(PY_getTruthValueOf(assert_target_10));
-
-    PyObjectContainer* assert_target_11 = PY_CHECK_EXCEPTION(PY_STD_operator_equals(PY_CHECK_EXCEPTION(PY_STD_GENERATOR_next_fast_arg_0 (gen_13)), PY_createInteger(4)));
-    assert(PY_getTruthValueOf(assert_target_11));
-
-
-    gen_13 = PY_CHECK_EXCEPTION(generator6_8 ());
-
-    PyObjectContainer* assert_target_12 = PY_CHECK_EXCEPTION(PY_STD_operator_equals(PY_CHECK_EXCEPTION(PY_STD_GENERATOR_next_fast_arg_0 (gen_13)), PY_createInteger(1)));
-    assert(PY_getTruthValueOf(assert_target_12));
-
-    PyObjectContainer* assert_target_13 = PY_CHECK_EXCEPTION(PY_STD_operator_equals(PY_CHECK_EXCEPTION(PY_STD_GENERATOR_next_fast_arg_0 (gen_13)), PY_createInteger(2)));
-    assert(PY_getTruthValueOf(assert_target_13));
-
-    PyObjectContainer* assert_target_14 = PY_CHECK_EXCEPTION(PY_STD_operator_equals(PY_CHECK_EXCEPTION(PY_STD_GENERATOR_next_fast_arg_0 (gen_13)), PY_createInteger(4)));
-    assert(PY_getTruthValueOf(assert_target_14));
-
-
-    gen_13 = PY_CHECK_EXCEPTION(generator7_10 (PY_createInteger(6)));
-
-    PyObjectContainer* assert_target_15 = PY_CHECK_EXCEPTION(PY_STD_operator_equals(PY_CHECK_EXCEPTION(PY_STD_GENERATOR_next_fast_arg_0 (gen_13)), PY_createInteger(2)));
-    assert(PY_getTruthValueOf(assert_target_15));
-
-    PyObjectContainer* assert_target_16 = PY_CHECK_EXCEPTION(PY_STD_operator_equals(PY_CHECK_EXCEPTION(PY_STD_GENERATOR_next_fast_arg_0 (gen_13)), PY_createInteger(6)));
+    PyObjectContainer* assert_target_16 = PY_CHECK_EXCEPTION(PY_STD_operator_equals(PY_CHECK_EXCEPTION(PY_STD_GENERATOR_next_fast_arg_0 (gen_13)), PY_createInteger(5)));
     assert(PY_getTruthValueOf(assert_target_16));
 
-    PyObjectContainer* assert_target_17 = PY_CHECK_EXCEPTION(PY_STD_operator_equals(PY_CHECK_EXCEPTION(PY_STD_GENERATOR_next_fast_arg_0 (gen_13)), PY_createInteger(4)));
+    PyObjectContainer* assert_target_17 = PY_CHECK_EXCEPTION(PY_STD_operator_equals(PY_CHECK_EXCEPTION(PY_STD_GENERATOR_next_fast_arg_0 (gen_13)), PY_createInteger(10)));
     assert(PY_getTruthValueOf(assert_target_17));
 
 
-    gen_13 = PY_CHECK_EXCEPTION(generator8_12 ());
+    gen_13 = PY_CHECK_EXCEPTION(generator5_6 ());
 
     PyObjectContainer* assert_target_18 = PY_CHECK_EXCEPTION(PY_STD_operator_equals(PY_CHECK_EXCEPTION(PY_STD_GENERATOR_next_fast_arg_0 (gen_13)), PY_createInteger(1)));
     assert(PY_getTruthValueOf(assert_target_18));
@@ -143,6 +119,42 @@ PyObjectContainer* test_0(void) {
 
     PyObjectContainer* assert_target_20 = PY_CHECK_EXCEPTION(PY_STD_operator_equals(PY_CHECK_EXCEPTION(PY_STD_GENERATOR_next_fast_arg_0 (gen_13)), PY_createInteger(4)));
     assert(PY_getTruthValueOf(assert_target_20));
+
+
+    gen_13 = PY_CHECK_EXCEPTION(generator6_8 ());
+
+    PyObjectContainer* assert_target_21 = PY_CHECK_EXCEPTION(PY_STD_operator_equals(PY_CHECK_EXCEPTION(PY_STD_GENERATOR_next_fast_arg_0 (gen_13)), PY_createInteger(1)));
+    assert(PY_getTruthValueOf(assert_target_21));
+
+    PyObjectContainer* assert_target_22 = PY_CHECK_EXCEPTION(PY_STD_operator_equals(PY_CHECK_EXCEPTION(PY_STD_GENERATOR_next_fast_arg_0 (gen_13)), PY_createInteger(2)));
+    assert(PY_getTruthValueOf(assert_target_22));
+
+    PyObjectContainer* assert_target_23 = PY_CHECK_EXCEPTION(PY_STD_operator_equals(PY_CHECK_EXCEPTION(PY_STD_GENERATOR_next_fast_arg_0 (gen_13)), PY_createInteger(4)));
+    assert(PY_getTruthValueOf(assert_target_23));
+
+
+    gen_13 = PY_CHECK_EXCEPTION(generator7_10 (PY_createInteger(6)));
+
+    PyObjectContainer* assert_target_24 = PY_CHECK_EXCEPTION(PY_STD_operator_equals(PY_CHECK_EXCEPTION(PY_STD_GENERATOR_next_fast_arg_0 (gen_13)), PY_createInteger(2)));
+    assert(PY_getTruthValueOf(assert_target_24));
+
+    PyObjectContainer* assert_target_25 = PY_CHECK_EXCEPTION(PY_STD_operator_equals(PY_CHECK_EXCEPTION(PY_STD_GENERATOR_next_fast_arg_0 (gen_13)), PY_createInteger(6)));
+    assert(PY_getTruthValueOf(assert_target_25));
+
+    PyObjectContainer* assert_target_26 = PY_CHECK_EXCEPTION(PY_STD_operator_equals(PY_CHECK_EXCEPTION(PY_STD_GENERATOR_next_fast_arg_0 (gen_13)), PY_createInteger(4)));
+    assert(PY_getTruthValueOf(assert_target_26));
+
+
+    gen_13 = PY_CHECK_EXCEPTION(generator8_12 ());
+
+    PyObjectContainer* assert_target_27 = PY_CHECK_EXCEPTION(PY_STD_operator_equals(PY_CHECK_EXCEPTION(PY_STD_GENERATOR_next_fast_arg_0 (gen_13)), PY_createInteger(1)));
+    assert(PY_getTruthValueOf(assert_target_27));
+
+    PyObjectContainer* assert_target_28 = PY_CHECK_EXCEPTION(PY_STD_operator_equals(PY_CHECK_EXCEPTION(PY_STD_GENERATOR_next_fast_arg_0 (gen_13)), PY_createInteger(2)));
+    assert(PY_getTruthValueOf(assert_target_28));
+
+    PyObjectContainer* assert_target_29 = PY_CHECK_EXCEPTION(PY_STD_operator_equals(PY_CHECK_EXCEPTION(PY_STD_GENERATOR_next_fast_arg_0 (gen_13)), PY_createInteger(4)));
+    assert(PY_getTruthValueOf(assert_target_29));
 
 
 
@@ -325,14 +337,14 @@ PyObjectContainer* generator5_6_ENTRY(PyGeneratorContainer* generator) {
     generator->yield_from_source = PY_STD_operator_iter(generator->locals[0]);
     generator->section_id = 1;
     gen_1:;
-    PyObjectContainer* curr_value_21 = PY_STD_operator_next(generator->yield_from_source);
+    PyObjectContainer* curr_value_30 = PY_STD_operator_next(generator->yield_from_source);
 
-    if (curr_value_21 == NULL)
+    if (curr_value_30 == NULL)
     {
         generator->section_id = 2;
         goto gen_2;
     }
-    return curr_value_21;
+    return curr_value_30;
     gen_2:;
 
 
@@ -366,14 +378,14 @@ PyObjectContainer* generator6_8_ENTRY(PyGeneratorContainer* generator) {
     generator->yield_from_source = PY_STD_operator_iter(generator->locals[0]);
     generator->section_id = 1;
     gen_1:;
-    PyObjectContainer* curr_value_22 = PY_STD_operator_next(generator->yield_from_source);
+    PyObjectContainer* curr_value_31 = PY_STD_operator_next(generator->yield_from_source);
 
-    if (curr_value_22 == NULL)
+    if (curr_value_31 == NULL)
     {
         generator->section_id = 2;
         goto gen_2;
     }
-    return curr_value_22;
+    return curr_value_31;
     gen_2:;
 
 
@@ -461,14 +473,14 @@ PyObjectContainer* generator8_12_ENTRY(PyGeneratorContainer* generator) {
     generator->yield_from_source = PY_STD_operator_iter(generator->locals[0]);
     generator->section_id = 1;
     gen_1:;
-    PyObjectContainer* curr_value_23 = PY_STD_operator_next(generator->yield_from_source);
+    PyObjectContainer* curr_value_32 = PY_STD_operator_next(generator->yield_from_source);
 
-    if (curr_value_23 == NULL)
+    if (curr_value_32 == NULL)
     {
         generator->section_id = 2;
         goto gen_2;
     }
-    return curr_value_23;
+    return curr_value_32;
     gen_2:;
     return NULL;
 }
