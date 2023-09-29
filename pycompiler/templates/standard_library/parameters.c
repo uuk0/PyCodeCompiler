@@ -130,6 +130,7 @@ PyObjectContainer** PY_ARGS_unpackArgTableForUnsafeCall(uint8_t positional_count
 
     if (info == NULL) {
         memcpy(new_args + *count_ref, defaults + (keyword_count - rem), rem * sizeof(PyObjectContainer*));
+        (*count_ref) += rem;
         return new_args;
     }
 
@@ -137,6 +138,7 @@ PyObjectContainer** PY_ARGS_unpackArgTableForUnsafeCall(uint8_t positional_count
         char* key = keywords[i];
         PyObjectContainer* value = PY_ARGS_getKeywordParameterOrDefault(args, info, key, defaults[i]);
         new_args[positional_count + keyword_count - rem + i] = value;
+        (*count_ref)++;
     }
 
     return new_args;

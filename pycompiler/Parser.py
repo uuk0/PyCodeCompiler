@@ -1459,7 +1459,7 @@ DECREF({constructor});
             else:
                 entries.append(arg.mode.c_name)
                 keys.append(
-                    arg.key
+                    arg.key.text
                     if arg.mode == CallExpression.ParameterType.KEYWORD
                     else None
                 )
@@ -1473,9 +1473,8 @@ DECREF({constructor});
         keyword_data = "NULL"
 
         if any(keys):
-            keyword_data = (
-                f"(char*[]) {{{', '.join(e if e else 'NULL' for e in keys)}}}"
-            )
+            inner = ", ".join(f'"{e}"' if e else "NULL" for e in keys)
+            keyword_data = f"(char*[]) {{{inner}}}"
 
         return f"PY_ARGS_createCallInfo({offset}, {len(entries)}, (uint64_t[]) {{{', '.join(' | '.join(e) for e in merged_entries)}}}, {keyword_data})"
 
@@ -1895,19 +1894,24 @@ return {func_name}({unbox});
             if arg.mode == FunctionDefinitionNode.ParameterType.NORMAL:
                 positional_count += 1
             elif arg.mode == FunctionDefinitionNode.ParameterType.KEYWORD:
-                keyword_keys.append(arg.name)
-                default_var = base.get_fresh_name(f"default_keyword_{arg.name}")
+                keyword_keys.append(arg.name.text)
+                default_var = base.get_fresh_name(f"default_keyword_{arg.name.text}")
                 keyword_default_names.append(default_var)
                 base.add_global_variable("PyObjectContainer*", default_var)
                 base.init_function.add_code(f"{default_var} = ")
                 arg.default.emit_c_code(base, base.init_function)
+                base.init_function.add_code(";\n")
             else:
                 raise RuntimeError(f"{arg} not implemented!")
+
+        kwd_keys = '", "'.join(keyword_keys)
+        if kwd_keys:
+            kwd_keys = f'"{kwd_keys}"'
 
         # todo: handle star and star-star args!
         safe_func.add_code(
             f"""
-PyObjectContainer** new_args = PY_ARGS_unpackArgTableForUnsafeCall({positional_count}, args, info, &argc, {len(keyword_keys)}, (char*[]){{{repr(keyword_keys)[1:-1]}}}, (PyObjectContainer*[]) {{{', '.join(keyword_default_names)}}});
+PyObjectContainer** new_args = PY_ARGS_unpackArgTableForUnsafeCall({positional_count}, args, info, &argc, {len(keyword_keys)}, (char*[]){{{kwd_keys}}}, (PyObjectContainer*[]) {{{', '.join(keyword_default_names)}}});
 PyObjectContainer* result;
 
 if (self == NULL) {{
