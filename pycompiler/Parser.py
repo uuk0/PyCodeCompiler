@@ -647,6 +647,10 @@ class ConstantAccessExpression(AbstractASTNodeExpression):
             self.static_value_type = INTEGER_DATA_TYPE
         elif isinstance(value, float):
             self.static_value_type = FLOAT_DATA_TYPE
+        elif isinstance(value, str):
+            self.static_value_type = ClassExactDataType(
+                Scope.STANDARD_LIBRARY_VALUES["<str>"]["*"]
+            )
 
     def __eq__(self, other):
         return type(other) == ConstantAccessExpression and self.value == other.value
@@ -2395,7 +2399,42 @@ class IfStatement(AbstractASTNode):
         replacement: AbstractASTNode,
         position: ParentAttributeSection,
     ) -> bool:
-        raise RuntimeError("IfStatement try_replace_child")
+        if position == ParentAttributeSection.LHS:
+            self.main_condition = replacement
+        elif position == ParentAttributeSection.RHS:
+            for i, line in enumerate(self.main_block):
+                if line is original:
+                    self.main_block[i] = replacement
+                    break
+            else:
+                raise ValueError(original)
+        elif position == ParentAttributeSection.PARAMETER:
+            for i, (cond, nodes) in enumerate(self.elif_blocks):
+                if cond is original:
+                    self.elif_blocks[i] = replacement, nodes
+                    break
+            else:
+                raise ValueError(original)
+        elif position == ParentAttributeSection.BODY:
+            for i, (cond, nodes) in enumerate(self.elif_blocks):
+                for j, node in enumerate(nodes):
+                    if node is original:
+                        self.elif_blocks[i][j] = replacement
+                        break
+                else:
+                    continue
+                break
+            else:
+                raise ValueError(original)
+        elif position == ParentAttributeSection.ELSE_BRANCH:
+            for i, node in enumerate(self.else_block):
+                if node is original:
+                    self.else_block[i] = replacement
+                    break
+            else:
+                raise ValueError(original)
+        else:
+            raise ValueError(position)
 
     def try_insert_before(
         self,

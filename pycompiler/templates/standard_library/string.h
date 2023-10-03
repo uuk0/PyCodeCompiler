@@ -10,6 +10,7 @@
 
 extern PyObjectContainer* PY_STD_string_hash_CONTAINER;
 PyObjectContainer* PY_STD_string_hash(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info);
+PyObjectContainer* PY_STD_string_hash_fast(PyObjectContainer* self);
 
 extern PyObjectContainer* PY_STD_string_eq_CONTAINER;
 PyObjectContainer* PY_STD_string_eq(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info);

@@ -18,6 +18,14 @@ PyObjectContainer* PY_STD_string_hash(PyObjectContainer* self, uint8_t argc, PyO
     return PY_createInteger(HASH_string(self->raw_value));
 }
 
+PyObjectContainer* PY_STD_string_hash_fast(PyObjectContainer* self)
+{
+    assert(self->type == PY_TYPE_STRING);
+    assert(self->raw_value != NULL);
+
+    return PY_createInteger(HASH_string(self->raw_value));
+}
+
 PyObjectContainer* PY_STD_string_eq_CONTAINER;
 PyObjectContainer* PY_STD_string_eq(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
 {

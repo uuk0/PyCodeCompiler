@@ -339,6 +339,34 @@
         ]
       },
       {
+        "name": "<str>",
+        "type": "class",
+        "type variable": "NULL",
+        "static attributes": [
+          {
+            "name": "__eq__",
+            "type": "method",
+            "c name": "PY_STD_string_eq_fast"
+          },
+          {
+            "name": "__hash__",
+            "type": "method",
+            "c name": "PY_STD_string_hash_fast"
+          },
+          {
+            "name": "__iter__",
+            "type": "method",
+            "c name": "PY_STD_string_iter_fast"
+          },
+          {
+            "name": "startswith",
+            "type": "method",
+            "arguments": 1,
+            "c name": "PY_STD_string_startswith_fast"
+          }
+        ]
+      },
+      {
         "name": "range",
         "type": "method",
         "arguments": 1,
