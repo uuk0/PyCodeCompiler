@@ -44,6 +44,9 @@ PyObjectContainer* PY_MODULE_source_init(void) {
     #ifdef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE
     PY_MODULE_INSTANCE_source = PY_createModuleObject("source");
     #endif
+    #ifdef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE
+    PY_setObjectAttributeByName(PY_MODULE_INSTANCE_source, "test", (function_container_test_0 = PY_createBoxForFunction(test_0_safeWrap)));
+    #endif
 
 
 
@@ -54,20 +57,12 @@ PyObjectContainer* PY_MODULE_source_init(void) {
 
 
     #ifdef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE
-    PY_setObjectAttributeByName(PY_MODULE_INSTANCE_source, "test", (function_container_test_0 = PY_createBoxForFunction(test_0_safeWrap)));
-    PY_setObjectAttributeByName(PY_MODULE_INSTANCE_source, "generator_1", (function_container_generator_1_1 = PY_createBoxForFunction(generator1_1_safeWrap)));
-    PY_setObjectAttributeByName(PY_MODULE_INSTANCE_source, "generator_2", (function_container_generator_2_2 = PY_createBoxForFunction(generator2_2_safeWrap)));
-    PY_setObjectAttributeByName(PY_MODULE_INSTANCE_source, "generator_3", (function_container_generator_3_3 = PY_createBoxForFunction(generator3_3_safeWrap)));
-    PY_setObjectAttributeByName(PY_MODULE_INSTANCE_source, "generator_4", (function_container_generator_4_4 = PY_createBoxForFunction(generator4_4_safeWrap)));
-    PY_setObjectAttributeByName(PY_MODULE_INSTANCE_source, "generator_5", (function_container_generator_5_5 = PY_createBoxForFunction(generator5_6_safeWrap)));
-    PY_setObjectAttributeByName(PY_MODULE_INSTANCE_source, "generator_6", (function_container_generator_6_6 = PY_createBoxForFunction(generator6_8_safeWrap)));
-    PY_setObjectAttributeByName(PY_MODULE_INSTANCE_source, "generator_7", (function_container_generator_7_7 = PY_createBoxForFunction(generator7_10_safeWrap)));
-    PY_setObjectAttributeByName(PY_MODULE_INSTANCE_source, "generator_8", (function_container_generator_8_8 = PY_createBoxForFunction(generator8_12_safeWrap)));
     PY_exposeModuleObject(PY_MODULE_INSTANCE_source);
     #endif
 }
 
 PyObjectContainer* test_0(void) {
+    // Source Location: .test
     PyObjectContainer* gen_13;
 
     gen_13 = PY_CHECK_EXCEPTION(generator1_1 ());

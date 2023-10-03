@@ -48,6 +48,7 @@ if typing.TYPE_CHECKING:
 
 class GetModuleImports(SyntaxTreeVisitor):
     def __init__(self):
+        super().__init__()
         self.modules = []
 
     def visit_import_statement(self, node: ImportStatement):
@@ -58,6 +59,7 @@ class GetModuleImports(SyntaxTreeVisitor):
 
 class GetHeaderRelatedInfo(SyntaxTreeVisitor):
     def __init__(self):
+        super().__init__()
         self.function_signatures = []
         self.global_variables = []
 
@@ -88,6 +90,7 @@ class GetHeaderRelatedInfo(SyntaxTreeVisitor):
 
 class GetCapturedNames(SyntaxTreeVisitor):
     def __init__(self):
+        super().__init__()
         self.names: typing.List[str] = []
 
     def visit_name_access(self, access: NameAccessExpression):
@@ -107,6 +110,7 @@ class GetCapturedNames(SyntaxTreeVisitor):
 
 class ModuleReferencesResolver(SyntaxTreeVisitor):
     def __init__(self, modules: typing.Dict):
+        super().__init__()
         self.modules = modules
 
     def visit_module_reference(self, module: ModuleReference):
@@ -372,6 +376,7 @@ class BinaryOperatorPriorityRewriter(SyntaxTreeVisitor):
 
 class ScopeGeneratorVisitor(SyntaxTreeVisitor):
     def __init__(self, scope: Scope):
+        super().__init__()
         self.scope: Scope = scope
         self.enable_name_access_export = False
 
@@ -384,6 +389,7 @@ class ScopeGeneratorVisitor(SyntaxTreeVisitor):
         outer_scope = self.scope
         outer_scope.expose_type_name(node.name.text, node)
         self.scope = self.scope.copy()
+        self.scope.export_locals_to_inner = False
         self.scope.class_name_stack.append(node.name.text)
 
         self.scope.is_scope_root = True

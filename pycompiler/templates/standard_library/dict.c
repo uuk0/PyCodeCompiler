@@ -5,6 +5,7 @@
 #include <assert.h>
 #include <stdarg.h>
 #include <memory.h>
+#include <string.h>
 #include "dict.h"
 #include "helpers/hashmap.h"
 #include "operators.h"
@@ -375,6 +376,60 @@ PyObjectContainer* PY_STD_dict_concat_inplace_fast(PyObjectContainer* self, PyOb
     return self;
 }
 
+PyObjectContainer* PY_STD_dict_repr(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info) {
+    assert(argc == 0);
+    return PY_STD_dict_repr_fast(self);
+}
+
+PyObjectContainer* PY_STD_dict_repr_fast(PyObjectContainer* self) {
+    assert(self->type == PY_TYPE_PY_IMPL);
+    assert(self->py_type == PY_TYPE_DICT);
+    assert(self->raw_value != NULL);
+    HashMapContainer* this_container = self->raw_value;
+
+    int64_t dict_size = PY_unpackInteger(PY_STD_dict_len_fast(self));
+
+    char* buffer = strdup("{}");
+    size_t buffer_size = 2;
+
+    bool first = true;
+    if (dict_size > 0) {
+        for (uint64_t i = 0; i < this_container->alloc_size; i++)
+        {
+            PyObjectContainer* key = this_container->key_memory[i];
+
+            if (key == NULL || key == (PyObjectContainer*)&HASHMAP_MARKER_UNSET)
+            {
+                continue;
+            }
+
+            char* key_repr = PY_getObjectRepr(this_container->key_memory[i]);
+            char* value_repr = PY_getObjectRepr(this_container->value_memory[i]);
+            size_t inner_size = strlen(key_repr) + strlen(": ") + strlen(value_repr);
+            if (!first) {
+                inner_size += strlen(", ");
+            }
+
+            buffer = realloc(buffer, buffer_size + inner_size + 1);
+            buffer[buffer_size-1] = '\0'; // remove the '}'
+            buffer_size += inner_size;
+
+            if (!first) {
+                strcat(buffer, ", ");
+            }
+
+            strcat(buffer, key_repr);
+            strcat(buffer, ": ");
+            strcat(buffer, value_repr);
+            strcat(buffer, "}");
+
+            first = false;
+        }
+    }
+
+    return PY_createString(buffer);
+}
+
 #ifdef PY_ENABLE_GENERATORS
 PyObjectContainer* PY_STD_dict_keys_iterator(PyGeneratorContainer* generator)
 {
@@ -523,6 +578,8 @@ void PY_STD_initDictType(void)
     PY_setClassAttributeByNameOrCreate(PY_TYPE_DICT, "copy", PY_createBoxForFunction(PY_STD_dict_copy));
     PY_setClassAttributeByNameOrCreate(PY_TYPE_DICT, "__or__", PY_createBoxForFunction(PY_STD_dict_concat));
     PY_setClassAttributeByNameOrCreate(PY_TYPE_DICT, "__or__", PY_createBoxForFunction(PY_STD_dict_concat_inplace));
+    PY_setClassAttributeByNameOrCreate(PY_TYPE_DICT, "__repr__", PY_createBoxForFunction(PY_STD_dict_repr));
+    PY_setClassAttributeByNameOrCreate(PY_TYPE_DICT, "__str__", PY_createBoxForFunction(PY_STD_dict_repr));
 
 #ifdef PY_ENABLE_GENERATORS
     PY_setClassAttributeByNameOrCreate(PY_TYPE_DICT, "__iter__", PY_createBoxForFunction(PY_STD_dict_keys));

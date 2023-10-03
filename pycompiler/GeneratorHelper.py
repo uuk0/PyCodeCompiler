@@ -14,6 +14,7 @@ from pycompiler.Parser import (
 
 class GetValidYieldStatements(SyntaxTreeVisitor):
     def __init__(self):
+        super().__init__()
         self.statements: typing.List[YieldStatement] = []
 
     def visit_yield_statement(self, yield_statement: YieldStatement):
@@ -30,6 +31,7 @@ class GetValidYieldStatements(SyntaxTreeVisitor):
 
 class LocalNameAccessRewriter(SyntaxTreeVisitor):
     def __init__(self):
+        super().__init__()
         self.name_index_table = {}
         self.next_name_id = 0
 

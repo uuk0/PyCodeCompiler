@@ -20,15 +20,15 @@ struct CallStructureInfo
     uint8_t offset;
     uint8_t count;
     uint64_t bitmask[8];   // possible 255 args, each 2 bit -> 512 bit -> 8
-    char** keyword_names;  // only valid when one CALL_STRUCTURE_KEYWORD is provided
+    struct PyObjectContainer** keyword_names;  // only valid when one CALL_STRUCTURE_KEYWORD is provided
 };
 typedef struct CallStructureInfo CallStructureInfo;
 
-CallStructureInfo* PY_ARGS_createCallInfo(uint8_t offset, uint8_t count, uint64_t bitmask[8], char** keyword_names);
+CallStructureInfo* PY_ARGS_createCallInfo(uint8_t offset, uint8_t count, uint64_t bitmask[8], struct PyObjectContainer** keyword_names);
 
 struct PyObjectContainer** PY_ARGS_unpackPositionalArgs(struct PyObjectContainer** args, CallStructureInfo* info, uint8_t* count_ref);
-struct PyObjectContainer* PY_ARGS_getKeywordParameter(struct PyObjectContainer** args, CallStructureInfo* info, char* name);
-struct PyObjectContainer* PY_ARGS_getKeywordParameterOrDefault(struct PyObjectContainer** args, CallStructureInfo* info, char* name, struct PyObjectContainer* default_value);
-struct PyObjectContainer** PY_ARGS_unpackArgTableForUnsafeCall(uint8_t positional_count, struct PyObjectContainer** args, CallStructureInfo* info, uint8_t* count_ref, uint8_t keyword_count, char** keywords, struct PyObjectContainer** defaults);
+struct PyObjectContainer* PY_ARGS_getKeywordParameter(struct PyObjectContainer** args, CallStructureInfo* info, struct PyObjectContainer* name);
+struct PyObjectContainer* PY_ARGS_getKeywordParameterOrDefault(struct PyObjectContainer** args, CallStructureInfo* info, struct PyObjectContainer* name, struct PyObjectContainer* default_value);
+struct PyObjectContainer** PY_ARGS_unpackArgTableForUnsafeCall(uint8_t positional_count, struct PyObjectContainer** args, CallStructureInfo* info, uint8_t* count_ref, uint8_t keyword_count, struct PyObjectContainer** keywords, struct PyObjectContainer** defaults);
 
 #endif //PYCCOMPILER_PARAMETERS_H

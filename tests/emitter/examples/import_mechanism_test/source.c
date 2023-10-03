@@ -48,14 +48,18 @@ PyObjectContainer* PY_MODULE_source_init(void) {
 
 
 
-
     #ifdef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE
     PY_setObjectAttributeByName(PY_MODULE_INSTANCE_source, "test", (function_container_test_0 = PY_createBoxForFunction(test_0_safeWrap)));
+    #endif
+
+    #ifdef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE
     PY_exposeModuleObject(PY_MODULE_INSTANCE_source);
     #endif
 }
 
 PyObjectContainer* test_0(void) {
+    // Source Location: .test
+
     PyObjectContainer* assert_target_1 = PY_CHECK_EXCEPTION(PY_STD_operator_equals(PY_getObjectAttributeByNameOrStatic(PY_MODULE_INSTANCE_typing, "TYPE_CHECKING"), PY_FALSE));
     assert(PY_getTruthValueOf(assert_target_1));
 

@@ -38,16 +38,21 @@ PyObjectContainer* PY_MODULE_source_init(void) {
     #ifdef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE
     PY_MODULE_INSTANCE_source = PY_createModuleObject("source");
     #endif
-
-
     #ifdef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE
     PY_setObjectAttributeByName(PY_MODULE_INSTANCE_source, "test", (function_container_test_0 = PY_createBoxForFunction(test_0_safeWrap)));
+    #endif
+
+    #ifdef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE
     PY_setObjectAttributeByName(PY_MODULE_INSTANCE_source, "test_2", (function_container_test_2_1 = PY_createBoxForFunction(test2_1_safeWrap)));
+    #endif
+
+    #ifdef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE
     PY_exposeModuleObject(PY_MODULE_INSTANCE_source);
     #endif
 }
 
 PyObjectContainer* test_0(void) {
+    // Source Location: .test
     PyObjectContainer* l_2;
     PyObjectContainer* s_3;
     PyObjectContainer* x_4;
@@ -81,6 +86,7 @@ PyObjectContainer* test_0_safeWrap(PyObjectContainer* self , uint8_t argc , PyOb
 }
 
 PyObjectContainer* test2_1(void) {
+    // Source Location: .test_2
     PyObjectContainer* l_5;
     PyObjectContainer* s_6;
     PyObjectContainer* x_7;

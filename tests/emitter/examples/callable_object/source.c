@@ -23,7 +23,9 @@ PyObjectContainer* PY_MODULE_INSTANCE_source;
 
 
 // Global Variables
-PyObjectContainer* function_container_test_0;
+PyObjectContainer* function_container___init___0;
+PyObjectContainer* function_container___call___1;
+PyObjectContainer* function_container_test_2;
 PyClassContainer* PY_CLASS_Test_4;
 
 
@@ -36,10 +38,18 @@ PyObjectContainer* PY_MODULE_source_init(void) {
     #ifdef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE
     PY_MODULE_INSTANCE_source = PY_createModuleObject("source");
     #endif
+    #ifdef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE
+    PY_setObjectAttributeByName(PY_MODULE_INSTANCE_source, "__init__", (function_container___init___0 = PY_createBoxForFunction(init_1_safeWrap)));
+    #endif
+    #ifdef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE
+    PY_setObjectAttributeByName(PY_MODULE_INSTANCE_source, "__call__", (function_container___call___1 = PY_createBoxForFunction(call_3_safeWrap)));
+    #endif
     PY_CLASS_INIT_PY_CLASS_Test_4();
+    #ifdef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE
+    PY_setObjectAttributeByName(PY_MODULE_INSTANCE_source, "test", (function_container_test_2 = PY_createBoxForFunction(test_5_safeWrap)));
+    #endif
 
     #ifdef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE
-    PY_setObjectAttributeByName(PY_MODULE_INSTANCE_source, "test", (function_container_test_0 = PY_createBoxForFunction(test_5_safeWrap)));
     PY_exposeModuleObject(PY_MODULE_INSTANCE_source);
     #endif
 }
@@ -58,6 +68,8 @@ PyObjectContainer* PY_CLASS_INIT_PY_CLASS_Test_4(void) {
 }
 
 PyObjectContainer* init_1(PyObjectContainer* self_0) {
+    // Source Location: Test.__init__
+
     return PY_NONE;
 
 
@@ -82,6 +94,8 @@ PyObjectContainer* init_1_safeWrap(PyObjectContainer* self , uint8_t argc , PyOb
 }
 
 PyObjectContainer* call_3(PyObjectContainer* self_2) {
+    // Source Location: Test.__call__
+
     return PY_createInteger(10);
 
 
@@ -107,12 +121,13 @@ PyObjectContainer* call_3_safeWrap(PyObjectContainer* self , uint8_t argc , PyOb
 }
 
 PyObjectContainer* test_5(void) {
+    // Source Location: .test
     PyObjectContainer* obj_6;
 
-    PyObjectContainer* obj_instance_1 = PY_createClassInstance(PY_CLASS_Test_4);
-    PY_CHECK_EXCEPTION(init_1(obj_instance_1));
+    PyObjectContainer* obj_instance_3 = PY_createClassInstance(PY_CLASS_Test_4);
+    PY_CHECK_EXCEPTION(init_1(obj_instance_3));
 
-    obj_6 = obj_instance_1;
+    obj_6 = obj_instance_3;
 
     return PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(obj_6, NULL, 0, NULL, NULL));
 }

@@ -34,6 +34,7 @@ class Scope:
         self.variable_type_map: typing.Dict[str, AbstractDataType | None] = {}
 
         self.strong_variables: typing.Dict[str, object] = {}
+        self.export_locals_to_inner = True
 
     def set_local_var_type_or_clear(self, name: str, data_type: AbstractDataType):
         if name in self.variable_type_map:
@@ -60,16 +61,22 @@ class Scope:
         return self.get_fresh_name(name)
 
     def get_remapped_name(self, name: str) -> str:
+        look_for_exposed = self.exposed_type_names
+
         if name not in self.variable_name_remap:
             if self.parent and not self.is_scope_root:
                 parent = self.parent
 
                 while parent:
-                    if name in parent.variable_name_remap:
+                    if name in parent.variable_name_remap and (
+                        not look_for_exposed or parent.exposed_type_names
+                    ):
                         self.variable_name_remap[
                             name
                         ] = result = parent.variable_name_remap[name]
                         return result
+
+                    look_for_exposed = look_for_exposed or parent.exposed_type_names
 
                     if not parent.is_scope_root:
                         break
@@ -312,6 +319,7 @@ class CCodeEmitter:
             return "\n".join(lines)
 
     def __init__(self, scope: Scope = None):
+        self.module_name: str = None
         self._fresh_name_counter = 0
         self.functions: typing.List[CCodeEmitter.CFunctionBuilder] = []
         self.includes: typing.List[str] = []
@@ -336,9 +344,6 @@ class CCodeEmitter:
     def add_global_variable(self, var_type: str, var_name: str, ignore_error=False):
         if not ignore_error and not var_name.isidentifier():
             raise ValueError(var_name)
-
-        if "len" in var_name:
-            raise RuntimeError
 
         if (var_type, var_name) in self.global_variables:
             return
@@ -1473,8 +1478,13 @@ DECREF({constructor});
         keyword_data = "NULL"
 
         if any(keys):
-            inner = ", ".join(f'"{e}"' if e else "NULL" for e in keys)
-            keyword_data = f"(char*[]) {{{inner}}}"
+            keyword_var = base.get_fresh_name("keyword_name_var")
+            base.add_global_variable("PyObjectContainer**", keyword_var)
+            inner = ", ".join(f'PY_createString("{e}")' if e else "NULL" for e in keys)
+            base.init_function.add_code(
+                f"{keyword_var} = (PyObjectContainer*[]) {{{inner}}};\n"
+            )
+            keyword_data = keyword_var
 
         return f"PY_ARGS_createCallInfo({offset}, {len(entries)}, (uint64_t[]) {{{', '.join(' | '.join(e) for e in merged_entries)}}}, {keyword_data})"
 
@@ -1705,6 +1715,10 @@ class FunctionDefinitionNode(AbstractASTNode):
         )
         base.add_function(func)
 
+        func.add_code(
+            f"// Source Location: {'.'.join(self.scope.class_name_stack)}.{self.name.text}\n"
+        )
+
         if len(self.body) > 0:
             args = [arg.name.text for arg in self.parameters]
 
@@ -1730,6 +1744,13 @@ class FunctionDefinitionNode(AbstractASTNode):
             func.add_code("return PY_NONE;")
 
         self.generate_safe_wrapper(base, func_name)
+
+        base.init_function.add_code("#ifdef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE\n")
+        assert self.global_container_name is not None
+        base.init_function.add_code(
+            f'PY_setObjectAttributeByName(PY_MODULE_INSTANCE_{base.module_name.replace(".", "__")}, "{self.name.text}", ({self.global_container_name} = PY_createBoxForFunction({self.normal_name}_safeWrap)));\n'
+        )
+        base.init_function.add_code("#endif\n")
 
     def emit_c_code_for_generator(
         self,
@@ -1906,12 +1927,19 @@ return {func_name}({unbox});
 
         kwd_keys = '", "'.join(keyword_keys)
         if kwd_keys:
-            kwd_keys = f'"{kwd_keys}"'
+            kwd_keys = f'PY_createString("{kwd_keys}")'
+
+        keyword_mem = base.get_fresh_name("keyword_name_table")
+
+        base.add_global_variable("PyObjectContainer**", keyword_mem)
+        base.init_function.add_code(
+            f"{keyword_mem} = (PyObjectContainer*[]){{{kwd_keys}}};\n"
+        )
 
         # todo: handle star and star-star args!
         safe_func.add_code(
             f"""
-PyObjectContainer** new_args = PY_ARGS_unpackArgTableForUnsafeCall({positional_count}, args, info, &argc, {len(keyword_keys)}, (char*[]){{{kwd_keys}}}, (PyObjectContainer*[]) {{{', '.join(keyword_default_names)}}});
+PyObjectContainer** new_args = PY_ARGS_unpackArgTableForUnsafeCall({positional_count}, args, info, &argc, {len(keyword_keys)}, {keyword_mem}, (PyObjectContainer*[]) {{{', '.join(keyword_default_names)}}});
 PyObjectContainer* result;
 
 if (self == NULL) {{
@@ -2905,9 +2933,20 @@ class StandardLibraryModuleReference(ModuleReference):
 
 
 class SyntaxTreeVisitor:
+    def __init__(self):
+        self.node_cache = set()
+
+    def reset(self):
+        self.node_cache.clear()
+
     def visit_any(self, obj: AbstractASTNode):
         if obj is None:
             return
+
+        if id(obj) in self.node_cache:
+            return
+
+        self.node_cache.add(id(obj))
 
         obj_type = type(obj)
 
@@ -3321,6 +3360,7 @@ class Parser:
             expr = self.parse()
 
         builder = CCodeEmitter(scope)
+        builder.module_name = module_name
         main = builder.CFunctionBuilder(
             f"PY_MODULE_{module_name.replace('.', '___') if module_name else 'unknown'}_init",
             [],
@@ -3363,13 +3403,15 @@ class Parser:
         for var in sorted(list(vars)):
             main.add_code(f"PyObjectContainer* {scope.get_remapped_name(var)};\n")
 
-        for line in expr:
-            if isinstance(line, FunctionDefinitionNode):
+        class FuncDefVisitor(SyntaxTreeVisitor):
+            def visit_function_definition(self, node: FunctionDefinitionNode):
                 global_name = builder.get_fresh_name(
-                    f"function_container_{line.name.text}"
+                    f"function_container_{node.name.text}"
                 )
                 builder.add_global_variable("PyObjectContainer*", global_name)
-                line.global_container_name = global_name
+                node.global_container_name = global_name
+
+        FuncDefVisitor().visit_any_list(expr)
 
         for line in expr:
             inner_block = main.get_statement_builder(indent=False)
@@ -3389,12 +3431,6 @@ class Parser:
         #     )
 
         main.add_code("#ifdef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE\n")
-        for line in expr:
-            if isinstance(line, FunctionDefinitionNode):
-                main.add_code(
-                    f'PY_setObjectAttributeByName(PY_MODULE_INSTANCE_{normal_module_name}, "{line.name.text}", ({line.global_container_name} = PY_createBoxForFunction({line.normal_name}_safeWrap)));\n'
-                )
-
         main.add_code(
             f"PY_exposeModuleObject(PY_MODULE_INSTANCE_{normal_module_name});\n"
         )

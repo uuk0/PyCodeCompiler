@@ -5,13 +5,14 @@
 #include <memory.h>
 #include <assert.h>
 #include <string.h>
+#include <stdio.h>
 #include "parameters.h"
 #include "pyinclude.h"
 #include "list.h"
 #include "dict.h"
 #include "standard_library/helpers/hashmap.h"
 
-CallStructureInfo* PY_ARGS_createCallInfo(uint8_t offset, uint8_t count, uint64_t bitmask[8], char** keyword_names)
+CallStructureInfo* PY_ARGS_createCallInfo(uint8_t offset, uint8_t count, uint64_t bitmask[8], PyObjectContainer** keyword_names)
 {
     CallStructureInfo* mem = malloc(sizeof(CallStructureInfo));
     mem->offset = offset;
@@ -77,7 +78,7 @@ PyObjectContainer** PY_ARGS_unpackPositionalArgs(PyObjectContainer** args, CallS
     return new_args;
 }
 
-PyObjectContainer* PY_ARGS_getKeywordParameter(PyObjectContainer** args, CallStructureInfo* info, char* name) {
+PyObjectContainer* PY_ARGS_getKeywordParameter(PyObjectContainer** args, CallStructureInfo* info, PyObjectContainer* name) {
     if (info == NULL) {
         return NULL;
     }
@@ -99,7 +100,7 @@ PyObjectContainer* PY_ARGS_getKeywordParameter(PyObjectContainer** args, CallStr
             }
         }
         else {
-            if (strcmp(info->keyword_names[i], name) == 0) {
+            if (strcmp(PY_unpackString(info->keyword_names[i]), PY_unpackString(name)) == 0) {
                 return args[info->offset + i];
             }
         }
@@ -117,25 +118,29 @@ PyObjectContainer* PY_ARGS_getKeywordParameter(PyObjectContainer** args, CallStr
     return NULL;
 }
 
-PyObjectContainer* PY_ARGS_getKeywordParameterOrDefault(PyObjectContainer** args, CallStructureInfo* info, char* name, PyObjectContainer* default_value) {
+PyObjectContainer* PY_ARGS_getKeywordParameterOrDefault(PyObjectContainer** args, CallStructureInfo* info, PyObjectContainer* name, PyObjectContainer* default_value) {
     PyObjectContainer* value = PY_ARGS_getKeywordParameter(args, info, name);
     return value == NULL ? default_value : value;
 }
 
-PyObjectContainer** PY_ARGS_unpackArgTableForUnsafeCall(uint8_t positional_count, PyObjectContainer** args, CallStructureInfo* info, uint8_t* count_ref, uint8_t keyword_count, char** keywords, PyObjectContainer** defaults) {
+PyObjectContainer** PY_ARGS_unpackArgTableForUnsafeCall(uint8_t positional_count, PyObjectContainer** args, CallStructureInfo* info, uint8_t* count_ref, uint8_t keyword_count, PyObjectContainer** keywords, PyObjectContainer** defaults) {
     PyObjectContainer** new_args = malloc((positional_count + keyword_count) * sizeof(PyObjectContainer*));
-    memcpy(new_args, args, *count_ref * sizeof(PyObjectContainer*));
+    memcpy(new_args, args, (*count_ref) * sizeof(PyObjectContainer*));
     uint8_t rem = keyword_count;
-    if (*count_ref > positional_count) rem -= *count_ref - positional_count;
 
     if (info == NULL) {
+        if (*count_ref > positional_count) rem -= (*count_ref) - positional_count;
+
         memcpy(new_args + *count_ref, defaults + (keyword_count - rem), rem * sizeof(PyObjectContainer*));
         (*count_ref) += rem;
         return new_args;
     }
 
+    if (info->offset > positional_count) rem -= info->offset - positional_count;
+    *count_ref = info->offset;
+
     for (int i = (keyword_count - rem); i < rem; i++) {
-        char* key = keywords[i];
+        PyObjectContainer* key = keywords[i];
         PyObjectContainer* value = PY_ARGS_getKeywordParameterOrDefault(args, info, key, defaults[i]);
         new_args[positional_count + keyword_count - rem + i] = value;
         (*count_ref)++;

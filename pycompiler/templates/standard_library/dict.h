@@ -49,6 +49,9 @@ PyObjectContainer* PY_STD_dict_concat_fast(PyObjectContainer* self, PyObjectCont
 PyObjectContainer* PY_STD_dict_concat_inplace(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info);
 PyObjectContainer* PY_STD_dict_concat_inplace_fast(PyObjectContainer* self, PyObjectContainer* other);
 
+PyObjectContainer* PY_STD_dict_repr(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info);
+PyObjectContainer* PY_STD_dict_repr_fast(PyObjectContainer* self);
+
 PyObjectContainer* PY_STD_dict_keys(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info);
 PyObjectContainer* PY_STD_dict_keys_fast(PyObjectContainer* self);
 

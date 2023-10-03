@@ -486,17 +486,19 @@ char* PY_getObjectRepr(PyObjectContainer* obj)
         if (method == NULL)
         {
             char* class_name = PY_getObjectClassName(obj);
-            size_t size = strlen(class_name) + strlen("<-object at \?\?\?>");
+            size_t size = strlen(class_name) + strlen("<-object at 0x0000020CB8576980>");
             char* buffer = malloc(size+1);
             if (buffer == NULL)
             {
                 perror("malloc repr wrapper");
                 exit(EXIT_FAILURE);
             }
-            snprintf(buffer, size+1, "<%s-object at \?\?\?>", class_name);
+            snprintf(buffer, size+1, "<%s-object at %#016llx>", class_name, (uintptr_t)obj);
             return buffer;
         }
-        return PY_unpackString(PY_CHECK_EXCEPTION_AND_EXIT(PY_invokeBoxedMethod(method, obj, 0, NULL, NULL)));
+        char* result = PY_unpackString(PY_CHECK_EXCEPTION_AND_EXIT(PY_invokeBoxedMethod(method, obj, 0, NULL, NULL)));
+        assert(*result != '\0');
+        return result;
     }
 
     switch (obj->type) {
@@ -512,11 +514,12 @@ char* PY_getObjectRepr(PyObjectContainer* obj)
         {
             size_t size = (int) ((ceil(log10((double)UINT64_MAX)) + 1 + 1) * sizeof(char));
             char *buffer = malloc(size);
-            snprintf(buffer, size, "%", PRIu64, *(int64_t*)obj->raw_value);
+            snprintf(buffer, size, "%lli", *(int64_t*)obj->raw_value);
             return buffer;
         }
         case PY_TYPE_STRING:
         {
+            // todo: escape " chars in text!
             char *buffer = malloc(strlen(obj->raw_value) + 2);
             buffer[0] = '\"';
             buffer[1] = '\0';
@@ -526,6 +529,7 @@ char* PY_getObjectRepr(PyObjectContainer* obj)
         }
         case PY_TYPE_FLOAT:
         {
+            // todo: whats the real size?
             size_t size = 64;
             char *buffer = malloc(size);
             snprintf(buffer, size, "%f", *(double*)obj->raw_value);
@@ -535,20 +539,46 @@ char* PY_getObjectRepr(PyObjectContainer* obj)
         {
             PyClassContainer* cls = PY_unwrapClassContainer(obj);
             char* class_name = cls->class_name;
-            size_t size = strlen(class_name) + strlen("<-type-object at \?\?\?>");
+            size_t size = strlen(class_name) + strlen("<-type-object at 0x0000020CB8576980>");
             char* buffer = malloc(size+1);
             if (buffer == NULL)
             {
                 perror("malloc repr wrapper");
                 exit(EXIT_FAILURE);
             }
-            snprintf(buffer, size, "<%s-type-object at \?\?\?>", class_name);
+            snprintf(buffer, size, "<%s-type-object at %#018llx>", class_name, (uintptr_t)obj);
             return buffer;
         }
         case PY_TYPE_FUNC_POINTER:
-            return "<function pointer>";
+        {
+            size_t size = strlen("<function pointer at 0x0000020CB8576980>");
+            char *buffer = malloc(size + 1);
+            if (buffer == NULL) {
+                perror("malloc repr wrapper");
+                exit(EXIT_FAILURE);
+            }
+            snprintf(buffer, size, "<function pointer at %#018llx>", (uintptr_t) obj);
+            return buffer;
+            return "<function pointer to>";
+        }
         case PY_EXCEPTION:
-            return "<exception>";
+        {
+            if (obj->raw_value != NULL)
+            {
+                // This is an (PYTHON) Exception object -> that repr is our one!
+                return PY_getObjectRepr(obj->raw_value);
+            }
+
+            size_t size = strlen("<exception at 0x0000020CB8576980>");
+            char* buffer = malloc(size+1);
+            if (buffer == NULL)
+            {
+                perror("malloc repr wrapper");
+                exit(EXIT_FAILURE);
+            }
+            snprintf(buffer, size, "<exception at %#018llx>", (uintptr_t)obj);
+            return buffer;
+        }
     }
     assert(0);
 }
@@ -571,7 +601,12 @@ PyObjectContainer* PY_getObjectStr_wrapper(PyObjectContainer* obj)
 
 PyObjectContainer* PY_invokeBoxedMethod(PyObjectContainer* method, PyObjectContainer* self, uint8_t param_count, PyObjectContainer** args, CallStructureInfo* info)
 {
-    assert(method != NULL);
+    if (method == NULL)
+    {
+        PyObjectContainer** x = NULL;
+        self = (PyObjectContainer*)*x;
+    }
+    PY_THROW_EXCEPTION_IF_WITH_MESSAGE(method == NULL, NULL, "method MUST be != NULL");
 
     bool decref_after = false;
 

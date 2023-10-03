@@ -36,16 +36,22 @@ PyObjectContainer* PY_MODULE_source_init(void) {
     #ifdef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE
     PY_MODULE_INSTANCE_source = PY_createModuleObject("source");
     #endif
-
-
     #ifdef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE
     PY_setObjectAttributeByName(PY_MODULE_INSTANCE_source, "test", (function_container_test_0 = PY_createBoxForFunction(test_0_safeWrap)));
+    #endif
+
+    #ifdef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE
     PY_setObjectAttributeByName(PY_MODULE_INSTANCE_source, "test_2", (function_container_test_2_1 = PY_createBoxForFunction(test2_1_safeWrap)));
+    #endif
+
+    #ifdef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE
     PY_exposeModuleObject(PY_MODULE_INSTANCE_source);
     #endif
 }
 
 PyObjectContainer* test_0(void) {
+    // Source Location: .test
+
     PyObjectContainer* assert_target_2 = PY_CHECK_EXCEPTION(PY_createInteger(1));
     assert(PY_getTruthValueOf(assert_target_2) && PY_createString("hello world!"));
 
@@ -61,6 +67,8 @@ PyObjectContainer* test_0_safeWrap(PyObjectContainer* self , uint8_t argc , PyOb
 }
 
 PyObjectContainer* test2_1(void) {
+    // Source Location: .test_2
+
     PyObjectContainer* assert_target_3 = PY_CHECK_EXCEPTION(PY_createInteger(0));
     assert(PY_getTruthValueOf(assert_target_3) && PY_createString("exception!"));
     return PY_NONE;

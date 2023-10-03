@@ -244,6 +244,16 @@
             "type": "method",
             "c name": "PY_STD_dict_concat_fast_inplace",
             "parameters": 1
+          },
+          {
+            "name": "__repr__",
+            "type": "method",
+            "c name": "PY_STD_dict_repr_fast"
+          },
+          {
+            "name": "__str__",
+            "type": "method",
+            "c name": "PY_STD_dict_repr_fast"
           }
         ]
       },

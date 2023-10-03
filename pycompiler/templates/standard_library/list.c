@@ -529,7 +529,7 @@ int64_t PY_STD_list_index_fast_list(PyObjectContainer* self, PyObjectContainer* 
         }
     }
 
-    PY_THROW_EXCEPTION(NULL);
+    assert(false);
 }
 
 void PY_STD_list_removeIndex(PY_STD_list_container* list, uint16_t index);
@@ -911,7 +911,7 @@ PyObjectContainer* PY_STD_list_sort(PyObjectContainer* self, uint8_t argc, PyObj
 
     PY_STD_list_container* list = (PY_STD_list_container*)self->raw_value;
 
-    PyObjectContainer* sort_key = PY_ARGS_getKeywordParameter(args, info, "key");
+    PyObjectContainer* sort_key = PY_ARGS_getKeywordParameter(args, info, PY_createString("key"));
     // todo: use sort_key if provided
 
     qsort(list->array, list->curr_size, sizeof(PyObjectContainer*), PY_STD_list_sort_cmp);

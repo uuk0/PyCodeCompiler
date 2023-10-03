@@ -23,6 +23,7 @@ PyObjectContainer* PY_MODULE_INSTANCE_source;
 
 
 // Global Variables
+PyObjectContainer* function_container___init___0;
 PyClassContainer* PY_CLASS_test_2;
 
 
@@ -37,11 +38,14 @@ PyObjectContainer* PY_MODULE_source_init(void) {
     #endif
     PyObjectContainer* obj_3;
     PyObjectContainer* test_2;
+    #ifdef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE
+    PY_setObjectAttributeByName(PY_MODULE_INSTANCE_source, "__init__", (function_container___init___0 = PY_createBoxForFunction(init_1_safeWrap)));
+    #endif
     PY_CLASS_INIT_PY_CLASS_test_2();
-    PyObjectContainer* obj_instance_0 = PY_createClassInstance(PY_CLASS_test_2);
-    PY_CHECK_EXCEPTION(init_1(obj_instance_0));
+    PyObjectContainer* obj_instance_1 = PY_createClassInstance(PY_CLASS_test_2);
+    PY_CHECK_EXCEPTION(init_1(obj_instance_1));
 
-    obj_3 = obj_instance_0;
+    obj_3 = obj_instance_1;
     #ifdef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE
     PY_exposeModuleObject(PY_MODULE_INSTANCE_source);
     #endif
@@ -60,6 +64,7 @@ PyObjectContainer* PY_CLASS_INIT_PY_CLASS_test_2(void) {
 }
 
 PyObjectContainer* init_1(PyObjectContainer* self_0) {
+    // Source Location: test.__init__
     PyObjectContainer* value_4;
 
     value_4 = PY_createInteger(0);
