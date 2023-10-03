@@ -251,6 +251,10 @@ static PyObjectContainer* PY_getObjectAttributeByNameOrStatic_primitive(PyObject
         {
             return PY_STD_string_iter_CONTAINER;
         }
+        if (strcmp(name, "startswith") == 0)
+        {
+            return PY_STD_string_startswith_CONTAINER;
+        }
     }
     else if (obj->type == PY_TYPE_PY_TYPE)
     {

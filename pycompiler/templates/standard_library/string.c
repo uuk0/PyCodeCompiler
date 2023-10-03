@@ -74,6 +74,8 @@ PyObjectContainer* PY_STD_string_iter_fast(PyObjectContainer* self)
     return container;
 }
 
+PyObjectContainer* PY_STD_string_startswith_CONTAINER;
+
 PyObjectContainer* PY_STD_string_startswith(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
 {
     assert(argc == 1);
@@ -104,4 +106,5 @@ void PY_STD_initStringType(void)
     PY_STD_string_hash_CONTAINER = PY_createBoxForFunction(PY_STD_string_hash);
     PY_STD_string_eq_CONTAINER = PY_createBoxForFunction(PY_STD_string_eq);
     PY_STD_string_iter_CONTAINER = PY_createBoxForFunction(PY_STD_string_iter);
+    PY_STD_string_startswith_CONTAINER = PY_createBoxForFunction(PY_STD_string_startswith);
 }
