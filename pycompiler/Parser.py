@@ -2487,6 +2487,47 @@ class IfStatement(AbstractASTNode):
         context.add_code(block.get_result())
 
 
+class TernaryOperator(AbstractASTNodeExpression):
+    def __init__(
+        self,
+        lhs: AbstractASTNodeExpression,
+        cond: AbstractASTNodeExpression,
+        rhs: AbstractASTNodeExpression,
+    ):
+        super().__init__()
+        self.lhs = lhs
+        self.cond = cond
+        self.rhs = rhs
+
+    def __repr__(self):
+        return f"TERNARY({self.cond} ? {self.lhs} : {self.rhs})"
+
+    def __eq__(self, other):
+        return (
+            type(other) == TernaryOperator
+            and self.lhs == other.lhs
+            and self.cond == other.cond
+            and self.rhs == other.rhs
+        )
+
+    def try_replace_child(
+        self,
+        original: AbstractASTNode | None,
+        replacement: AbstractASTNode,
+        position: ParentAttributeSection,
+    ) -> bool:
+        raise NotImplementedError
+
+    def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder):
+        context.add_code("(")
+        self.cond.emit_c_code(base, context)
+        context.add_code(" ? ")
+        self.lhs.emit_c_code(base, context)
+        context.add_code(" : ")
+        self.rhs.emit_c_code(base, context)
+        context.add_code(")")
+
+
 class BinaryOperatorExpression(AbstractASTNodeExpression):
     class BinaryOperation(enum.Enum):
         PLUS = enum.auto()
@@ -3993,6 +4034,30 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
                 base = BinaryOperatorExpression(
                     base, BinaryOperatorExpression.BinaryOperation.SMALLER, expression
                 )
+
+            elif self.lexer.inspect_chars(3) == "if ":
+                self.lexer.get_chars(2)
+                self.lexer.try_parse_whitespaces()
+                cond = self.try_parse_expression()
+                if cond is None:
+                    raise SyntaxError(
+                        "expected <condition> after 'if' in ternary operator"
+                    )
+
+                self.lexer.try_parse_whitespaces()
+                if self.lexer.get_chars(5) != "else ":
+                    raise SyntaxError(
+                        "expected 'else' after <condition> in ternary operator"
+                    )
+
+                self.lexer.try_parse_whitespaces()
+                rhs = self.try_parse_expression()
+                if rhs is None:
+                    raise SyntaxError(
+                        "expected <else-value> after 'else' in ternary operator"
+                    )
+
+                base = TernaryOperator(base, cond, rhs)
 
             else:
                 break

@@ -86,7 +86,7 @@ Make the compiled test suite from python not fail in the major test cases
 - constants and variables
 - variable assignments, including multiple lhs and complex lhs objects, like e.g. `target[0] = x.y = 10`
 - the subscription operator (`[]`), attribute access (`.`)
-- function calls (`()`)
+- function calls (`()`) including keyword, '*' and '**'
 - function declarations (python 3.12 syntax with generics via `[]` after the function name), including generators
   (WIP)
   - no inner functions (TODO: make them work with a wrapper)
@@ -101,7 +101,7 @@ Make the compiled test suite from python not fail in the major test cases
   - TODO: allow generator destruction (requires some transforms before)
 - `for`(each)-loops
   - using the `__iter__` function which can be defined on objects
-- TODO: if-elif-else
+- if-elif-else and ternary expressions
 - TODO: compare-chains resolving
 - TODO: dynamic imports (`__import__`, `importlib`)
 
