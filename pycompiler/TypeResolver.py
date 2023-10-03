@@ -31,6 +31,7 @@ from pycompiler.Parser import (
     PrefixOperation,
     InplaceOperator,
     ListComprehension,
+    TernaryOperator,
 )
 
 if typing.TYPE_CHECKING:
@@ -299,6 +300,13 @@ class ResolveParentAttribute(SyntaxTreeVisitor):
                 comprehension,
                 ParentAttributeSection.ELSE_BRANCH,
             )
+
+    def visit_ternary_operator(self, operator: TernaryOperator):
+        super().visit_ternary_operator(operator)
+
+        operator.lhs.parent = operator, ParentAttributeSection.LHS
+        operator.cond.parent = operator, ParentAttributeSection.PARAMETER
+        operator.rhs.parent = operator, ParentAttributeSection.RHS
 
 
 class BinaryOperatorPriorityRewriter(SyntaxTreeVisitor):

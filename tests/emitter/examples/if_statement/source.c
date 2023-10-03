@@ -24,6 +24,7 @@ PyObjectContainer* PY_MODULE_INSTANCE_source;
 
 // Global Variables
 PyObjectContainer* function_container_test_0;
+PyObjectContainer* function_container_test2_1;
 
 
 
@@ -37,6 +38,10 @@ PyObjectContainer* PY_MODULE_source_init(void) {
     #endif
     #ifdef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE
     PY_setObjectAttributeByName(PY_MODULE_INSTANCE_source, "test", (function_container_test_0 = PY_createBoxForFunction(test_1_safeWrap)));
+    #endif
+
+    #ifdef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE
+    PY_setObjectAttributeByName(PY_MODULE_INSTANCE_source, "test2", (function_container_test2_1 = PY_createBoxForFunction(test2_3_safeWrap)));
     #endif
 
     #ifdef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE
@@ -70,6 +75,29 @@ PyObjectContainer* test_1_safeWrap(PyObjectContainer* self , uint8_t argc , PyOb
     else {
         assert(argc == 0);
         result = test_1(self);
+    }
+
+    if (info) free(new_args);
+    return result;
+}
+
+PyObjectContainer* test2_3(PyObjectContainer* x_2) {
+    // Source Location: .test2
+
+    return (PY_STD_operator_equals(x_2, PY_createInteger(3)) ? PY_createInteger(1) : PY_createInteger(2));
+}
+
+PyObjectContainer* test2_3_safeWrap(PyObjectContainer* self , uint8_t argc , PyObjectContainer** args , CallStructureInfo* info) {
+    PyObjectContainer** new_args = PY_ARGS_unpackPositionalArgs(args, info, &argc);
+    PyObjectContainer* result;
+
+    if (self == NULL) {
+        assert(argc == 1);
+        result = test2_3(new_args[0]);
+    }
+    else {
+        assert(argc == 0);
+        result = test2_3(self);
     }
 
     if (info) free(new_args);

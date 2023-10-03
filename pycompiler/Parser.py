@@ -3100,6 +3100,8 @@ class SyntaxTreeVisitor:
             return self.visit_list_comprehension(obj)
         elif obj_type == WalrusOperatorExpression:
             return self.visit_walrus_operator(obj)
+        elif obj_type == TernaryOperator:
+            return self.visit_ternary_operator(obj)
         else:
             print(type(obj))
             raise RuntimeError(obj)
@@ -3252,6 +3254,13 @@ class SyntaxTreeVisitor:
             self.visit_any(comprehension.target_expression),
             self.visit_any(comprehension.iterable),
             self.visit_any(comprehension.if_node),
+        )
+
+    def visit_ternary_operator(self, operator: TernaryOperator):
+        return (
+            self.visit_any(operator.lhs),
+            self.visit_any(operator.cond),
+            self.visit_any(operator.rhs),
         )
 
 
@@ -3925,6 +3934,30 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
                 base = self.parse_function_call(base, opening_bracket)
                 can_be_target = False
 
+            elif self.lexer.inspect_chars(3) == "if ":
+                self.lexer.get_chars(2)
+                self.lexer.try_parse_whitespaces()
+                cond = self.try_parse_expression()
+                if cond is None:
+                    raise SyntaxError(
+                        "expected <condition> after 'if' in ternary operator"
+                    )
+
+                self.lexer.try_parse_whitespaces()
+                if self.lexer.get_chars(5) != "else ":
+                    raise SyntaxError(
+                        "expected 'else' after <condition> in ternary operator"
+                    )
+
+                self.lexer.try_parse_whitespaces()
+                rhs = self.try_parse_expression()
+                if rhs is None:
+                    raise SyntaxError(
+                        "expected <else-value> after 'else' in ternary operator"
+                    )
+
+                base = TernaryOperator(base, cond, rhs)
+
             elif self.lexer.inspect_chars(2) == ":=" and can_be_target:
                 self.lexer.get_chars(2)
                 self.lexer.try_parse_whitespaces()
@@ -4034,30 +4067,6 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
                 base = BinaryOperatorExpression(
                     base, BinaryOperatorExpression.BinaryOperation.SMALLER, expression
                 )
-
-            elif self.lexer.inspect_chars(3) == "if ":
-                self.lexer.get_chars(2)
-                self.lexer.try_parse_whitespaces()
-                cond = self.try_parse_expression()
-                if cond is None:
-                    raise SyntaxError(
-                        "expected <condition> after 'if' in ternary operator"
-                    )
-
-                self.lexer.try_parse_whitespaces()
-                if self.lexer.get_chars(5) != "else ":
-                    raise SyntaxError(
-                        "expected 'else' after <condition> in ternary operator"
-                    )
-
-                self.lexer.try_parse_whitespaces()
-                rhs = self.try_parse_expression()
-                if rhs is None:
-                    raise SyntaxError(
-                        "expected <else-value> after 'else' in ternary operator"
-                    )
-
-                base = TernaryOperator(base, cond, rhs)
 
             else:
                 break
