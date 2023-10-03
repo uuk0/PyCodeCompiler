@@ -107,7 +107,17 @@ Make the compiled test suite from python not fail in the major test cases
 
 ## Supported Builtin Modules
 
-None yet (typing.TYPE_CHECKING is implemented for testing purposes, but not more)
+### typing
+
+The `TYPE_CHECKING` variable is set to forced `False`
+
+### unittest
+
+Implementing `main` and basic `TestCase`
+
+### itertools
+
+Implemented `chain`
 
 ## Command Line Interface
 
