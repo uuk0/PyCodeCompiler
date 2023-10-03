@@ -34,6 +34,7 @@ enum PyObjectType
     PY_TYPE_PY_TYPE,        // a type reference to a PyClassContainer, raw_type is a PyClassContainer*
     PY_TYPE_FUNC_POINTER,   // a c function pointer (boxed)
     PY_EXCEPTION,           // an exception thrown; use PY_CHECK_EXCEPTION and related to auto-fwd the exception
+    PY_TYPE_SPECIAL,        // used in a few cases where the type is secured by other means
 };
 typedef enum PyObjectType PyObjectType;
 

@@ -16,6 +16,7 @@
 #include "tuple.h"
 #include "dict.h"
 #include "string.h"
+#include "lambdas.h"
 
 #include "importhelper.h"
 

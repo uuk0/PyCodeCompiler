@@ -31,6 +31,7 @@ void PY_STD_INIT()
     PY_STD_initDictType();
     PY_STD_initStringType();
     PY_STD_initExceptionType();
+    PY_CHECK_EXCEPTION_AND_EXIT(PY_STD_lambda_helper_init());
 
 #ifdef PY_ENABLE_GENERATORS
     PY_STD_initGeneratorType();

@@ -367,6 +367,19 @@
         ]
       },
       {
+        "name": "<lambda>",
+        "type": "class",
+        "type variable": "PY_TYPE_lambda",
+        "static attributes": [
+          {
+            "name": "__call__",
+            "type": "method",
+            "boxed": true,
+            "box name": "PY_STD_invoke_lambda_CONTAINER"
+          }
+        ]
+      },
+      {
         "name": "range",
         "type": "method",
         "arguments": 1,

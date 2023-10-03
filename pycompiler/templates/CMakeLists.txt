@@ -41,6 +41,8 @@ add_library(templates
         standard_library/parameters.h
         standard_library/modules/io.c
         standard_library/modules/io.h
+        standard_library/lambdas.c
+        standard_library/lambdas.h
 )
 
 add_executable(test

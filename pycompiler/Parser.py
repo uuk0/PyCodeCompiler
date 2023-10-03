@@ -1962,6 +1962,27 @@ return result;
         )
 
 
+class BuiltinBoxedMethod(FunctionDefinitionNode):
+    def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder):
+        raise NotImplementedError
+
+    def try_replace_child(
+        self,
+        original: AbstractASTNode | None,
+        replacement: AbstractASTNode,
+        position: ParentAttributeSection,
+    ) -> bool:
+        raise NotImplementedError
+
+    def try_insert_before(
+        self,
+        original: AbstractASTNode | None,
+        insert: AbstractASTNode,
+        position: ParentAttributeSection,
+    ) -> bool:
+        raise NotImplementedError
+
+
 class ClassDefinitionNode(AbstractASTNode):
     def __init__(
         self,
@@ -3281,6 +3302,15 @@ def _parse_std_lib_decl_entry(entry: dict) -> AbstractASTNode:
                 cls.function_table[attr["name"]] = _parse_std_lib_decl_entry(attr)
 
         return cls
+
+    elif entry["type"] == "method" and entry.get("boxed", False):
+        obj = BuiltinBoxedMethod(TokenType.IDENTIFIER(entry["name"]), [], [], [])
+        obj.normal_name = entry["box name"]
+
+        if "return type" in entry:
+            obj.data_type = _parse_data_type(entry["return type"])
+
+        return obj
 
     elif entry["type"] in ("method", "constant"):
         obj = GlobalCNameAccessExpression(entry["c name"], declare=False)
