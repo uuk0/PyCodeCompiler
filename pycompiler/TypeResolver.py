@@ -33,6 +33,8 @@ from pycompiler.Parser import (
     ListComprehension,
     TernaryOperator,
     CapturedLocalAccessExpression,
+    WalrusOperatorExpression,
+    TupleConstructor,
 )
 
 if typing.TYPE_CHECKING:
@@ -40,9 +42,7 @@ if typing.TYPE_CHECKING:
         AbstractASTNode,
         AttributeExpression,
         ReturnStatement,
-        WalrusOperatorExpression,
         PriorityBrackets,
-        TupleConstructor,
         ListConstructor,
         AssertStatement,
     )
@@ -447,8 +447,27 @@ class ScopeGeneratorVisitor(SyntaxTreeVisitor):
     def visit_name_access(self, access: NameAccessExpression):
         super().visit_name_access(access)
 
-        if self.enable_name_access_export:
+        if not access.parent:
+            raise ValueError(access)
+
+        if (
+            isinstance(
+                access.parent[0],
+                (
+                    AssignmentExpression,
+                    WalrusOperatorExpression,
+                    ForLoopStatement,
+                    ListComprehension,
+                ),
+            )
+            and access.parent[1] == ParentAttributeSection.LHS
+        ):
             self.scope.export_variable_name(access.name.text)
+        # todo: ensure lhs of assignment-like!
+        elif isinstance(access.parent[0], TupleConstructor):
+            self.scope.export_variable_name(access.name.text)
+        # else:
+        #     print(access, access.parent)
 
     def visit_while_statement(self, while_statement: WhileStatement):
         super().visit_while_statement(while_statement)
@@ -570,12 +589,11 @@ class NameNormalizer(SyntaxTreeVisitor):
             TokenType.IDENTIFIER(name)
         )
 
-        gen = ScopeGeneratorVisitor(yield_statement.scope)
-        gen.visit_any(new_node)
+        ResolveParentAttribute().visit_any(new_node)
+        ScopeGeneratorVisitor(yield_statement.scope).visit_any(new_node)
         yield_statement.yield_expression.scope = yield_statement.scope
 
-        gen = ResolveParentAttribute()
-        gen.visit_any(yield_statement.parent[0])
+        ResolveParentAttribute().visit_any(yield_statement.parent[0])
 
 
 class GenericFuncCallInliner(SyntaxTreeVisitor):
@@ -617,18 +635,24 @@ class LocalNameValidator(SyntaxTreeVisitor):
 
         if self.curr_func and self.curr_func.local_capture_node:
             func: FunctionDefinitionNode = self.curr_func
+            scope = func.local_capture_node.get_enclosing_scope()
 
-            if func.local_capture_node.scope.has_name_access(access.name.text):
+            NameNormalizer().visit_any(self.curr_func.local_capture_node)
+            self.visit_any(self.curr_func.local_capture_node)
+
+            if scope.has_name_access(access.name.text):
                 if access.name.text not in func.local_value_capturing:
                     func.local_value_capturing.append(access.name.text)
 
                 access.parent[0].try_replace_child(
                     access,
                     CapturedLocalAccessExpression(
-                        access.name, func.local_value_capturing.index(access.name.text)
+                        access.name,
+                        func.local_value_capturing.index(access.name.text),
                     ),
                     access.parent[1],
                 )
+                return
 
         raise NameError(
             f"Cannot find '{access.name.text}' at {access} in scope {access.scope}"
@@ -642,8 +666,8 @@ class ResolveGlobalNames(SyntaxTreeVisitor):
         if global_name := access.scope.get_module_global_variable_name(
             access.name.text
         ):
-            print("global", access.name.text, global_name)
-            print(access.scope.global_scope.variable_name_stack)
+            # print("global", access.name.text, global_name)
+            # print(access.scope.global_scope.variable_name_stack)
             access.parent[0].try_replace_child(
                 access, GlobalCNameAccessExpression(global_name), access.parent[1]
             )

@@ -393,9 +393,12 @@ class ClassExactDataType(ClassOrSubclassDataType):
 
 class AbstractASTNode(abc.ABC):
     def __init__(self):
-        self.scope = None
+        self.scope: Scope | None = None
         self.parent: typing.Tuple[AbstractASTNode, ParentAttributeSection] | None = None
         self.static_value_type = None
+
+    def get_enclosing_scope(self) -> Scope:
+        return self.scope
 
     def set_parent(self, node: AbstractASTNode, section: ParentAttributeSection):
         self.parent = node, section
@@ -1686,9 +1689,18 @@ class FunctionDefinitionNode(AbstractASTNode):
         self.is_generator = is_generator
         self.return_type: AbstractDataType = None
         self.global_container_name = None
-        self.local_value_capturing = local_value_capturing
+        self.local_value_capturing = local_value_capturing or []
         self.local_capture_node: AbstractASTNode | None = None
         self.is_top_level = False
+        self.self_var_name = None
+
+    def get_self_var_name(self):
+        if not self.self_var_name:
+            self.self_var_name = self.scope.get_fresh_name("self_arg_local")
+        return self.self_var_name
+
+    def get_enclosing_scope(self) -> Scope:
+        return self.body[0].scope if self.body else None
 
     def setup(self):
         if self.is_generator:
@@ -1770,11 +1782,18 @@ class FunctionDefinitionNode(AbstractASTNode):
         base.add_function(func)
 
         if self.local_value_capturing:
+            func.parameter_decl.insert(
+                0, f"PyObjectContainer* {self.get_self_var_name()}"
+            )
             func.add_code(
-                """
+                f"""
 // Local capturing resolving
-assert(self != NULL && self->type == PY_TYPE_SPECIAL);
-PyObjectContainer** locals = self->raw_value;
+// {' '.join(self.local_value_capturing)}
+assert({self.get_self_var_name()} != NULL);
+assert({self.get_self_var_name()}->type == PY_TYPE_PY_IMPL);
+assert({self.get_self_var_name()}->py_type == PY_TYPE_lambda);
+PyObjectContainer** locals = PY_getObjectAttributeByName({self.get_self_var_name()}, "locals")->raw_value;
+
 """
             )
 
@@ -1926,8 +1945,15 @@ container->next_section = {func_name}_ENTRY;
         arg_unbox = [f"new_args[{i}]" for i, param in enumerate(self.parameters)]
         arg_unbox_2 = [f"new_args[{i}]" for i, param in enumerate(self.parameters[1:])]
 
-        unbox = " , ".join(arg_unbox)
-        unbox_2 = " , ".join(arg_unbox_2)
+        unbox = ", ".join(arg_unbox)
+        unbox_2 = ", ".join(arg_unbox_2)
+
+        if self.local_value_capturing:
+            if arg_unbox:
+                unbox = "self, " + unbox
+                unbox_2 = "self, " + unbox_2
+            else:
+                unbox = unbox_2 = "self"
 
         if len(self.parameters) > 0:
             has_keyword = False
@@ -1960,12 +1986,20 @@ return result;
 
 """
                 )
-        else:
+        elif not self.local_value_capturing:
             safe_func.add_code(
                 f"""
 assert(self == NULL);
-assert(argc == {len(self.parameters)});
+assert(argc == 0);
 return {func_name}({unbox});
+"""
+            )
+        else:
+            safe_func.add_code(
+                f"""
+assert(self != NULL);
+assert(argc == 0);
+return {func_name}(self);
 """
             )
 
@@ -2059,6 +2093,9 @@ class ClassDefinitionNode(AbstractASTNode):
         self.function_table: typing.Dict[
             str | typing.Tuple[str, int], AbstractASTNode
         ] = {}
+
+    def get_enclosing_scope(self) -> Scope:
+        return self.body[0].scope if self.body else None
 
     def __eq__(self, other):
         return (
@@ -3182,6 +3219,8 @@ class SyntaxTreeVisitor:
             return self.visit_walrus_operator(obj)
         elif obj_type == TernaryOperator:
             return self.visit_ternary_operator(obj)
+        elif obj_type == CapturedLocalAccessExpression:
+            return self.visit_captured_local_name(obj)
         else:
             print(type(obj))
             raise RuntimeError(obj)
@@ -3203,6 +3242,9 @@ class SyntaxTreeVisitor:
         )
 
     def visit_name_access(self, access: NameAccessExpression):
+        pass
+
+    def visit_captured_local_name(self, access: CapturedLocalAccessExpression):
         pass
 
     def visit_global_c_name_access(self, access: GlobalCNameAccessExpression):

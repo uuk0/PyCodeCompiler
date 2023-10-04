@@ -1,4 +1,5 @@
 import shutil
+import sys
 import unittest
 import os
 import subprocess
@@ -32,7 +33,7 @@ class TestGenerator(unittest.TestCase):
 
                 if a != b:
                     diff = "\n".join(difflib.unified_diff(a.split("\n"), b.split("\n")))
-                    print(diff)
+                    print(diff, file=sys.stdout)
                     self.fail("result differs from reference code!")
 
         exit_code = subprocess.call(f"{folder}/test_build/{module_name}/result.exe")

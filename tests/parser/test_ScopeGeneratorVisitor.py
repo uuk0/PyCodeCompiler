@@ -9,6 +9,7 @@ class TestScopeGeneratorVisitor(TestCase):
         parser = Parser.Parser("test = hello")
         expr = parser.parse()
         scope = Parser.Scope()
+        TypeResolver.ResolveParentAttribute().visit_any_list(expr)
         visitor = TypeResolver.ScopeGeneratorVisitor(scope)
 
         # sourcery skip: no-loop-in-tests
@@ -22,6 +23,7 @@ class TestScopeGeneratorVisitor(TestCase):
         expr = parser.parse()
 
         scope = Parser.Scope()
+        TypeResolver.ResolveParentAttribute().visit_any_list(expr)
         visitor = TypeResolver.ScopeGeneratorVisitor(scope)
 
         # sourcery skip: no-loop-in-tests
@@ -40,6 +42,7 @@ class TestScopeGeneratorVisitor(TestCase):
         expr = parser.parse()
 
         scope = Parser.Scope()
+        TypeResolver.ResolveParentAttribute().visit_any_list(expr)
         TypeResolver.ScopeGeneratorVisitor(scope).visit_any_list(expr)
 
         self.assertEqual({"test", "a"}, scope.variable_name_stack)
@@ -52,12 +55,11 @@ class TestScopeGeneratorVisitor(TestCase):
         expr = parser.parse()
 
         scope = Parser.Scope()
-        visitor = TypeResolver.ScopeGeneratorVisitor(scope)
         func_def = typing.cast(FunctionDefinitionNode, expr[0])
 
         # sourcery skip: no-loop-in-tests
-        for item in expr:
-            visitor.visit_any(item)
+        TypeResolver.ResolveParentAttribute().visit_any_list(expr)
+        TypeResolver.ScopeGeneratorVisitor(scope).visit_any_list(expr)
 
         self.assertEqual({"x"}, func_def.body[0].scope.variable_name_stack)
 
@@ -69,6 +71,7 @@ class TestScopeGeneratorVisitor(TestCase):
         expr = parser.parse()
 
         scope = Parser.Scope()
+        TypeResolver.ResolveParentAttribute().visit_any_list(expr)
         visitor = TypeResolver.ScopeGeneratorVisitor(scope)
         func_def = typing.cast(FunctionDefinitionNode, expr[0])
 
@@ -88,6 +91,7 @@ class TestScopeGeneratorVisitor(TestCase):
         expr = parser.parse()
 
         scope = Parser.Scope()
+        TypeResolver.ResolveParentAttribute().visit_any_list(expr)
         visitor = TypeResolver.ScopeGeneratorVisitor(scope)
         func_def = typing.cast(FunctionDefinitionNode, expr[0])
 
@@ -105,6 +109,7 @@ class TestScopeGeneratorVisitor(TestCase):
         expr = parser.parse()
 
         scope = Parser.Scope()
+        TypeResolver.ResolveParentAttribute().visit_any_list(expr)
         visitor = TypeResolver.ScopeGeneratorVisitor(scope)
         func_def = typing.cast(FunctionDefinitionNode, expr[0])
 
