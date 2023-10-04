@@ -1647,6 +1647,7 @@ class FunctionDefinitionNode(AbstractASTNode):
         parameters: typing.List[FunctionDefinitionNode.FunctionDefinitionParameter],
         body: typing.List[AbstractASTNode],
         is_generator=False,
+        local_value_capturing: typing.List[typing.Tuple[str, AbstractASTNodeExpression]] = None,
     ):
         super().__init__()
         self.name = name
@@ -1657,6 +1658,7 @@ class FunctionDefinitionNode(AbstractASTNode):
         self.is_generator = is_generator
         self.return_type: AbstractDataType = None
         self.global_container_name = None
+        self.local_value_capturing = local_value_capturing
 
         if self.is_generator:
             # is guaranteed to return a generator object
@@ -1672,10 +1674,11 @@ class FunctionDefinitionNode(AbstractASTNode):
             and self.parameters == other.parameters
             and self.body == other.body
             and self.is_generator == other.is_generator
+            and self.local_value_capturing == other.local_value_capturing
         )
 
     def __repr__(self):
-        return f"FUNCTION({self.name}|{self.generics}|{self.parameters}|{self.is_generator}|{self.body})"
+        return f"FUNCTION({self.name}|{self.generics}|{self.parameters}|{self.local_value_capturing}|{self.is_generator}|{self.body})"
 
     def try_replace_child(
         self,

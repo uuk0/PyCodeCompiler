@@ -1,6 +1,8 @@
+import shutil
 import unittest
 import os
 import subprocess
+import difflib
 
 from pycompiler.Compiler import Project
 
@@ -15,6 +17,23 @@ class TestGenerator(unittest.TestCase):
         project.add_main_function()
         project.add_entry_point(f"{folder}/tests/test_{module_name}.py")
         project.build()
+
+        if not os.path.exists(f"{folder}/references/test_{module_name}.c"):
+            shutil.copy(
+                f"{folder}/test_build/{module_name}/test_{module_name}.c",
+                f"{folder}/references/test_{module_name}.c",
+            )
+        else:
+            with open(f"{folder}/references/test_{module_name}.c") as fc, open(
+                f"{folder}/test_build/{module_name}/test_{module_name}.c"
+            ) as fn:
+                a = fc.read()
+                b = fn.read()
+
+                if a != b:
+                    diff = "\n".join(difflib.unified_diff(a.split("\n"), b.split("\n")))
+                    print(diff)
+                    self.fail("result differs from reference code!")
 
         exit_code = subprocess.call(f"{folder}/test_build/{module_name}/result.exe")
         self.assertEqual(exit_code, 0)
