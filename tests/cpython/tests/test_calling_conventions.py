@@ -76,6 +76,11 @@ class TestLambdaDeclaration(unittest.TestCase):
         x = lambda: lambda: 10
         self.assertEqual(x()(), 10)
 
+    def test_lambda_capture(self):
+        y = 10
+        x = lambda: y
+        self.assertEqual(x(), 10)
+
 
 if __name__ == "__main__":
     unittest.main()
