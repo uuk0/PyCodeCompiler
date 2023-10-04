@@ -1967,14 +1967,17 @@ container->next_section = {func_name}_ENTRY;
                     break
 
             if has_keyword:
-                self.emit_safe_wrap_with_keywords(
+                arg_unpack = self.emit_safe_wrap_with_keywords(
                     base, func_name, safe_func, unbox, unbox_2
                 )
-            elif self.local_value_capturing:
+            else:
+                arg_unpack = "PY_ARGS_unpackPositionalArgs(args, info, &argc)"
+
+            if self.local_value_capturing:
                 safe_func.add_code(
                     f"""
 assert(self != NULL);
-PyObjectContainer** new_args = PY_ARGS_unpackPositionalArgs(args, info, &argc);
+PyObjectContainer** new_args = {arg_unpack};
 PyObjectContainer* result;
 
 assert(argc == {len(self.parameters)});
@@ -1984,7 +1987,7 @@ result = {func_name}({unbox});
             else:
                 safe_func.add_code(
                     f"""
-PyObjectContainer** new_args = PY_ARGS_unpackPositionalArgs(args, info, &argc);
+PyObjectContainer** new_args = {arg_unpack};
 PyObjectContainer* result;
 
 if (self == NULL) {{
@@ -2048,26 +2051,7 @@ return {func_name}(self);
             f"{keyword_mem} = (PyObjectContainer*[]){{{kwd_keys}}};\n"
         )
 
-        # todo: handle star and star-star args!
-        safe_func.add_code(
-            f"""
-PyObjectContainer** new_args = PY_ARGS_unpackArgTableForUnsafeCall({positional_count}, args, info, &argc, {len(keyword_keys)}, {keyword_mem}, (PyObjectContainer*[]) {{{', '.join(keyword_default_names)}}});
-PyObjectContainer* result;
-
-if (self == NULL) {{
-    assert(argc == {len(self.parameters)});
-    result = {func_name}({unbox});
-}}
-else {{
-    assert(argc == {len(self.parameters) - 1});
-    result = {func_name}(self{f' , {unbox_2}' if unbox_2 else ''});
-}}
-
-if (info) free(new_args);
-return result;
-
-"""
-        )
+        return f"PY_ARGS_unpackArgTableForUnsafeCall({positional_count}, args, info, &argc, {len(keyword_keys)}, {keyword_mem}, (PyObjectContainer*[]) {{{', '.join(keyword_default_names)}}})"
 
 
 class BuiltinBoxedMethod(FunctionDefinitionNode):
