@@ -1660,6 +1660,7 @@ class FunctionDefinitionNode(AbstractASTNode):
         self.global_container_name = None
         self.local_value_capturing = local_value_capturing
 
+    def setup(self):
         if self.is_generator:
             # is guaranteed to return a generator object
             self.static_value_type = ClassExactDataType(
@@ -3384,6 +3385,7 @@ class Parser:
         self.skip_end_check = False
         self.is_in_singleline_expression = False
         self.base_node_list: list = None
+        self.layer_stack: typing.List[FunctionDefinitionNode | ClassDefinitionNode] = []
 
     def parse(
         self, stop_on_indention_exit=False, mention_on_yield=None
@@ -4796,6 +4798,15 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
         prev_in_function = self.is_in_function
         self.is_in_function = True
 
+        func_node = FunctionDefinitionNode(
+            function_name,
+            generic_names,
+            parameters,
+            [],
+            is_generator=False,
+        )
+        self.layer_stack.append(func_node)
+
         is_generator = False
 
         def feedback():
@@ -4813,15 +4824,16 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
 
             self.indent_level -= 1
 
+        func_node.body[:] = body
+        func_node.is_generator = is_generator
+        func_node.setup()
+
+        tos = self.layer_stack.pop()
+        assert tos == func_node
+
         self.is_in_function = prev_in_function
 
-        return FunctionDefinitionNode(
-            function_name,
-            generic_names,
-            parameters,
-            body,
-            is_generator=is_generator,
-        )
+        return func_node
 
     def try_parse_generic_parameters(
         self, duplicate_name_check
@@ -4994,6 +5006,14 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
         if self.lexer.get_chars(1) != ":":
             raise SyntaxError
 
+        cls = ClassDefinitionNode(
+            class_name,
+            generics,
+            parents,
+            [],
+        )
+        self.layer_stack.append(cls)
+
         self.indent_level += 1
         previous_in_func = self.is_in_function
         self.is_in_function = False
@@ -5001,12 +5021,9 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
         self.is_in_function = previous_in_func
         self.indent_level -= 1
 
-        cls = ClassDefinitionNode(
-            class_name,
-            generics,
-            parents,
-            body,
-        )
+        cls.body[:] = body
+        tos = self.layer_stack.pop()
+        assert tos == cls
 
         for node in body:
             if isinstance(node, FunctionDefinitionNode):
