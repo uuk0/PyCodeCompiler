@@ -619,6 +619,7 @@ PyObjectContainer* PY_invokeBoxedMethod(PyObjectContainer* method, PyObjectConta
 {
     if (method == NULL)
     {
+        printf("FAULT: method is NULL");
         PyObjectContainer** x = NULL;
         self = (PyObjectContainer*)*x;
     }
@@ -640,6 +641,14 @@ PyObjectContainer* PY_invokeBoxedMethod(PyObjectContainer* method, PyObjectConta
         }
 
         decref_after = true;
+    }
+
+    if (method->type == PY_TYPE_PY_TYPE) {
+        PyClassContainer* cls = PY_unwrapClassContainer(method);
+        PyObjectContainer* obj = PY_createClassInstance(cls);
+        PyObjectContainer* init = PY_getObjectAttributeByNameOrStatic(obj, "__init__");
+        PY_invokeBoxedMethod(init, obj, param_count, args, info);
+        return obj;
     }
 
     if (method->type != PY_TYPE_FUNC_POINTER)

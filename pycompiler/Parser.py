@@ -717,6 +717,9 @@ class ConstantAccessExpression(AbstractASTNodeExpression):
         elif isinstance(self.value, FunctionDefinitionNode):
             self.value.emit_reference_access(base, context, self.scope)
 
+        elif isinstance(self.value, ClassDefinitionNode):
+            self.value.emit_reference_access(base, context, self.scope)
+
         else:
             print(self.parent)
             raise NotImplementedError(self.value)
@@ -2223,6 +2226,10 @@ if ({init_subclass} != NULL) {{
                 init_class.add_code(
                     f'PY_setClassAttributeByNameOrCreate({variable_name}, "{line.name.text}", PY_createBoxForFunction({line.normal_name}_safeWrap));\n'
                 )
+            elif isinstance(line, ClassDefinitionNode):
+                init_class.add_code(
+                    f"""PY_setClassAttributeByNameOrCreate({variable_name}, "{line.name.text}", PY_createClassWrapper(PY_CLASS_{line.normal_name}));\n"""
+                )
 
         for line in self.body:
             inner_block = init_class.get_statement_builder(indent=False)
@@ -2237,6 +2244,11 @@ if ({init_subclass} != NULL) {{
             init_class.add_code(inner_block.get_result() + "\n")
 
         base.add_to_initializer(f"PY_CLASS_INIT_{variable_name}();\n")
+
+    def emit_reference_access(
+        self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder, scope: Scope
+    ):
+        context.add_code(f"PY_createClassWrapper(PY_CLASS_{self.normal_name})")
 
 
 class StandardLibraryClass(ClassDefinitionNode):
@@ -3836,7 +3848,9 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
                 if expression is None:
                     raise SyntaxError("expected <expression> after '['")
 
-                if closing_bracket := self.lexer.try_parse_closing_square_bracket():
+                if not (
+                    closing_bracket := self.lexer.try_parse_closing_square_bracket()
+                ):
                     raise SyntaxError("expected ']' after '[' <expression>")
 
                 base = SubscriptionExpression(

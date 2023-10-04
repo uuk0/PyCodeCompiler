@@ -89,21 +89,24 @@ Make the compiled test suite from python not fail in the major test cases
 - function calls (`()`) including keyword, '*' and '**'
 - function declarations (python 3.12 syntax with generics via `[]` after the function name), including generators
   (WIP)
-  - no inner functions (TODO: make them work with a wrapper)
+  - there are some limits to captured locals
 - class declarations (python 3.12 syntax with generics via `[]` after the class name)
-  - instantiation (only for static-know classes currently)
-  - no inner classes (TODO: make them work, PyClassContainer supports it already!)
-  - TODO: class references, call mechanism should be able to construct class dynamically
+  - instantiation and references to classes
+  - class-inside-class and class-inside-function
+  - class instantiation on demand
+  - TODO: allow local class instances by moving them on the stack & set the NO_FREE flag
+  - TODO: use short struct for primitive types
 - while loops, including continue, break and else
 - list, tuple and dict explict construction (using `(a, b)`,`[a, b]` and `{a: b}`)
   - TODO: comprehensions
+  - TODO: slices
 - tuple-like deconstruction
   - TODO: allow generator destruction (requires some transforms before)
 - `for`(each)-loops
   - using the `__iter__` function which can be defined on objects
 - if-elif-else and ternary expressions
 - TODO: compare-chains resolving
-- TODO: dynamic imports (`__import__`, `importlib`)
+- TODO: dynamic imports (`__import__`, `importlib`) -> use the `Project` to declare hidden imports
 
 ## Supported Builtin Modules
 

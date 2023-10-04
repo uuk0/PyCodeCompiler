@@ -68,6 +68,7 @@ PyObjectContainer* PY_CLASS_INIT_PY_CLASS_TestSimple_2(void) {
     if (init_subclass_1 != NULL) {
         PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(init_subclass_1, PY_createClassWrapper(PY_CLASS_TestSimple_2), 0, NULL, NULL));
     }
+    PY_ClassContainer_EnsureObjectAttributesDeclaredFor(PY_CLASS_TestSimple_2, PY_CLASS_TestSimple_2 -> parents[0]);
 
     // Attributes
     PY_setClassAttributeByNameOrCreate(PY_CLASS_TestSimple_2, "test_basic", PY_createBoxForFunction(testbasic_1_safeWrap));

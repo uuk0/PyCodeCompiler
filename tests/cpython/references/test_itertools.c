@@ -81,6 +81,7 @@ PyObjectContainer* PY_CLASS_INIT_PY_CLASS_TestItertoolsChain_6(void) {
     if (init_subclass_3 != NULL) {
         PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(init_subclass_3, PY_createClassWrapper(PY_CLASS_TestItertoolsChain_6), 0, NULL, NULL));
     }
+    PY_ClassContainer_EnsureObjectAttributesDeclaredFor(PY_CLASS_TestItertoolsChain_6, PY_CLASS_TestItertoolsChain_6 -> parents[0]);
 
     // Attributes
     PY_setClassAttributeByNameOrCreate(PY_CLASS_TestItertoolsChain_6, "test_chain_empty", PY_createBoxForFunction(testchainempty_1_safeWrap));

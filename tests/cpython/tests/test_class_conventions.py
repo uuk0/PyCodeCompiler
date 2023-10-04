@@ -22,5 +22,16 @@ class TestClassCallable(unittest.TestCase):
         self.assertEqual(a(), 20)
 
 
+class TestClassInClass(unittest.TestCase):
+    def test_basic(self):
+        class A:
+            class B:
+                def get(self):
+                    return 10
+
+        x = A.B()
+        self.assertEqual(x.get(), 10)
+
+
 if __name__ == "__main__":
     unittest.main()

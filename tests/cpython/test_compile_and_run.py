@@ -19,7 +19,7 @@ class TestGenerator(unittest.TestCase):
         project.add_entry_point(f"{folder}/tests/test_{module_name}.py")
         project.build()
 
-        if not os.path.exists(f"{folder}/references/test_{module_name}.c"):
+        if not os.path.exists(f"{folder}/references/test_{module_name}.c"):  # or True:
             shutil.copy(
                 f"{folder}/test_build/{module_name}/test_{module_name}.c",
                 f"{folder}/references/test_{module_name}.c",
@@ -37,7 +37,11 @@ class TestGenerator(unittest.TestCase):
                     self.fail("result differs from reference code!")
 
         exit_code = subprocess.call(f"{folder}/test_build/{module_name}/result.exe")
-        self.assertEqual(exit_code, 0)
+
+        if exit_code == 3221225477:
+            self.fail("segfault in test")
+
+        self.assertEqual(exit_code, 0, "running test as result.exe")
 
     def test_unittest(self):
         self.compile_and_run("unittest")
