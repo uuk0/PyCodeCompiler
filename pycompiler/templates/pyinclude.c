@@ -115,8 +115,13 @@ bool PY_isInstanceOf(PyObjectContainer* obj, PyClassContainer* cls)
     return PY_isSubclassOf(obj->py_type, cls);
 }
 
-void PY_ClassContainer_DeclareObjectAttribute(PyClassContainer* cls, char* name)
-{
+void PY_ClassContainer_DeclareObjectAttribute(PyClassContainer* cls, char* name) {
+    for (int i = 0; i < cls->attr_count; i++) {
+        if (strcmp(cls->attr_name_array[i], name) == 0) {
+            return;
+        }
+    }
+
     cls->attr_count++;
     cls->attr_name_array = realloc(cls->attr_name_array, cls->attr_count * sizeof(char*));
     if (cls->attr_name_array == NULL)
@@ -125,6 +130,12 @@ void PY_ClassContainer_DeclareObjectAttribute(PyClassContainer* cls, char* name)
         exit(EXIT_FAILURE);
     }
     cls->attr_name_array[cls->attr_count-1] = name;
+}
+
+void PY_ClassContainer_EnsureObjectAttributesDeclaredFor(PyClassContainer* cls, PyClassContainer* parent) {
+    for (int i = 0; i < parent->attr_count; i++) {
+        PY_ClassContainer_DeclareObjectAttribute(cls, parent->attr_name_array[i]);
+    }
 }
 
 PyObjectContainer* PY_createClassInstance(PyClassContainer* cls)

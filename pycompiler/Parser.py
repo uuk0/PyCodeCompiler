@@ -1170,7 +1170,7 @@ class AttributeExpression(AbstractASTNodeExpression):
         value_source.emit_c_code(base, context)
         context.add_code(f";\nPY_setObjectAttributeByName(")
         self.base.emit_c_code(base, context)
-        context.add_code(f', {temporary}, "{self.attribute.text}")')
+        context.add_code(f', "{self.attribute.text}", {temporary})')
 
 
 class SubscriptionExpression(AbstractASTNodeExpression):
@@ -2092,6 +2092,7 @@ class ClassDefinitionNode(AbstractASTNode):
         self.function_table: typing.Dict[
             str | typing.Tuple[str, int], AbstractASTNode
         ] = {}
+        self.declared_locals = []
 
     def get_enclosing_scope(self) -> Scope:
         return self.body[0].scope if self.body else None
@@ -2193,8 +2194,27 @@ if ({init_subclass} != NULL) {{
 }}\n"""
                     )
 
+                init_class.add_code(
+                    f"PY_ClassContainer_EnsureObjectAttributesDeclaredFor({variable_name}, {variable_name} -> parents[{i}]);\n"
+                )
+
         else:
             init_class.add_code(f"{variable_name} -> parents[0] = PY_TYPE_OBJECT;\n")
+
+        if "__init__" in self.function_table:
+            init: FunctionDefinitionNode = self.function_table["__init__"]
+
+            for node in init.body:
+                if isinstance(node, AssignmentExpression):
+                    for lhs in node.lhs:
+                        if (
+                            isinstance(lhs, AttributeExpression)
+                            and isinstance(lhs.base, NameAccessExpression)
+                            and lhs.base.name.text == init.parameters[0].name.text
+                        ):
+                            init_class.add_code(
+                                f"""PY_ClassContainer_DeclareObjectAttribute({variable_name}, "{lhs.attribute.text}");\n"""
+                            )
 
         init_class.add_code("\n// Attributes\n")
 
@@ -3813,16 +3833,29 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
             if opening_square_bracket := self.lexer.try_parse_opening_square_bracket():
                 expression = self.try_parse_expression()
 
-                if expression is None or not (
-                    closing_bracket := self.lexer.try_parse_closing_square_bracket()
-                ):
-                    raise SyntaxError
+                if expression is None:
+                    raise SyntaxError("expected <expression> after '['")
+
+                if closing_bracket := self.lexer.try_parse_closing_square_bracket():
+                    raise SyntaxError("expected ']' after '[' <expression>")
 
                 base = SubscriptionExpression(
                     base,
                     opening_square_bracket,
                     expression,
                     closing_bracket,
+                )
+
+            elif dot := self.lexer.try_parse_dot():
+                identifier = self.lexer.try_parse_identifier()
+
+                if identifier is None:
+                    raise SyntaxError("expected <identifier> after '.'")
+
+                base = AttributeExpression(
+                    base,
+                    dot,
+                    identifier,
                 )
 
             else:
