@@ -684,7 +684,7 @@ class ConstantAccessExpression(AbstractASTNodeExpression):
             )
 
         elif isinstance(self.value, FunctionDefinitionNode):
-            context.add_code(self.value.global_container_name)
+            self.value.emit_reference_access(base, context, self.scope)
 
         else:
             print(self.parent)
@@ -1647,7 +1647,7 @@ class FunctionDefinitionNode(AbstractASTNode):
         parameters: typing.List[FunctionDefinitionNode.FunctionDefinitionParameter],
         body: typing.List[AbstractASTNode],
         is_generator=False,
-        local_value_capturing: typing.List[typing.Tuple[str, AbstractASTNodeExpression]] = None,
+        local_value_capturing: typing.List[str] = None,
     ):
         super().__init__()
         self.name = name
@@ -1665,6 +1665,22 @@ class FunctionDefinitionNode(AbstractASTNode):
             self.static_value_type = ClassExactDataType(
                 Scope.STANDARD_LIBRARY_VALUES["<generator>"]["*"]
             )
+
+    def emit_reference_access(
+        self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder, scope: Scope
+    ):
+        if not self.local_value_capturing:
+            context.add_code(self.global_container_name)
+            return
+
+        local_access = [
+            scope.get_remapped_name(name) for name in self.local_value_capturing
+        ]
+        base.add_include('"standard_library/lambdas.h"')
+        context.add_code(
+            f"PY_CREATE_lambda_WRAPPER({self.global_container_name}, PY_CREATE_lambda_locals"
+            f"({len(self.local_value_capturing)}, {', '.join(local_access)}))"
+        )
 
     def __eq__(self, other):
         return (
