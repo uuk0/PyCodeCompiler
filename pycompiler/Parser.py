@@ -3383,11 +3383,15 @@ class Parser:
         self.is_in_function = False
         self.skip_end_check = False
         self.is_in_singleline_expression = False
+        self.base_node_list: list = None
 
     def parse(
         self, stop_on_indention_exit=False, mention_on_yield=None
     ) -> typing.List[AbstractASTNode]:
         ast_stream: typing.List[AbstractASTNode] = []
+
+        if self.base_node_list is None:
+            self.base_node_list = ast_stream
 
         require_indent = True
 
@@ -3941,6 +3945,60 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
             expr = self.try_parse_expression()
 
             return PrefixOperation(PrefixOperation.PrefixOperator.NOT, expr)
+
+        elif identifier == "lambda":
+            self.lexer.try_parse_whitespaces()
+            params = []
+
+            while self.lexer.inspect_chars(1) != ":":
+                name = self.lexer.try_parse_identifier()
+
+                if name is None:
+                    raise SyntaxError("expected <name>")
+
+                params.append(name.text)
+
+                self.lexer.try_parse_whitespaces()
+
+                if self.lexer.inspect_chars(1) != ",":
+                    if self.lexer.inspect_chars(1) != ":":
+                        raise SyntaxError(
+                            "expected ':' or ',' after <name> in <lambda>"
+                        )
+
+                    break
+
+                self.lexer.get_chars(1)
+                self.lexer.try_parse_whitespaces()
+
+            if self.lexer.get_chars(1) != ":":
+                raise RuntimeError("unreachable")
+
+            inner_expr = self.try_parse_expression()
+
+            if inner_expr is None:
+                raise SyntaxError("expected <expression> after <lambda head>")
+
+            # todo: local capturing!
+            func_def = FunctionDefinitionNode(
+                TokenType.IDENTIFIER("<lambda>"),
+                [],
+                [
+                    FunctionDefinitionNode.FunctionDefinitionParameter(
+                        TokenType.IDENTIFIER(name),
+                        FunctionDefinitionNode.ParameterType.NORMAL,
+                    )
+                    for name in params
+                ],
+                [
+                    ReturnStatement(inner_expr),
+                ],
+            )
+
+            # function definition itself is outside
+            self.base_node_list.append(func_def)
+
+            return ConstantAccessExpression(func_def)
 
         else:
             base = NameAccessExpression(identifier)
