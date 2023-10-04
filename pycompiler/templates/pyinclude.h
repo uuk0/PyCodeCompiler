@@ -173,5 +173,7 @@ free(obj);                                                     \
 };
  * **/
 
+PyObjectContainer* PY_NOOP(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info);
+
 #endif
 

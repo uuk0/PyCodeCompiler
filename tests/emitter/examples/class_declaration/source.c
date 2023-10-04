@@ -40,6 +40,7 @@ PyObjectContainer* PY_MODULE_source_init(void) {
     PY_setObjectAttributeByName(PY_MODULE_INSTANCE_source, "test", (function_container_test_0 = PY_createBoxForFunction(test_1_safeWrap)));
     #endif
     PY_CLASS_INIT_PY_CLASS_test_2();
+
     #ifdef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE
     PY_exposeModuleObject(PY_MODULE_INSTANCE_source);
     #endif

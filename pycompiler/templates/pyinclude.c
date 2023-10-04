@@ -846,6 +846,7 @@ void initialize()
     PY_TRUE->flags |= PY_OBJ_NO_FREE;
 
     PY_TYPE_OBJECT = PY_createClassContainer("object");
+    PY_setClassAttributeByNameOrCreate(PY_TYPE_OBJECT, "__init__", PY_createBoxForFunction(PY_NOOP));
 
     initialized = true;
 }
@@ -874,5 +875,9 @@ void DECREF(PyObjectContainer* obj) {
             break;
     }
     free(obj);
+}
+
+PyObjectContainer* PY_NOOP(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info) {
+    return PY_NONE;
 }
 

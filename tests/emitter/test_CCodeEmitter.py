@@ -1,3 +1,4 @@
+import difflib
 import os
 import pathlib
 import subprocess

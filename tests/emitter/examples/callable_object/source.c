@@ -45,6 +45,7 @@ PyObjectContainer* PY_MODULE_source_init(void) {
     PY_setObjectAttributeByName(PY_MODULE_INSTANCE_source, "__call__", (function_container___call___1 = PY_createBoxForFunction(call_3_safeWrap)));
     #endif
     PY_CLASS_INIT_PY_CLASS_Test_4();
+
     #ifdef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE
     PY_setObjectAttributeByName(PY_MODULE_INSTANCE_source, "test", (function_container_test_2 = PY_createBoxForFunction(test_5_safeWrap)));
     #endif

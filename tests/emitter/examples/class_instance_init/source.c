@@ -42,6 +42,7 @@ PyObjectContainer* PY_MODULE_source_init(void) {
     PY_setObjectAttributeByName(PY_MODULE_INSTANCE_source, "__init__", (function_container___init___0 = PY_createBoxForFunction(init_1_safeWrap)));
     #endif
     PY_CLASS_INIT_PY_CLASS_test_2();
+
     PyObjectContainer* obj_instance_1 = PY_createClassInstance(PY_CLASS_test_2);
     PY_CHECK_EXCEPTION(init_1(obj_instance_1));
 

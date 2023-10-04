@@ -118,19 +118,23 @@ PyObjectContainer* PY_MODULE_test_calling_conventions_init(void) {
     PY_setObjectAttributeByName(PY_MODULE_INSTANCE_test_calling_conventions, "test_local_capture_with_arg", (function_container_test_local_capture_with_arg_9 = PY_createBoxForFunction(testlocalcapturewitharg_54_safeWrap)));
     #endif
     PY_CLASS_INIT_PY_CLASS_TestFunctionInception_17();
+
     #ifdef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE
     PY_setObjectAttributeByName(PY_MODULE_INSTANCE_test_calling_conventions, "test_simple", (function_container_test_simple_10 = PY_createBoxForFunction(testsimple_19_safeWrap)));
     #endif
     PY_CLASS_INIT_PY_CLASS_TestCallStar_20();
+
     keyword_name_var_36 = (PyObjectContainer*[]) {PY_createString("a")};
     #ifdef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE
     PY_setObjectAttributeByName(PY_MODULE_INSTANCE_test_calling_conventions, "test_simple", (function_container_test_simple_11 = PY_createBoxForFunction(testsimple_22_safeWrap)));
     #endif
     PY_CLASS_INIT_PY_CLASS_TestKeyword_23();
+
     #ifdef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE
     PY_setObjectAttributeByName(PY_MODULE_INSTANCE_test_calling_conventions, "test_simple", (function_container_test_simple_12 = PY_createBoxForFunction(testsimple_25_safeWrap)));
     #endif
     PY_CLASS_INIT_PY_CLASS_TestStarStar_26();
+
     #ifdef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE
     PY_setObjectAttributeByName(PY_MODULE_INSTANCE_test_calling_conventions, "__lambda__", (function_container___lambda___13 = PY_createBoxForFunction(lambda_27_safeWrap)));
     #endif
@@ -164,6 +168,7 @@ PyObjectContainer* PY_MODULE_test_calling_conventions_init(void) {
     PY_setObjectAttributeByName(PY_MODULE_INSTANCE_test_calling_conventions, "test_lambda_capture", (function_container_test_lambda_capture_21 = PY_createBoxForFunction(testlambdacapture_57_safeWrap)));
     #endif
     PY_CLASS_INIT_PY_CLASS_TestLambdaDeclaration_41();
+
     if (PY_unpackBoolean(PY_CHECK_EXCEPTION(PY_CHECK_EXCEPTION(PY_STD_string_eq_fast (PY_createString("__main__") , PY_createString("__main__")))))) {
         PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(PY_getObjectAttributeByNameOrStatic(PY_MODULE_INSTANCE_unittest, "main"), NULL, 0, NULL, NULL));
     }

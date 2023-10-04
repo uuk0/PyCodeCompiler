@@ -68,6 +68,7 @@ PyObjectContainer* PY_MODULE_test_list_init(void) {
     PY_setObjectAttributeByName(PY_MODULE_INSTANCE_test_list, "test_len", (function_container_test_len_3 = PY_createBoxForFunction(testlen_7_safeWrap)));
     #endif
     PY_CLASS_INIT_PY_CLASS_ListTest_8();
+
     if (PY_unpackBoolean(PY_CHECK_EXCEPTION(PY_CHECK_EXCEPTION(PY_STD_string_eq_fast (PY_createString("__main__") , PY_createString("__main__")))))) {
         PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(PY_getObjectAttributeByNameOrStatic(PY_MODULE_INSTANCE_unittest, "main"), NULL, 0, NULL, NULL));
     }
