@@ -1769,6 +1769,15 @@ class FunctionDefinitionNode(AbstractASTNode):
         )
         base.add_function(func)
 
+        if self.local_value_capturing:
+            func.add_code(
+                """
+// Local capturing resolving
+assert(self != NULL && self->type == PY_TYPE_SPECIAL);
+PyObjectContainer** locals = self->raw_value;
+"""
+            )
+
         func.add_code(
             f"// Source Location: {'.'.join(self.scope.class_name_stack)}.{self.name.text}\n"
         )

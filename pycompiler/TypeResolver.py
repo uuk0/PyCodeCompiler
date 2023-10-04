@@ -624,7 +624,9 @@ class LocalNameValidator(SyntaxTreeVisitor):
 
                 access.parent[0].try_replace_child(
                     access,
-                    CapturedLocalAccessExpression(access.name, func.local_value_capturing.index(access.name.text)),
+                    CapturedLocalAccessExpression(
+                        access.name, func.local_value_capturing.index(access.name.text)
+                    ),
                     access.parent[1],
                 )
 
