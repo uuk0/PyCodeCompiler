@@ -332,6 +332,7 @@ PyObjectContainer* PY_getObjectAttributeByNameOrStatic(PyObjectContainer* obj, c
             {
                 return value;
             }
+            i++;
         }
     }
 

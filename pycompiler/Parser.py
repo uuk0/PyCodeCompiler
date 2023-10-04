@@ -1828,7 +1828,7 @@ PyObjectContainer** locals = PY_getObjectAttributeByName({self.get_self_var_name
         self.generate_safe_wrapper(base, func_name)
 
         base.init_function.add_code("#ifdef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE\n")
-        assert self.global_container_name is not None
+        assert self.global_container_name is not None, self
         base.init_function.add_code(
             f'PY_setObjectAttributeByName(PY_MODULE_INSTANCE_{base.module_name.replace(".", "__")}, "{self.name.text}", ({self.global_container_name} = PY_createBoxForFunction({self.normal_name}_safeWrap)));\n'
         )
@@ -2216,7 +2216,7 @@ if ({init_subclass} != NULL) {{
 
             init_class.add_code(inner_block.get_result() + "\n")
 
-        base.add_to_initializer(f"PY_CLASS_INIT_{variable_name}();")
+        base.add_to_initializer(f"PY_CLASS_INIT_{variable_name}();\n")
 
 
 class StandardLibraryClass(ClassDefinitionNode):
@@ -3634,6 +3634,7 @@ class Parser:
                 )
                 builder.add_global_variable("PyObjectContainer*", global_name)
                 node.global_container_name = global_name
+                super().visit_function_definition(node)
 
         FuncDefVisitor().visit_any_list(expr)
 
