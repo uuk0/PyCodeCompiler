@@ -4725,7 +4725,7 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
         )
 
     # def <name>['[' <generic parameters> ']'] '(' <parameters, some with *, ** or =, some with type hints> ')':
-    def try_parse_function_definition(self) -> FunctionDefinitionNode | None:
+    def try_parse_function_definition(self) -> AbstractASTNode | None:
         def_token = self.lexer.get_chars(len("def "))
 
         if def_token != "def ":
@@ -4832,6 +4832,18 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
         assert tos == func_node
 
         self.is_in_function = prev_in_function
+
+        if self.layer_stack and isinstance(
+            self.layer_stack[-1], FunctionDefinitionNode
+        ):
+            self.base_node_list.append(func_node)
+            return AssignmentExpression(
+                [
+                    NameAccessExpression(function_name),
+                ],
+                None,
+                ConstantAccessExpression(func_node),
+            )
 
         return func_node
 
