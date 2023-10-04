@@ -3946,7 +3946,7 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
 
             return PrefixOperation(PrefixOperation.PrefixOperator.NOT, expr)
 
-        elif identifier == "lambda":
+        elif identifier.text == "lambda":
             self.lexer.try_parse_whitespaces()
             params = []
 
@@ -3980,8 +3980,9 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
                 raise SyntaxError("expected <expression> after <lambda head>")
 
             # todo: local capturing!
+            # todo: can the lambda name include where its from?
             func_def = FunctionDefinitionNode(
-                TokenType.IDENTIFIER("<lambda>"),
+                TokenType.IDENTIFIER("__lambda__"),
                 [],
                 [
                     FunctionDefinitionNode.FunctionDefinitionParameter(

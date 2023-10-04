@@ -39,5 +39,19 @@ class TestStarStar(unittest.TestCase):
         test_star_star(self, simple_target_keyword)
 
 
+class TestLambdaDeclaration(unittest.TestCase):
+    def test_basic(self):
+        x = lambda: 10
+        self.assertEqual(x(), 10)
+
+    def test_with_param(self):
+        x = lambda a: a + 2
+        self.assertEqual(x(2), 4)
+
+    def test_lambda_ception(self):
+        x = lambda: lambda: 10
+        self.assertEqual(x()(), 10)
+
+
 if __name__ == "__main__":
     unittest.main()
