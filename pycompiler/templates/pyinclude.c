@@ -698,7 +698,7 @@ PyObjectContainer* PY_SetSubscriptionValue(PyObjectContainer* obj, PyObjectConta
 PyObjectContainer* PY_createString(char* string)
 {
     PyObjectContainer* container = createEmptyContainer(PY_TYPE_STRING);
-    container->raw_value = string;
+    container->raw_value = strdup(string);
     return container;
 }
 
@@ -837,13 +837,42 @@ void initialize()
     if (initialized) return;
 
     PY_NONE = createEmptyContainer(PY_TYPE_NONE);
+    PY_NONE->flags |= PY_OBJ_NO_FREE;
     PY_FALSE = createEmptyContainer(PY_TYPE_BOOL);
     PY_FALSE->raw_value = (void*)0;
+    PY_FALSE->flags |= PY_OBJ_NO_FREE;
     PY_TRUE = createEmptyContainer(PY_TYPE_BOOL);
     PY_TRUE->raw_value = (void*)1;
+    PY_TRUE->flags |= PY_OBJ_NO_FREE;
 
     PY_TYPE_OBJECT = PY_createClassContainer("object");
 
     initialized = true;
+}
+
+void DECREF(PyObjectContainer* obj) {
+    if (obj->flags & PY_OBJ_NO_FREE) return;
+
+    obj->refcount--;
+    if (obj->refcount > 0) return;
+
+    switch(obj->type) {
+        case PY_TYPE_PY_IMPL : {
+            PyObjectContainer* method = PY_getObjectAttributeByNameOrStatic(obj, "__del__");
+            if (method != NULL) {
+                PY_invokeBoxedMethod(method, obj, 0, NULL, NULL);
+                DECREF(method);
+            }
+            break;
+        }
+        case PY_TYPE_INT:
+        case PY_TYPE_FLOAT:
+        case PY_TYPE_STRING:
+            free(obj->raw_value);
+            break;
+        default:
+            break;
+    }
+    free(obj);
 }
 

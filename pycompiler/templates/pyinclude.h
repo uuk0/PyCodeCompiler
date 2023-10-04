@@ -59,6 +59,17 @@ struct PyClassContainer
 };
 typedef struct PyClassContainer PyClassContainer;
 
+// Compatible struct to PyObjectContainer, which can be used instead
+// for smaller objects
+struct ShortPyObjectContainer
+{
+    PyObjectType type;
+    void* raw_value;
+    uint16_t refcount;
+    uint16_t flags;
+};
+
+#define PY_OBJ_NO_FREE 1
 
 struct PyObjectContainer
 {
@@ -71,6 +82,7 @@ struct PyObjectContainer
     struct PyObjectContainer* source;
 
 #ifdef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE
+    // TODO: make HASHMAP*
     uint16_t dynamic_attr_count;
     char** dynamic_attr_keys;
     struct PyObjectContainer** dynamic_attr_values;
@@ -146,7 +158,10 @@ bool PY_getTruthValueOf(PyObjectContainer* obj);
 void initialize();
 
 #define INCREF(obj) obj->refcount++;
-#define DECREF(obj) obj->refcount--; if (obj->refcount == 0) free(obj);
+// #define DECREF(obj) obj->refcount--; if (obj->refcount == 0) free(obj);
+
+void DECREF(PyObjectContainer* obj);
+
 /**
 #define DECREF(obj) obj->refcount--; if (obj->refcount == 0) { \
 PyObjectContainer* method = PY_getObjectAttributeByNameOrStatic(obj, "__del__"); \
