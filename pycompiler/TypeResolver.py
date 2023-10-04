@@ -32,6 +32,7 @@ from pycompiler.Parser import (
     InplaceOperator,
     ListComprehension,
     TernaryOperator,
+    CapturedLocalAccessExpression,
 )
 
 if typing.TYPE_CHECKING:
@@ -592,13 +593,44 @@ class GenericFuncCallInliner(SyntaxTreeVisitor):
 
 
 class LocalNameValidator(SyntaxTreeVisitor):
+    def __init__(self):
+        super().__init__()
+        self.curr_func: FunctionDefinitionNode | None = None
+
+    def visit_function_definition(self, node: FunctionDefinitionNode):
+        old = self.curr_func
+        self.curr_func = node
+        super().visit_function_definition(node)
+        self.curr_func = old
+
+    def visit_class_definition(self, node: ClassDefinitionNode):
+        old = self.curr_func
+        self.curr_func = None
+        super().visit_class_definition(node)
+        self.curr_func = old
+
     def visit_name_access(self, access: NameAccessExpression):
         super().visit_name_access(access)
 
-        if not access.scope.has_name_access(access.name.text):
-            raise NameError(
-                f"Cannot find '{access.name.text}' at {access} in scope {access.scope}"
-            )
+        if access.scope.has_name_access(access.name.text):
+            return
+
+        if self.curr_func and self.curr_func.local_capture_node:
+            func: FunctionDefinitionNode = self.curr_func
+
+            if func.local_capture_node.scope.has_name_access(access.name.text):
+                if access.name.text not in func.local_value_capturing:
+                    func.local_value_capturing.append(access.name.text)
+
+                access.parent[0].try_replace_child(
+                    access,
+                    CapturedLocalAccessExpression(access.name, func.local_value_capturing.index(access.name.text)),
+                    access.parent[1],
+                )
+
+        raise NameError(
+            f"Cannot find '{access.name.text}' at {access} in scope {access.scope}"
+        )
 
 
 class ResolveGlobalNames(SyntaxTreeVisitor):

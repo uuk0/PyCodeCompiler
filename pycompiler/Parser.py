@@ -575,8 +575,36 @@ class NameAccessExpression(AbstractASTNodeExpression):
         value_source.emit_c_code(base, context)
 
 
+class CapturedLocalAccessExpression(NameAccessExpression):
+    def __init__(self, name: Lexer.Token | str, index: int):
+        super().__init__(name)
+        self.index = index
+
+    def __eq__(self, other):
+        return (
+            type(other) == GeneratorNameAccessExpression
+            and self.name == other.name
+            and self.index == other.index
+        )
+
+    def __repr__(self):
+        return f"CAPTURED-VARIABLE({self.name})"
+
+    def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder):
+        context.add_code(f"locals[{self.index}]")
+
+    def emit_c_code_for_write(
+        self,
+        base: CCodeEmitter,
+        context: CCodeEmitter.CExpressionBuilder,
+        value_source: AbstractASTNodeExpression,
+    ):
+        context.add_code(f"locals[{self.index}] = ")
+        value_source.emit_c_code(base, context)
+
+
 class GeneratorNameAccessExpression(NameAccessExpression):
-    def __init__(self, name: Lexer.Token, index: int):
+    def __init__(self, name: Lexer.Token | str, index: int):
         super().__init__(name)
         self.index = index
 
@@ -1659,6 +1687,7 @@ class FunctionDefinitionNode(AbstractASTNode):
         self.return_type: AbstractDataType = None
         self.global_container_name = None
         self.local_value_capturing = local_value_capturing
+        self.local_capture_node: AbstractASTNode | None = None
         self.is_top_level = False
 
     def setup(self):
@@ -1754,8 +1783,6 @@ class FunctionDefinitionNode(AbstractASTNode):
                     )
 
         for line in self.body:
-            print(line)
-            print(line.scope.variable_name_remap)
             inner_section = func.get_statement_builder(indent=False)
 
             line.emit_c_code(base, inner_section)
@@ -4001,6 +4028,9 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
                 ],
             )
 
+            if self.layer_stack:
+                func_def.local_capture_node = self.layer_stack[-1]
+
             # function definition itself is outside
             self.base_node_list.append(func_def)
 
@@ -4840,6 +4870,7 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
             self.layer_stack[-1], FunctionDefinitionNode
         ):
             self.base_node_list.append(func_node)
+            func_node.local_capture_node = self.layer_stack[-1]
             return AssignmentExpression(
                 [
                     NameAccessExpression(function_name),
