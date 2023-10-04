@@ -426,7 +426,8 @@ class ScopeGeneratorVisitor(SyntaxTreeVisitor):
         self.scope.close()
         self.scope = outer_scope
 
-        self.scope.export_variable_name(node.name.text, strong_value=node)
+        if node.is_top_level:
+            self.scope.export_variable_name(node.name.text, strong_value=node)
 
     def visit_function_definition_parameter(
         self, node: FunctionDefinitionNode.FunctionDefinitionParameter
@@ -607,6 +608,8 @@ class ResolveGlobalNames(SyntaxTreeVisitor):
         if global_name := access.scope.get_module_global_variable_name(
             access.name.text
         ):
+            print("global", access.name.text, global_name)
+            print(access.scope.global_scope.variable_name_stack)
             access.parent[0].try_replace_child(
                 access, GlobalCNameAccessExpression(global_name), access.parent[1]
             )

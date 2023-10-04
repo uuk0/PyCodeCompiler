@@ -1659,6 +1659,7 @@ class FunctionDefinitionNode(AbstractASTNode):
         self.return_type: AbstractDataType = None
         self.global_container_name = None
         self.local_value_capturing = local_value_capturing
+        self.is_top_level = False
 
     def setup(self):
         if self.is_generator:
@@ -1748,11 +1749,13 @@ class FunctionDefinitionNode(AbstractASTNode):
 
             for var in list(sorted(list(self.body[0].scope.variable_name_stack))):
                 if var not in args:
-                    norm_name = self.body[0].scope.get_normalised_name(var)
-                    self.body[0].scope.add_remapped_name(var, norm_name)
-                    func.add_code(f"PyObjectContainer* {norm_name};\n")
+                    func.add_code(
+                        f"PyObjectContainer* {self.body[0].scope.get_remapped_name(var)};\n"
+                    )
 
         for line in self.body:
+            print(line)
+            print(line.scope.variable_name_remap)
             inner_section = func.get_statement_builder(indent=False)
 
             line.emit_c_code(base, inner_section)
@@ -4844,6 +4847,9 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
                 None,
                 ConstantAccessExpression(func_node),
             )
+
+        elif not self.layer_stack:
+            func_node.is_top_level = True
 
         return func_node
 

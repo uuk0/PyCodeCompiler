@@ -97,8 +97,8 @@ PyObjectContainer* PY_CLASS_INIT_PY_CLASS_ListTest_8(void) {
 
 PyObjectContainer* testbasic_1(PyObjectContainer* self_0) {
     // Source Location: ListTest.test_basic
-    PyObjectContainer* l03_10;
-    PyObjectContainer* l03bis_11;
+    PyObjectContainer* l0_3_10;
+    PyObjectContainer* l0_3_bis_11;
     PyObjectContainer* x_12;
 
     PyObjectContainer* obj_instance_6 = PY_createClassInstance(PY_TYPE_LIST);
@@ -106,16 +106,16 @@ PyObjectContainer* testbasic_1(PyObjectContainer* self_0) {
 
     PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(PY_getObjectAttributeByNameOrStatic(self_0, "assertEqual"), NULL, 2, (PyObjectContainer*[]) {obj_instance_6, PY_STD_list_CREATE(0)}, NULL));
 
-    l03_10 = PY_STD_list_CREATE(4, PY_createInteger(0), PY_createInteger(1), PY_createInteger(2), PY_createInteger(3));
+    l0_3_10 = PY_STD_list_CREATE(4, PY_createInteger(0), PY_createInteger(1), PY_createInteger(2), PY_createInteger(3));
 
     PyObjectContainer* obj_instance_8 = PY_createClassInstance(PY_TYPE_LIST);
-    PY_CHECK_EXCEPTION(PY_STD_list_init_fast_arg_1(obj_instance_8 , l03_10));
+    PY_CHECK_EXCEPTION(PY_STD_list_init_fast_arg_1(obj_instance_8 , l0_3_10));
 
-    l03bis_11 = obj_instance_8;
+    l0_3_bis_11 = obj_instance_8;
 
-    PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(PY_getObjectAttributeByNameOrStatic(self_0, "assertEqual"), NULL, 2, (PyObjectContainer*[]) {l03_10, l03bis_11}, NULL));
+    PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(PY_getObjectAttributeByNameOrStatic(self_0, "assertEqual"), NULL, 2, (PyObjectContainer*[]) {l0_3_10, l0_3_bis_11}, NULL));
 
-    PyObjectContainer* temporary_11 = PY_STD_operator_is_not(l03_10, l03bis_11);
+    PyObjectContainer* temporary_11 = PY_STD_operator_is_not(l0_3_10, l0_3_bis_11);
     PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(PY_getObjectAttributeByNameOrStatic(self_0, "assertTrue"), NULL, 1, &temporary_11, NULL));
 
     PyObjectContainer* obj_instance_13 = PY_createClassInstance(PY_TYPE_LIST);

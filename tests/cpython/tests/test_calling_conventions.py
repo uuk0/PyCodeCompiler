@@ -9,6 +9,14 @@ def simple_target_keyword(a=10):
     return a
 
 
+class TestFunctionInception(unittest.TestCase):
+    def test_basic(self):
+        def target():
+            return 10
+
+        self.assertEqual(target(), 10)
+
+
 class TestCallStar(unittest.TestCase):
     def test_simple(self):
         f = simple_target
