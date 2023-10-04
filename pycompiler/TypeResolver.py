@@ -71,9 +71,20 @@ class GetHeaderRelatedInfo(SyntaxTreeVisitor):
             f"PyObjectContainer* {node.normal_name}_safeWrap(PyObjectContainer* self, uint8_t argc, "
             f"PyObjectContainer** args, CallStructureInfo* info)"
         )
-        self.function_signatures.append(
-            f"PyObjectContainer* {node.normal_name}("
-            f"{', '.join(f'PyObjectContainer* {e.normal_name}' for e in node.parameters)})"
+
+        if node.local_value_capturing:
+            self.function_signatures.append(
+                f"PyObjectContainer* {node.normal_name}(PyObjectContainer* {node.get_self_var_name()}{', ' if node.parameters else ''}"
+                f"{', '.join(f'PyObjectContainer* {e.normal_name}' for e in node.parameters)})"
+            )
+        else:
+            self.function_signatures.append(
+                f"PyObjectContainer* {node.normal_name}("
+                f"{', '.join(f'PyObjectContainer* {e.normal_name}' for e in node.parameters)})"
+            )
+
+        self.global_variables.append(
+            f"PyObjectContainer* function_container_{node.normal_name}"
         )
 
         if node.is_generator:

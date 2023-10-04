@@ -1951,9 +1951,13 @@ container->next_section = {func_name}_ENTRY;
         if self.local_value_capturing:
             if arg_unbox:
                 unbox = "self, " + unbox
+            else:
+                unbox = "self"
+
+            if arg_unbox_2:
                 unbox_2 = "self, " + unbox_2
             else:
-                unbox = unbox_2 = "self"
+                unbox_2 = "self"
 
         if len(self.parameters) > 0:
             has_keyword = False
@@ -1965,6 +1969,17 @@ container->next_section = {func_name}_ENTRY;
             if has_keyword:
                 self.emit_safe_wrap_with_keywords(
                     base, func_name, safe_func, unbox, unbox_2
+                )
+            elif self.local_value_capturing:
+                safe_func.add_code(
+                    f"""
+assert(self != NULL);
+PyObjectContainer** new_args = PY_ARGS_unpackPositionalArgs(args, info, &argc);
+PyObjectContainer* result;
+
+assert(argc == {len(self.parameters)});
+result = {func_name}({unbox});
+"""
                 )
             else:
                 safe_func.add_code(

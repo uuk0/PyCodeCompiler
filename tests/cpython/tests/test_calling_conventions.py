@@ -24,6 +24,23 @@ class TestFunctionInception(unittest.TestCase):
 
         self.assertEqual(target(), 10)
 
+    def test_local_capture_two_vars(self):
+        extern = 10
+        add = 2
+
+        def target():
+            return extern + add
+
+        self.assertEqual(target(), 12)
+
+    def test_local_capture_with_arg(self):
+        extern = 10
+
+        def target(add):
+            return extern + add
+
+        self.assertEqual(target(2), 12)
+
 
 class TestCallStar(unittest.TestCase):
     def test_simple(self):
