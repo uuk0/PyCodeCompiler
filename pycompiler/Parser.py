@@ -669,10 +669,11 @@ class GlobalCNameAccessExpression(AbstractASTNodeExpression):
 
 
 class ConstantAccessExpression(AbstractASTNodeExpression):
-    def __init__(self, value: typing.Any, token=None):
+    def __init__(self, value: typing.Any, token=None, construct_ref=True):
         super().__init__()
         self.value = value
         self.token = token
+        self.construct_ref = construct_ref
 
         if isinstance(value, int):
             self.static_value_type = INTEGER_DATA_TYPE
@@ -718,7 +719,13 @@ class ConstantAccessExpression(AbstractASTNodeExpression):
             self.value.emit_reference_access(base, context, self.scope)
 
         elif isinstance(self.value, ClassDefinitionNode):
-            self.value.emit_reference_access(base, context, self.scope)
+            if self.construct_ref:
+                variable_name = f"PY_CLASS_{self.value.normal_name}"
+                context.add_code(
+                    f"""PY_createClass("{self.value.name.text}", PY_CLASS_INIT_{variable_name})"""
+                )
+            else:
+                self.value.emit_reference_access(base, context, self.scope)
 
         else:
             print(self.parent)
@@ -2096,6 +2103,7 @@ class ClassDefinitionNode(AbstractASTNode):
             str | typing.Tuple[str, int], AbstractASTNode
         ] = {}
         self.declared_locals = []
+        self.is_toplevel_class = False
 
     def get_enclosing_scope(self) -> Scope:
         return self.body[0].scope if self.body else None
@@ -2146,10 +2154,14 @@ class ClassDefinitionNode(AbstractASTNode):
     def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder):
         variable_name = f"PY_CLASS_{self.normal_name}"
 
-        base.add_global_variable("PyClassContainer*", variable_name)
+        if self.is_toplevel_class:
+            base.add_global_variable("PyClassContainer*", variable_name)
 
         init_class = CCodeEmitter.CFunctionBuilder(
-            f"PY_CLASS_INIT_{variable_name}", [], "PyObjectContainer*", base.scope
+            f"PY_CLASS_INIT_{variable_name}",
+            ["PyClassContainer** cls"],
+            "PyObjectContainer*",
+            base.scope,
         )
         base.add_function(init_class)
 
@@ -2168,8 +2180,8 @@ class ClassDefinitionNode(AbstractASTNode):
         init_class.add_code(
             f"""
 // Create Class {variable_name} ('{self.name.text}' in source code)
-{variable_name} = PY_createClassContainer("{self.name.text}");
-PY_ClassContainer_AllocateParentArray({variable_name}, {max(len(self.parents), 1)});
+*cls = PY_createClassContainer("{self.name.text}");
+PY_ClassContainer_AllocateParentArray(*cls, {max(len(self.parents), 1)});
 """
         )  # todo: include all the other stuff here!
 
@@ -2180,29 +2192,29 @@ PY_ClassContainer_AllocateParentArray({variable_name}, {max(len(self.parents), 1
             for i, parent in enumerate(self.parents):
                 if isinstance(parent, ClassDefinitionNode):
                     init_class.add_code(
-                        f"{variable_name} -> parents[{i}] = PY_CLASS_{parent.normal_name};\n"
+                        f"(*cls)->parents[{i}] = PY_CLASS_{parent.normal_name};\n"
                     )
                 else:
                     init_class.add_code(
-                        f"{variable_name} -> parents[{i}] = PY_unwrapClassContainer(PY_CHECK_EXCEPTION("
+                        f"(*cls)->parents[{i}] = PY_unwrapClassContainer(PY_CHECK_EXCEPTION("
                     )
                     parent.emit_c_code(base, init_class)
                     init_class.add_code("));\n")
 
                     init_subclass = base.get_fresh_name("init_subclass")
                     init_class.add_code(
-                        f"""PyObjectContainer* {init_subclass} = PY_getClassAttributeByName({variable_name}->parents[{i}], "__init_subclass__");
+                        f"""PyObjectContainer* {init_subclass} = PY_getClassAttributeByName((*cls)->parents[{i}], "__init_subclass__");
 if ({init_subclass} != NULL) {{
-    PY_CHECK_EXCEPTION(PY_invokeBoxedMethod({init_subclass}, PY_createClassWrapper({variable_name}), 0, NULL, NULL));
+    PY_CHECK_EXCEPTION(PY_invokeBoxedMethod({init_subclass}, PY_createClassWrapper(*cls), 0, NULL, NULL));
 }}\n"""
                     )
 
                 init_class.add_code(
-                    f"PY_ClassContainer_EnsureObjectAttributesDeclaredFor({variable_name}, {variable_name} -> parents[{i}]);\n"
+                    f"PY_ClassContainer_EnsureObjectAttributesDeclaredFor(*cls, (*cls)->parents[{i}]);\n"
                 )
 
         else:
-            init_class.add_code(f"{variable_name} -> parents[0] = PY_TYPE_OBJECT;\n")
+            init_class.add_code(f"(*cls)->parents[0] = PY_TYPE_OBJECT;\n")
 
         if "__init__" in self.function_table:
             init: FunctionDefinitionNode = self.function_table["__init__"]
@@ -2216,7 +2228,7 @@ if ({init_subclass} != NULL) {{
                             and lhs.base.name.text == init.parameters[0].name.text
                         ):
                             init_class.add_code(
-                                f"""PY_ClassContainer_DeclareObjectAttribute({variable_name}, "{lhs.attribute.text}");\n"""
+                                f"""PY_ClassContainer_DeclareObjectAttribute(*cls, "{lhs.attribute.text}");\n"""
                             )
 
         init_class.add_code("\n// Attributes\n")
@@ -2224,11 +2236,11 @@ if ({init_subclass} != NULL) {{
         for line in self.body:
             if isinstance(line, FunctionDefinitionNode):
                 init_class.add_code(
-                    f'PY_setClassAttributeByNameOrCreate({variable_name}, "{line.name.text}", PY_createBoxForFunction({line.normal_name}_safeWrap));\n'
+                    f'PY_setClassAttributeByNameOrCreate(*cls, "{line.name.text}", PY_createBoxForFunction({line.normal_name}_safeWrap));\n'
                 )
             elif isinstance(line, ClassDefinitionNode):
                 init_class.add_code(
-                    f"""PY_setClassAttributeByNameOrCreate({variable_name}, "{line.name.text}", PY_createClassWrapper(PY_CLASS_{line.normal_name}));\n"""
+                    f"""PY_setClassAttributeByNameOrCreate(*cls, "{line.name.text}", PY_createClassWrapper(PY_CLASS_{line.normal_name}));\n"""
                 )
 
         for line in self.body:
@@ -2243,7 +2255,18 @@ if ({init_subclass} != NULL) {{
 
             init_class.add_code(inner_block.get_result() + "\n")
 
-        base.add_to_initializer(f"PY_CLASS_INIT_{variable_name}();\n")
+        # copy the toplevel vars over TODO: what if __init__ has a return in it?
+        for name in self.get_enclosing_scope().variable_name_stack:
+            init_class.add_code(
+                f"""PY_setClassAttributeByNameOrCreate(*cls, "{name}", {self.get_enclosing_scope().get_remapped_name(name)});\n"""
+            )
+
+        init_class.add_code("return PY_NONE;\n")
+
+        if self.is_toplevel_class:
+            base.add_to_initializer(
+                f"PY_CLASS_INIT_{variable_name}(&{variable_name});\n"
+            )
 
     def emit_reference_access(
         self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder, scope: Scope
@@ -3552,7 +3575,10 @@ class Parser:
             self.skip_end_check = False
 
             if node is not None:
-                ast_stream.append(node)
+                if isinstance(node, list):
+                    ast_stream += node
+                else:
+                    ast_stream.append(node)
             else:
                 print(
                     repr(self.lexer.file[self.lexer.file_cursor :]),
@@ -3770,7 +3796,7 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
 
     def parse_line(
         self, require_indent=True, include_comment=True, mention_on_yield=None
-    ) -> AbstractASTNode | None:
+    ) -> AbstractASTNode | typing.List[AbstractASTNode] | None:
         if include_comment and (comment := self.try_parse_comment()):
             return comment
 
@@ -5109,7 +5135,9 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
             hint=hint,
         )
 
-    def try_parse_class_node(self) -> ClassDefinitionNode | None:
+    def try_parse_class_node(
+        self,
+    ) -> AbstractASTNode | None:
         # class <xy> ['[' <generics> ']'] '(' <parent expressions> ')' ':' ...
         class_token = self.lexer.get_chars(len("class "))
 
@@ -5172,9 +5200,23 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
         tos = self.layer_stack.pop()
         assert tos == cls
 
+        if not self.layer_stack or (
+            isinstance(self.layer_stack[-1], ClassDefinitionNode)
+            and self.layer_stack[-1].is_toplevel_class
+        ):
+            cls.is_toplevel_class = True
+
         for node in body:
             if isinstance(node, FunctionDefinitionNode):
                 cls.function_table[node.name.text] = node
+
+        if not cls.is_toplevel_class:
+            self.base_node_list.append(cls)
+            return AssignmentExpression(
+                [NameAccessExpression(cls.name.text)],
+                None,
+                ConstantAccessExpression(cls, construct_ref=True),
+            )
 
         return cls
 

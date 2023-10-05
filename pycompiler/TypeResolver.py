@@ -96,9 +96,13 @@ class GetHeaderRelatedInfo(SyntaxTreeVisitor):
         super().visit_class_definition(node)
 
         self.function_signatures.append(
-            f"PyObjectContainer* PY_CLASS_INIT_PY_CLASS_{node.normal_name}(void)"
+            f"PyObjectContainer* PY_CLASS_INIT_PY_CLASS_{node.normal_name}(PyClassContainer** cls)"
         )
-        self.global_variables.append(f"PyClassContainer* PY_CLASS_{node.normal_name}")
+
+        if node.is_toplevel_class:
+            self.global_variables.append(
+                f"PyClassContainer* PY_CLASS_{node.normal_name}"
+            )
 
 
 class GetCapturedNames(SyntaxTreeVisitor):
@@ -422,7 +426,10 @@ class ScopeGeneratorVisitor(SyntaxTreeVisitor):
         self.scope.close(export_local_name=node.name.text)
         self.scope = outer_scope
 
-        self.scope.export_variable_name(node.name.text, strong_value=node)
+        if node.is_toplevel_class:
+            self.scope.export_variable_name(node.name.text, strong_value=node)
+        else:
+            self.scope.export_variable_name("PY_CLASS_" + node.normal_name)
 
     def visit_function_definition(self, node: FunctionDefinitionNode):
         outer_scope = self.scope

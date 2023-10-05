@@ -181,6 +181,12 @@ PyClassContainer* PY_unwrapClassContainer(PyObjectContainer* obj)
     return obj->raw_value;
 }
 
+PyObjectContainer* PY_createClass(char* name, PyObjectContainer* init(PyClassContainer**)) {
+    PyClassContainer* cls = PY_createClassContainer(name);
+    PY_CHECK_EXCEPTION(init(&cls));
+    return PY_createClassWrapper(cls);
+}
+
 PyObjectContainer* PY_getObjectAttributeByName(PyObjectContainer* obj, char* name)
 {
     // todo: can we implement it for other types also?

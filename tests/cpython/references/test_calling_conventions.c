@@ -117,23 +117,23 @@ PyObjectContainer* PY_MODULE_test_calling_conventions_init(void) {
     #ifdef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE
     PY_setObjectAttributeByName(PY_MODULE_INSTANCE_test_calling_conventions, "test_local_capture_with_arg", (function_container_test_local_capture_with_arg_9 = PY_createBoxForFunction(testlocalcapturewitharg_54_safeWrap)));
     #endif
-    PY_CLASS_INIT_PY_CLASS_TestFunctionInception_17();
+    PY_CLASS_INIT_PY_CLASS_TestFunctionInception_17(&PY_CLASS_TestFunctionInception_17);
 
     #ifdef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE
     PY_setObjectAttributeByName(PY_MODULE_INSTANCE_test_calling_conventions, "test_simple", (function_container_test_simple_10 = PY_createBoxForFunction(testsimple_19_safeWrap)));
     #endif
-    PY_CLASS_INIT_PY_CLASS_TestCallStar_20();
+    PY_CLASS_INIT_PY_CLASS_TestCallStar_20(&PY_CLASS_TestCallStar_20);
 
     keyword_name_var_36 = (PyObjectContainer*[]) {PY_createString("a")};
     #ifdef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE
     PY_setObjectAttributeByName(PY_MODULE_INSTANCE_test_calling_conventions, "test_simple", (function_container_test_simple_11 = PY_createBoxForFunction(testsimple_22_safeWrap)));
     #endif
-    PY_CLASS_INIT_PY_CLASS_TestKeyword_23();
+    PY_CLASS_INIT_PY_CLASS_TestKeyword_23(&PY_CLASS_TestKeyword_23);
 
     #ifdef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE
     PY_setObjectAttributeByName(PY_MODULE_INSTANCE_test_calling_conventions, "test_simple", (function_container_test_simple_12 = PY_createBoxForFunction(testsimple_25_safeWrap)));
     #endif
-    PY_CLASS_INIT_PY_CLASS_TestStarStar_26();
+    PY_CLASS_INIT_PY_CLASS_TestStarStar_26(&PY_CLASS_TestStarStar_26);
 
     #ifdef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE
     PY_setObjectAttributeByName(PY_MODULE_INSTANCE_test_calling_conventions, "__lambda__", (function_container___lambda___13 = PY_createBoxForFunction(lambda_27_safeWrap)));
@@ -167,7 +167,7 @@ PyObjectContainer* PY_MODULE_test_calling_conventions_init(void) {
     #ifdef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE
     PY_setObjectAttributeByName(PY_MODULE_INSTANCE_test_calling_conventions, "test_lambda_capture", (function_container_test_lambda_capture_21 = PY_createBoxForFunction(testlambdacapture_57_safeWrap)));
     #endif
-    PY_CLASS_INIT_PY_CLASS_TestLambdaDeclaration_41();
+    PY_CLASS_INIT_PY_CLASS_TestLambdaDeclaration_41(&PY_CLASS_TestLambdaDeclaration_41);
 
     if (PY_unpackBoolean(PY_CHECK_EXCEPTION(PY_CHECK_EXCEPTION(PY_STD_string_eq_fast (PY_createString("__main__") , PY_createString("__main__")))))) {
         PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(PY_getObjectAttributeByNameOrStatic(PY_MODULE_INSTANCE_unittest, "main"), NULL, 0, NULL, NULL));
@@ -315,24 +315,30 @@ PyObjectContainer* target_53_safeWrap(PyObjectContainer* self , uint8_t argc , P
     result = target_53(self, new_args[0]);
 }
 
-PyObjectContainer* PY_CLASS_INIT_PY_CLASS_TestFunctionInception_17(void) {
+PyObjectContainer* PY_CLASS_INIT_PY_CLASS_TestFunctionInception_17(PyClassContainer** cls) {
     // Create Class PY_CLASS_TestFunctionInception_17 ('TestFunctionInception' in source code)
-    PY_CLASS_TestFunctionInception_17 = PY_createClassContainer("TestFunctionInception");
-    PY_ClassContainer_AllocateParentArray(PY_CLASS_TestFunctionInception_17, 1);
+    *cls = PY_createClassContainer("TestFunctionInception");
+    PY_ClassContainer_AllocateParentArray(*cls, 1);
 
     // Create Parent Objects for class 'TestFunctionInception'
-    PY_CLASS_TestFunctionInception_17 -> parents[0] = PY_unwrapClassContainer(PY_CHECK_EXCEPTION(PY_getObjectAttributeByNameOrStatic(PY_MODULE_INSTANCE_unittest, "TestCase")));
-    PyObjectContainer* init_subclass_24 = PY_getClassAttributeByName(PY_CLASS_TestFunctionInception_17->parents[0], "__init_subclass__");
+    (*cls)->parents[0] = PY_unwrapClassContainer(PY_CHECK_EXCEPTION(PY_getObjectAttributeByNameOrStatic(PY_MODULE_INSTANCE_unittest, "TestCase")));
+    PyObjectContainer* init_subclass_24 = PY_getClassAttributeByName((*cls)->parents[0], "__init_subclass__");
     if (init_subclass_24 != NULL) {
-        PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(init_subclass_24, PY_createClassWrapper(PY_CLASS_TestFunctionInception_17), 0, NULL, NULL));
+        PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(init_subclass_24, PY_createClassWrapper(*cls), 0, NULL, NULL));
     }
-    PY_ClassContainer_EnsureObjectAttributesDeclaredFor(PY_CLASS_TestFunctionInception_17, PY_CLASS_TestFunctionInception_17 -> parents[0]);
+    PY_ClassContainer_EnsureObjectAttributesDeclaredFor(*cls, (*cls)->parents[0]);
 
     // Attributes
-    PY_setClassAttributeByNameOrCreate(PY_CLASS_TestFunctionInception_17, "test_basic", PY_createBoxForFunction(testbasic_10_safeWrap));
-    PY_setClassAttributeByNameOrCreate(PY_CLASS_TestFunctionInception_17, "test_local_capture", PY_createBoxForFunction(testlocalcapture_44_safeWrap));
-    PY_setClassAttributeByNameOrCreate(PY_CLASS_TestFunctionInception_17, "test_local_capture_two_vars", PY_createBoxForFunction(testlocalcapturetwovars_50_safeWrap));
-    PY_setClassAttributeByNameOrCreate(PY_CLASS_TestFunctionInception_17, "test_local_capture_with_arg", PY_createBoxForFunction(testlocalcapturewitharg_54_safeWrap));
+    PY_setClassAttributeByNameOrCreate(*cls, "test_basic", PY_createBoxForFunction(testbasic_10_safeWrap));
+    PY_setClassAttributeByNameOrCreate(*cls, "test_local_capture", PY_createBoxForFunction(testlocalcapture_44_safeWrap));
+    PY_setClassAttributeByNameOrCreate(*cls, "test_local_capture_two_vars", PY_createBoxForFunction(testlocalcapturetwovars_50_safeWrap));
+    PY_setClassAttributeByNameOrCreate(*cls, "test_local_capture_with_arg", PY_createBoxForFunction(testlocalcapturewitharg_54_safeWrap));
+
+
+
+
+
+    return PY_NONE;
 }
 
 PyObjectContainer* testbasic_10(PyObjectContainer* self_9) {
@@ -464,21 +470,24 @@ PyObjectContainer* testlocalcapturewitharg_54_safeWrap(PyObjectContainer* self ,
     return result;
 }
 
-PyObjectContainer* PY_CLASS_INIT_PY_CLASS_TestCallStar_20(void) {
+PyObjectContainer* PY_CLASS_INIT_PY_CLASS_TestCallStar_20(PyClassContainer** cls) {
     // Create Class PY_CLASS_TestCallStar_20 ('TestCallStar' in source code)
-    PY_CLASS_TestCallStar_20 = PY_createClassContainer("TestCallStar");
-    PY_ClassContainer_AllocateParentArray(PY_CLASS_TestCallStar_20, 1);
+    *cls = PY_createClassContainer("TestCallStar");
+    PY_ClassContainer_AllocateParentArray(*cls, 1);
 
     // Create Parent Objects for class 'TestCallStar'
-    PY_CLASS_TestCallStar_20 -> parents[0] = PY_unwrapClassContainer(PY_CHECK_EXCEPTION(PY_getObjectAttributeByNameOrStatic(PY_MODULE_INSTANCE_unittest, "TestCase")));
-    PyObjectContainer* init_subclass_30 = PY_getClassAttributeByName(PY_CLASS_TestCallStar_20->parents[0], "__init_subclass__");
+    (*cls)->parents[0] = PY_unwrapClassContainer(PY_CHECK_EXCEPTION(PY_getObjectAttributeByNameOrStatic(PY_MODULE_INSTANCE_unittest, "TestCase")));
+    PyObjectContainer* init_subclass_30 = PY_getClassAttributeByName((*cls)->parents[0], "__init_subclass__");
     if (init_subclass_30 != NULL) {
-        PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(init_subclass_30, PY_createClassWrapper(PY_CLASS_TestCallStar_20), 0, NULL, NULL));
+        PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(init_subclass_30, PY_createClassWrapper(*cls), 0, NULL, NULL));
     }
-    PY_ClassContainer_EnsureObjectAttributesDeclaredFor(PY_CLASS_TestCallStar_20, PY_CLASS_TestCallStar_20 -> parents[0]);
+    PY_ClassContainer_EnsureObjectAttributesDeclaredFor(*cls, (*cls)->parents[0]);
 
     // Attributes
-    PY_setClassAttributeByNameOrCreate(PY_CLASS_TestCallStar_20, "test_simple", PY_createBoxForFunction(testsimple_19_safeWrap));
+    PY_setClassAttributeByNameOrCreate(*cls, "test_simple", PY_createBoxForFunction(testsimple_19_safeWrap));
+
+
+    return PY_NONE;
 }
 
 PyObjectContainer* testsimple_19(PyObjectContainer* self_18) {
@@ -512,21 +521,24 @@ PyObjectContainer* testsimple_19_safeWrap(PyObjectContainer* self , uint8_t argc
     return result;
 }
 
-PyObjectContainer* PY_CLASS_INIT_PY_CLASS_TestKeyword_23(void) {
+PyObjectContainer* PY_CLASS_INIT_PY_CLASS_TestKeyword_23(PyClassContainer** cls) {
     // Create Class PY_CLASS_TestKeyword_23 ('TestKeyword' in source code)
-    PY_CLASS_TestKeyword_23 = PY_createClassContainer("TestKeyword");
-    PY_ClassContainer_AllocateParentArray(PY_CLASS_TestKeyword_23, 1);
+    *cls = PY_createClassContainer("TestKeyword");
+    PY_ClassContainer_AllocateParentArray(*cls, 1);
 
     // Create Parent Objects for class 'TestKeyword'
-    PY_CLASS_TestKeyword_23 -> parents[0] = PY_unwrapClassContainer(PY_CHECK_EXCEPTION(PY_getObjectAttributeByNameOrStatic(PY_MODULE_INSTANCE_unittest, "TestCase")));
-    PyObjectContainer* init_subclass_33 = PY_getClassAttributeByName(PY_CLASS_TestKeyword_23->parents[0], "__init_subclass__");
+    (*cls)->parents[0] = PY_unwrapClassContainer(PY_CHECK_EXCEPTION(PY_getObjectAttributeByNameOrStatic(PY_MODULE_INSTANCE_unittest, "TestCase")));
+    PyObjectContainer* init_subclass_33 = PY_getClassAttributeByName((*cls)->parents[0], "__init_subclass__");
     if (init_subclass_33 != NULL) {
-        PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(init_subclass_33, PY_createClassWrapper(PY_CLASS_TestKeyword_23), 0, NULL, NULL));
+        PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(init_subclass_33, PY_createClassWrapper(*cls), 0, NULL, NULL));
     }
-    PY_ClassContainer_EnsureObjectAttributesDeclaredFor(PY_CLASS_TestKeyword_23, PY_CLASS_TestKeyword_23 -> parents[0]);
+    PY_ClassContainer_EnsureObjectAttributesDeclaredFor(*cls, (*cls)->parents[0]);
 
     // Attributes
-    PY_setClassAttributeByNameOrCreate(PY_CLASS_TestKeyword_23, "test_simple", PY_createBoxForFunction(testsimple_22_safeWrap));
+    PY_setClassAttributeByNameOrCreate(*cls, "test_simple", PY_createBoxForFunction(testsimple_22_safeWrap));
+
+
+    return PY_NONE;
 }
 
 PyObjectContainer* testsimple_22(PyObjectContainer* self_21) {
@@ -565,21 +577,24 @@ PyObjectContainer* testsimple_22_safeWrap(PyObjectContainer* self , uint8_t argc
     return result;
 }
 
-PyObjectContainer* PY_CLASS_INIT_PY_CLASS_TestStarStar_26(void) {
+PyObjectContainer* PY_CLASS_INIT_PY_CLASS_TestStarStar_26(PyClassContainer** cls) {
     // Create Class PY_CLASS_TestStarStar_26 ('TestStarStar' in source code)
-    PY_CLASS_TestStarStar_26 = PY_createClassContainer("TestStarStar");
-    PY_ClassContainer_AllocateParentArray(PY_CLASS_TestStarStar_26, 1);
+    *cls = PY_createClassContainer("TestStarStar");
+    PY_ClassContainer_AllocateParentArray(*cls, 1);
 
     // Create Parent Objects for class 'TestStarStar'
-    PY_CLASS_TestStarStar_26 -> parents[0] = PY_unwrapClassContainer(PY_CHECK_EXCEPTION(PY_getObjectAttributeByNameOrStatic(PY_MODULE_INSTANCE_unittest, "TestCase")));
-    PyObjectContainer* init_subclass_40 = PY_getClassAttributeByName(PY_CLASS_TestStarStar_26->parents[0], "__init_subclass__");
+    (*cls)->parents[0] = PY_unwrapClassContainer(PY_CHECK_EXCEPTION(PY_getObjectAttributeByNameOrStatic(PY_MODULE_INSTANCE_unittest, "TestCase")));
+    PyObjectContainer* init_subclass_40 = PY_getClassAttributeByName((*cls)->parents[0], "__init_subclass__");
     if (init_subclass_40 != NULL) {
-        PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(init_subclass_40, PY_createClassWrapper(PY_CLASS_TestStarStar_26), 0, NULL, NULL));
+        PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(init_subclass_40, PY_createClassWrapper(*cls), 0, NULL, NULL));
     }
-    PY_ClassContainer_EnsureObjectAttributesDeclaredFor(PY_CLASS_TestStarStar_26, PY_CLASS_TestStarStar_26 -> parents[0]);
+    PY_ClassContainer_EnsureObjectAttributesDeclaredFor(*cls, (*cls)->parents[0]);
 
     // Attributes
-    PY_setClassAttributeByNameOrCreate(PY_CLASS_TestStarStar_26, "test_simple", PY_createBoxForFunction(testsimple_25_safeWrap));
+    PY_setClassAttributeByNameOrCreate(*cls, "test_simple", PY_createBoxForFunction(testsimple_25_safeWrap));
+
+
+    return PY_NONE;
 }
 
 PyObjectContainer* testsimple_25(PyObjectContainer* self_24) {
@@ -689,24 +704,30 @@ PyObjectContainer* lambda_56_safeWrap(PyObjectContainer* self , uint8_t argc , P
     return lambda_56(self);
 }
 
-PyObjectContainer* PY_CLASS_INIT_PY_CLASS_TestLambdaDeclaration_41(void) {
+PyObjectContainer* PY_CLASS_INIT_PY_CLASS_TestLambdaDeclaration_41(PyClassContainer** cls) {
     // Create Class PY_CLASS_TestLambdaDeclaration_41 ('TestLambdaDeclaration' in source code)
-    PY_CLASS_TestLambdaDeclaration_41 = PY_createClassContainer("TestLambdaDeclaration");
-    PY_ClassContainer_AllocateParentArray(PY_CLASS_TestLambdaDeclaration_41, 1);
+    *cls = PY_createClassContainer("TestLambdaDeclaration");
+    PY_ClassContainer_AllocateParentArray(*cls, 1);
 
     // Create Parent Objects for class 'TestLambdaDeclaration'
-    PY_CLASS_TestLambdaDeclaration_41 -> parents[0] = PY_unwrapClassContainer(PY_CHECK_EXCEPTION(PY_getObjectAttributeByNameOrStatic(PY_MODULE_INSTANCE_unittest, "TestCase")));
-    PyObjectContainer* init_subclass_45 = PY_getClassAttributeByName(PY_CLASS_TestLambdaDeclaration_41->parents[0], "__init_subclass__");
+    (*cls)->parents[0] = PY_unwrapClassContainer(PY_CHECK_EXCEPTION(PY_getObjectAttributeByNameOrStatic(PY_MODULE_INSTANCE_unittest, "TestCase")));
+    PyObjectContainer* init_subclass_45 = PY_getClassAttributeByName((*cls)->parents[0], "__init_subclass__");
     if (init_subclass_45 != NULL) {
-        PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(init_subclass_45, PY_createClassWrapper(PY_CLASS_TestLambdaDeclaration_41), 0, NULL, NULL));
+        PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(init_subclass_45, PY_createClassWrapper(*cls), 0, NULL, NULL));
     }
-    PY_ClassContainer_EnsureObjectAttributesDeclaredFor(PY_CLASS_TestLambdaDeclaration_41, PY_CLASS_TestLambdaDeclaration_41 -> parents[0]);
+    PY_ClassContainer_EnsureObjectAttributesDeclaredFor(*cls, (*cls)->parents[0]);
 
     // Attributes
-    PY_setClassAttributeByNameOrCreate(PY_CLASS_TestLambdaDeclaration_41, "test_basic", PY_createBoxForFunction(testbasic_34_safeWrap));
-    PY_setClassAttributeByNameOrCreate(PY_CLASS_TestLambdaDeclaration_41, "test_with_param", PY_createBoxForFunction(testwithparam_36_safeWrap));
-    PY_setClassAttributeByNameOrCreate(PY_CLASS_TestLambdaDeclaration_41, "test_lambda_ception", PY_createBoxForFunction(testlambdaception_38_safeWrap));
-    PY_setClassAttributeByNameOrCreate(PY_CLASS_TestLambdaDeclaration_41, "test_lambda_capture", PY_createBoxForFunction(testlambdacapture_57_safeWrap));
+    PY_setClassAttributeByNameOrCreate(*cls, "test_basic", PY_createBoxForFunction(testbasic_34_safeWrap));
+    PY_setClassAttributeByNameOrCreate(*cls, "test_with_param", PY_createBoxForFunction(testwithparam_36_safeWrap));
+    PY_setClassAttributeByNameOrCreate(*cls, "test_lambda_ception", PY_createBoxForFunction(testlambdaception_38_safeWrap));
+    PY_setClassAttributeByNameOrCreate(*cls, "test_lambda_capture", PY_createBoxForFunction(testlambdacapture_57_safeWrap));
+
+
+
+
+
+    return PY_NONE;
 }
 
 PyObjectContainer* testbasic_34(PyObjectContainer* self_33) {

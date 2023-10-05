@@ -39,27 +39,32 @@ PyObjectContainer* PY_MODULE_source_init(void) {
     #ifdef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE
     PY_setObjectAttributeByName(PY_MODULE_INSTANCE_source, "test", (function_container_test_0 = PY_createBoxForFunction(test_1_safeWrap)));
     #endif
-    PY_CLASS_INIT_PY_CLASS_test_2();
+    PY_CLASS_INIT_PY_CLASS_test_2(&PY_CLASS_test_2);
 
     #ifdef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE
     PY_exposeModuleObject(PY_MODULE_INSTANCE_source);
     #endif
 }
 
-PyObjectContainer* PY_CLASS_INIT_PY_CLASS_test_2(void) {
+PyObjectContainer* PY_CLASS_INIT_PY_CLASS_test_2(PyClassContainer** cls) {
     PyObjectContainer* attr_3;
 
     // Create Class PY_CLASS_test_2 ('test' in source code)
-    PY_CLASS_test_2 = PY_createClassContainer("test");
-    PY_ClassContainer_AllocateParentArray(PY_CLASS_test_2, 1);
+    *cls = PY_createClassContainer("test");
+    PY_ClassContainer_AllocateParentArray(*cls, 1);
 
     // Create Parent Objects for class 'test'
-    PY_CLASS_test_2 -> parents[0] = PY_TYPE_OBJECT;
+    (*cls)->parents[0] = PY_TYPE_OBJECT;
 
     // Attributes
-    PY_setClassAttributeByNameOrCreate(PY_CLASS_test_2, "test", PY_createBoxForFunction(test_1_safeWrap));
+    PY_setClassAttributeByNameOrCreate(*cls, "test", PY_createBoxForFunction(test_1_safeWrap));
 
     attr_3 = PY_createInteger(10);
+
+
+
+    PY_setClassAttributeByNameOrCreate(*cls, "attr", attr_3);
+    return PY_NONE;
 }
 
 PyObjectContainer* test_1(PyObjectContainer* self_0) {

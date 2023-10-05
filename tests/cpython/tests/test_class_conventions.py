@@ -33,5 +33,18 @@ class TestClassInClass(unittest.TestCase):
         self.assertEqual(x.get(), 10)
 
 
+class TestClassInFunction(unittest.TestCase):
+    def test_basic(self):
+        def target():
+            class X:
+                def get(self):
+                    return 20
+
+            return X
+
+        obj = target()()
+        self.assertEqual(obj.get(), 20)
+
+
 if __name__ == "__main__":
     unittest.main()

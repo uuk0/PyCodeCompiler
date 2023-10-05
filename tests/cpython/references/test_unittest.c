@@ -47,7 +47,7 @@ PyObjectContainer* PY_MODULE_test_unittest_init(void) {
     #ifdef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE
     PY_setObjectAttributeByName(PY_MODULE_INSTANCE_test_unittest, "test_basic", (function_container_test_basic_0 = PY_createBoxForFunction(testbasic_1_safeWrap)));
     #endif
-    PY_CLASS_INIT_PY_CLASS_TestSimple_2();
+    PY_CLASS_INIT_PY_CLASS_TestSimple_2(&PY_CLASS_TestSimple_2);
 
     if (PY_unpackBoolean(PY_CHECK_EXCEPTION(PY_CHECK_EXCEPTION(PY_STD_string_eq_fast (PY_createString("__main__") , PY_createString("__main__")))))) {
         PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(PY_getObjectAttributeByNameOrStatic(PY_MODULE_INSTANCE_unittest, "main"), NULL, 0, NULL, NULL));
@@ -57,21 +57,24 @@ PyObjectContainer* PY_MODULE_test_unittest_init(void) {
     #endif
 }
 
-PyObjectContainer* PY_CLASS_INIT_PY_CLASS_TestSimple_2(void) {
+PyObjectContainer* PY_CLASS_INIT_PY_CLASS_TestSimple_2(PyClassContainer** cls) {
     // Create Class PY_CLASS_TestSimple_2 ('TestSimple' in source code)
-    PY_CLASS_TestSimple_2 = PY_createClassContainer("TestSimple");
-    PY_ClassContainer_AllocateParentArray(PY_CLASS_TestSimple_2, 1);
+    *cls = PY_createClassContainer("TestSimple");
+    PY_ClassContainer_AllocateParentArray(*cls, 1);
 
     // Create Parent Objects for class 'TestSimple'
-    PY_CLASS_TestSimple_2 -> parents[0] = PY_unwrapClassContainer(PY_CHECK_EXCEPTION(PY_getObjectAttributeByNameOrStatic(PY_MODULE_INSTANCE_unittest, "TestCase")));
-    PyObjectContainer* init_subclass_1 = PY_getClassAttributeByName(PY_CLASS_TestSimple_2->parents[0], "__init_subclass__");
+    (*cls)->parents[0] = PY_unwrapClassContainer(PY_CHECK_EXCEPTION(PY_getObjectAttributeByNameOrStatic(PY_MODULE_INSTANCE_unittest, "TestCase")));
+    PyObjectContainer* init_subclass_1 = PY_getClassAttributeByName((*cls)->parents[0], "__init_subclass__");
     if (init_subclass_1 != NULL) {
-        PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(init_subclass_1, PY_createClassWrapper(PY_CLASS_TestSimple_2), 0, NULL, NULL));
+        PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(init_subclass_1, PY_createClassWrapper(*cls), 0, NULL, NULL));
     }
-    PY_ClassContainer_EnsureObjectAttributesDeclaredFor(PY_CLASS_TestSimple_2, PY_CLASS_TestSimple_2 -> parents[0]);
+    PY_ClassContainer_EnsureObjectAttributesDeclaredFor(*cls, (*cls)->parents[0]);
 
     // Attributes
-    PY_setClassAttributeByNameOrCreate(PY_CLASS_TestSimple_2, "test_basic", PY_createBoxForFunction(testbasic_1_safeWrap));
+    PY_setClassAttributeByNameOrCreate(*cls, "test_basic", PY_createBoxForFunction(testbasic_1_safeWrap));
+
+
+    return PY_NONE;
 }
 
 PyObjectContainer* testbasic_1(PyObjectContainer* self_0) {

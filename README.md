@@ -96,6 +96,7 @@ Make the compiled test suite from python not fail in the major test cases
   - class instantiation on demand
   - TODO: allow local class instances by moving them on the stack & set the NO_FREE flag
   - TODO: use short struct for primitive types
+  - TODO: class local capturing by storing value in class static attribute table with unreachable name / by index
 - while loops, including continue, break and else
 - list, tuple and dict explict construction (using `(a, b)`,`[a, b]` and `{a: b}`)
   - TODO: comprehensions

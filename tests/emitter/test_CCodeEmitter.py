@@ -54,9 +54,9 @@ class TestCCodeEmitter(TestCase):
             with open(f"{folder}/build/source.c", mode="w") as f:
                 f.write(c_compare)
 
-            with open(f"{folder}/source.c", mode="w") as f:
-                f.write(c_compare)
-            c = c_compare
+            # with open(f"{folder}/source.c", mode="w") as f:
+            #     f.write(c_compare)
+            # c = c_compare
 
             self.assertEqual(c, c_compare, "c source")
         else:
