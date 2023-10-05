@@ -32,6 +32,10 @@ class TestClassInClass(unittest.TestCase):
         x = A.B()
         self.assertEqual(x.get(), 10)
 
+        a = A()
+        b = a.B()
+        self.assertEqual(b.get(), 10)
+
 
 class TestClassInFunction(unittest.TestCase):
     def test_basic(self):

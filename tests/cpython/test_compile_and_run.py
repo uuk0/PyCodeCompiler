@@ -19,7 +19,7 @@ class TestGenerator(unittest.TestCase):
         project.add_entry_point(f"{folder}/tests/test_{module_name}.py")
         project.build()
 
-        if not os.path.exists(f"{folder}/references/test_{module_name}.c") or True:
+        if not os.path.exists(f"{folder}/references/test_{module_name}.c"):
             shutil.copy(
                 f"{folder}/test_build/{module_name}/test_{module_name}.c",
                 f"{folder}/references/test_{module_name}.c",
