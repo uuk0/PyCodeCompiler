@@ -1101,6 +1101,16 @@ PyObjectContainer* PY_STD_list_copy_fast(PyObjectContainer* self)
     return result;
 }
 
+PyObjectContainer* PY_STD_list_del(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info) {
+    assert(self != NULL);
+    assert(self->type == PY_TYPE_PY_IMPL);
+    assert(self->py_type == PY_TYPE_LIST);
+    PY_STD_list_container* list = (PY_STD_list_container*)self->raw_value;
+    free(list->array);
+    free(list);
+    return PY_NONE;
+}
+
 void PY_STD_initListType(void)
 {
     PY_TYPE_LIST = PY_createClassContainer("list");
@@ -1121,6 +1131,7 @@ void PY_STD_initListType(void)
     PY_setClassAttributeByNameOrCreate(PY_TYPE_LIST, "__add__", PY_createBoxForFunction(PY_STD_list_add));
     PY_setClassAttributeByNameOrCreate(PY_TYPE_LIST, "__iadd__", PY_createBoxForFunction(PY_STD_list_extend));
     PY_setClassAttributeByNameOrCreate(PY_TYPE_LIST, "__mul__", PY_createBoxForFunction(PY_STD_list_mul));
+    PY_setClassAttributeByNameOrCreate(PY_TYPE_LIST, "__del__", PY_createBoxForFunction(PY_STD_list_del));
 #ifdef PY_ENABLE_GENERATORS
     PY_setClassAttributeByNameOrCreate(PY_TYPE_LIST, "__iter__", PY_createBoxForFunction(PY_STD_list_iter));
 #endif

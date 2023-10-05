@@ -90,6 +90,8 @@ PyObjectContainer* PY_STD_list_imul_fast(PyObjectContainer* self, PyObjectContai
 PyObjectContainer* PY_STD_list_copy(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info);
 PyObjectContainer* PY_STD_list_copy_fast(PyObjectContainer* self);
 
+PyObjectContainer* PY_STD_list_del(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info);
+
 void PY_STD_initListType(void);
 
 #endif //TEMPLATES_LIST_H
