@@ -524,7 +524,7 @@ char* PY_getObjectRepr(PyObjectContainer* obj)
                 perror("malloc repr wrapper");
                 exit(EXIT_FAILURE);
             }
-            snprintf(buffer, size+1, "<%s-object at %#016llx>", class_name, (uintptr_t)obj);
+            snprintf(buffer, size+1, "<%s-object at %#018" PRIu64 ">", class_name, (uintptr_t)obj);
             return buffer;
         }
         char* result = PY_unpackString(PY_CHECK_EXCEPTION_AND_EXIT(PY_invokeBoxedMethod(method, obj, 0, NULL, NULL)));
@@ -545,7 +545,7 @@ char* PY_getObjectRepr(PyObjectContainer* obj)
         {
             size_t size = (int) ((ceil(log10((double)UINT64_MAX)) + 1 + 1) * sizeof(char));
             char *buffer = malloc(size);
-            snprintf(buffer, size, "%lli", *(int64_t*)obj->raw_value);
+            snprintf(buffer, size, "%" PRId64, *(int64_t*)obj->raw_value);
             return buffer;
         }
         case PY_TYPE_STRING:
@@ -577,7 +577,7 @@ char* PY_getObjectRepr(PyObjectContainer* obj)
                 perror("malloc repr wrapper");
                 exit(EXIT_FAILURE);
             }
-            snprintf(buffer, size, "<%s-type-object at %#018llx>", class_name, (uintptr_t)obj);
+            snprintf(buffer, size, "<%s-type-object at %#018" PRIu64 ">", class_name, (uintptr_t)obj);
             return buffer;
         }
         case PY_TYPE_FUNC_POINTER:
@@ -588,7 +588,7 @@ char* PY_getObjectRepr(PyObjectContainer* obj)
                 perror("malloc repr wrapper");
                 exit(EXIT_FAILURE);
             }
-            snprintf(buffer, size, "<function pointer at %#018llx>", (uintptr_t) obj);
+            snprintf(buffer, size, "<function pointer at %#018" PRIu64 ">", (uintptr_t) obj);
             return buffer;
             return "<function pointer to>";
         }
@@ -607,7 +607,7 @@ char* PY_getObjectRepr(PyObjectContainer* obj)
                 perror("malloc repr wrapper");
                 exit(EXIT_FAILURE);
             }
-            snprintf(buffer, size, "<exception at %#018llx>", (uintptr_t)obj);
+            snprintf(buffer, size, "<exception at %#018" PRIu64 ">", (uintptr_t)obj);
             return buffer;
         }
     }
