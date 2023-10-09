@@ -242,8 +242,21 @@
           {
             "name": "__ior__",
             "type": "method",
-            "c name": "PY_STD_dict_concat_fast_inplace",
+            "c name": "PY_STD_dict_concat_inplace_fast",
             "parameters": 1
+          },
+          {
+            "name": "update",
+            "type": "method",
+            "c name": "PY_STD_dict_concat_inplace_fast",
+            "parameters": 1
+          },
+          {
+            "name": "update",
+            "type": "method",
+            "box name": "PY_NOOP_CONTAINER",
+            "parameters": 0,
+            "boxed": true
           },
           {
             "name": "__repr__",
@@ -254,6 +267,11 @@
             "name": "__str__",
             "type": "method",
             "c name": "PY_STD_dict_repr_fast"
+          },
+          {
+            "name": "__bool__",
+            "type": "method",
+            "c name": "PY_STD_dict_bool_fast"
           }
         ]
       },
@@ -307,6 +325,11 @@
         "name": "None",
         "type": "constant",
         "c name": "PY_NONE"
+      },
+      {
+        "name": "NotImplemented",
+        "type": "constant",
+        "c name": "PY_NOT_IMPLEMENTED"
       },
       {
         "name": "C_NULL",
@@ -380,6 +403,11 @@
         ]
       },
       {
+        "name": "object",
+        "type": "class",
+        "type variable": "PY_TYPE_OBJECT"
+      },
+      {
         "name": "range",
         "type": "method",
         "arguments": 1,
@@ -396,6 +424,42 @@
         "type": "method",
         "arguments": 3,
         "c name": "PY_STD_range_arg_3"
+      },
+      {
+        "name": "id",
+        "type": "method",
+        "arguments": 1,
+        "c name": "PY_STD_id"
+      },
+      {
+        "name": "bool",
+        "type": "method",
+        "arguments": 1,
+        "c name": "PY_getTruthValueOf_BOXED"
+      },
+      {
+        "name": "int",
+        "type": "method",
+        "arguments": 1,
+        "c name": "PY_toInt"
+      },
+      {
+        "name": "hasattr",
+        "type": "method",
+        "arguments": 2,
+        "c name": "PY_STD_hasattr"
+      },
+      {
+        "name": "getattr",
+        "type": "method",
+        "arguments": 2,
+        "c name": "PY_STD_getattr"
+      },
+      {
+        "name": "getattr",
+        "type": "method",
+        "arguments": 3,
+        "c name": "PY_STD_getattr_with_default"
       }
     ]
   },
@@ -454,6 +518,18 @@
             "type": "method",
             "arguments": 1,
             "c name": "PY_MODULE_unittest_TestCase_assertNotEqual_fast"
+          },
+          {
+            "name": "assertIs",
+            "type": "method",
+            "arguments": 1,
+            "c name": "PY_MODULE_unittest_TestCase_assertIs_fast"
+          },
+          {
+            "name": "assertIsNot",
+            "type": "method",
+            "arguments": 1,
+            "c name": "PY_MODULE_unittest_TestCase_assertIsNot_fast"
           },
           {
             "name": "fail",

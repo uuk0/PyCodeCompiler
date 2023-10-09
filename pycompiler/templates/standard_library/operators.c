@@ -431,7 +431,12 @@ PyObjectContainer* PY_STD_operator_apply_inplace(PyObjectContainer* lhs, char* n
 {
     PY_THROW_EXCEPTION_IF_WITH_MESSAGE_AND_OBJ(lhs->type != PY_TYPE_PY_IMPL, NULL, "expected <py impl object>, got %s\n", lhs);
     PyObjectContainer* method = PY_getObjectAttributeByNameOrStatic(lhs, name);
-    PY_THROW_EXCEPTION_IF_WITH_MESSAGE_AND_OBJ(method == NULL, NULL, "expected <supports operation>, got %s\n", lhs);
+
+    if (method == NULL) {
+        printf("%s\n", name);
+        PY_THROW_EXCEPTION_IF_WITH_MESSAGE_AND_OBJ(method == NULL, NULL, "expected <supports operation>, got %s\n", lhs);
+    }
+
     PyObjectContainer* result = PY_invokeBoxedMethod(method, lhs, 1, &rhs, NULL);
     return result ? result : lhs;
 }

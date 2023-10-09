@@ -52,6 +52,9 @@ class TestGenerator(unittest.TestCase):
     def test_list(self):
         self.compile_and_run("list")
 
+    def test_dict(self):
+        self.compile_and_run("dict")
+
     def test_calling_conventions(self):
         self.compile_and_run("calling_conventions")
 

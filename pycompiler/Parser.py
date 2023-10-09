@@ -218,6 +218,7 @@ class CCodeEmitter:
             raise RuntimeError
 
         def add_code(self, code: str):
+            assert code is not None
             self.snippets.append(code)
 
         def get_result(self) -> str:
@@ -684,6 +685,9 @@ class ConstantAccessExpression(AbstractASTNodeExpression):
                 Scope.STANDARD_LIBRARY_VALUES["<str>"]["*"]
             )
 
+    def copy(self):
+        return ConstantAccessExpression(self.value, self.token, self.construct_ref)
+
     def __eq__(self, other):
         return type(other) == ConstantAccessExpression and self.value == other.value
 
@@ -719,7 +723,7 @@ class ConstantAccessExpression(AbstractASTNodeExpression):
             self.value.emit_reference_access(base, context, self.scope)
 
         elif isinstance(self.value, ClassDefinitionNode):
-            if self.construct_ref:
+            if self.construct_ref and not self.value.is_builtin:
                 variable_name = f"PY_CLASS_{self.value.normal_name}"
                 context.add_code(
                     f"""PY_createClass("{self.value.name.text}", PY_CLASS_INIT_{variable_name})"""
@@ -1340,9 +1344,17 @@ class CallExpression(AbstractASTNodeExpression):
     ) -> bool:
         replacement.parent = self, position
         if position == ParentAttributeSection.LHS:
+            if (
+                "PY_STD_dict_concat_inplace_fast" in repr(replacement)
+                and len(self.args) != 2
+            ):
+                raise RuntimeError
             self.base = replacement
         elif position == ParentAttributeSection.PARAMETER:
-            self.args.replace(original, replacement)
+            for i, arg in enumerate(self.args):
+                if arg is original:
+                    self.args[i] = replacement
+                    break
         else:
             return False
         return True
@@ -1359,6 +1371,10 @@ class CallExpression(AbstractASTNodeExpression):
             obj = typing.cast(ConstantAccessExpression, self.base).value
 
         if isinstance(obj, FunctionDefinitionNode):
+            if obj.force_container:
+                self.emit_c_code_any_call(base, context)
+                return
+
             func_name = obj.normal_name
         elif isinstance(obj, ClassDefinitionNode):
             self.emit_c_code_constructor(base, context)
@@ -1699,6 +1715,7 @@ class FunctionDefinitionNode(AbstractASTNode):
         self.is_generator = is_generator
         self.return_type: AbstractDataType = None
         self.global_container_name = None
+        self.force_container = False
         self.local_value_capturing = local_value_capturing or []
         self.local_capture_node: AbstractASTNode | None = None
         self.is_top_level = False
@@ -1723,6 +1740,8 @@ class FunctionDefinitionNode(AbstractASTNode):
         self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder, scope: Scope
     ):
         if not self.local_value_capturing:
+            assert self.global_container_name != None, self
+
             context.add_code(self.global_container_name)
             return
 
@@ -2065,6 +2084,13 @@ return {func_name}(self);
 
 
 class BuiltinBoxedMethod(FunctionDefinitionNode):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.force_container = True
+
+    def copy(self):
+        return self
+
     def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder):
         raise NotImplementedError
 
@@ -2083,6 +2109,9 @@ class BuiltinBoxedMethod(FunctionDefinitionNode):
         position: ParentAttributeSection,
     ) -> bool:
         raise NotImplementedError
+
+    def __repr__(self):
+        return f"BUILTIN-" + super().__repr__()
 
 
 class ClassDefinitionNode(AbstractASTNode):
@@ -2104,6 +2133,7 @@ class ClassDefinitionNode(AbstractASTNode):
         ] = {}
         self.declared_locals = []
         self.is_toplevel_class = False
+        self.is_builtin = False
 
     def get_enclosing_scope(self) -> Scope:
         return self.body[0].scope if self.body else None
@@ -2271,13 +2301,17 @@ if ({init_subclass} != NULL) {{
     def emit_reference_access(
         self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder, scope: Scope
     ):
-        context.add_code(f"PY_createClassWrapper(PY_CLASS_{self.normal_name})")
+        if not self.is_builtin:
+            context.add_code(f"PY_createClassWrapper(PY_CLASS_{self.normal_name})")
+        else:
+            context.add_code(f"PY_createClassWrapper({self.normal_name})")
 
 
 class StandardLibraryClass(ClassDefinitionNode):
     def __init__(self, name: str, exposed_name: str):
         super().__init__(TokenType.IDENTIFIER(name), [], [], [])
         self.normal_name = exposed_name
+        self.is_builtin = True
 
     def __eq__(self, other):
         return self is other
@@ -3275,6 +3309,8 @@ class SyntaxTreeVisitor:
             return self.visit_ternary_operator(obj)
         elif obj_type == CapturedLocalAccessExpression:
             return self.visit_captured_local_name(obj)
+        elif obj_type == BuiltinBoxedMethod:
+            pass  # todo: do we want to handle it?
         else:
             print(type(obj))
             raise RuntimeError(obj)
@@ -3460,12 +3496,12 @@ def _parse_std_lib_decl_entry(entry: dict) -> AbstractASTNode:
 
     elif entry["type"] == "method" and entry.get("boxed", False):
         obj = BuiltinBoxedMethod(TokenType.IDENTIFIER(entry["name"]), [], [], [])
-        obj.normal_name = entry["box name"]
+        obj.global_container_name = obj.normal_name = entry["box name"]
 
         if "return type" in entry:
             obj.data_type = _parse_data_type(entry["return type"])
 
-        return obj
+        return ConstantAccessExpression(obj, construct_ref=False)
 
     elif entry["type"] in ("method", "constant"):
         obj = GlobalCNameAccessExpression(entry["c name"], declare=False)
@@ -3569,7 +3605,7 @@ class Parser:
                         print(self.indent_level)
                         print(repr(self.lexer.file[self.lexer.file_cursor :]))
                         raise SyntaxError(
-                            f"expected <newline> or ';' after expression, got {repr(self.lexer.get_chars(1))}"
+                            f"expected <newline> or ';' after <expression>, got '{repr(self.lexer.get_chars(4))}'"
                         )
 
             self.skip_end_check = False
@@ -3872,6 +3908,7 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
                 expression = self.try_parse_expression()
 
                 if expression is None:
+                    print(self.lexer.inspect_chars(10))
                     raise SyntaxError("expected <expression> after '['")
 
                 if not (
@@ -3989,7 +4026,7 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
             self.lexer.get_chars(1)
 
     def try_parse_expression(
-        self, generators_require_brackets=True
+        self, generators_require_brackets=True, tuple_require_brackets=True
     ) -> AbstractASTNode | None:
         self.lexer.try_parse_whitespaces()
         identifier = self.lexer.try_parse_identifier()
@@ -4258,10 +4295,12 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
                 )
 
             elif self.lexer.inspect_chars(len("not in")) == "not in":
+                self.lexer.get_chars(len("not in"))
                 operator = "not in"
+                self.lexer.try_parse_whitespaces()
                 expression = self.try_parse_expression()
                 if expression is None:
-                    raise SyntaxError
+                    raise SyntaxError("expected <expression> after 'not in'")
 
                 base = BinaryOperatorExpression(
                     base, BinaryOperatorExpression.String2Type[operator], expression
@@ -4335,6 +4374,18 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
                     base, BinaryOperatorExpression.BinaryOperation.SMALLER, expression
                 )
 
+            elif not tuple_require_brackets and self.lexer.inspect_chars(1) == ",":
+                base = TupleConstructor([base])
+
+                while self.lexer.inspect_chars(1) == ",":
+                    self.lexer.get_chars(1)
+                    self.lexer.try_parse_whitespaces()
+                    expr = self.try_parse_expression()
+                    if expr is None:
+                        break
+                    base.items.append(expr)
+                    self.lexer.try_parse_whitespaces()
+
             else:
                 break
 
@@ -4392,10 +4443,11 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
             return ListConstructor([])
 
         expression = self.try_parse_expression()
-        self.lexer.try_parse_whitespaces()
+        self.lexer.try_parse_whitespaces(include_newline=True)
 
         if expression is None:
-            raise SyntaxError
+            print(repr(self.lexer.inspect_chars(10)))
+            raise SyntaxError("expected <expression> after '['")
 
         elements.append(expression)
 
@@ -4505,7 +4557,9 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
         self.lexer.try_parse_whitespaces(include_newline=True)
 
         if self.lexer.get_chars(1) != "}":
-            raise SyntaxError
+            print(repr(self.lexer.inspect_chars(20)))
+            print(elements)
+            raise SyntaxError("expected '}' after <expression> in <dict expression>")
 
         self.lexer.discard_save_state()
 
@@ -4582,13 +4636,20 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
 
                 if identifier is not None:
                     self.lexer.try_parse_whitespaces(include_newline=True)
-                    if self.lexer.inspect_chars(1) == "=":
+                    if (
+                        self.lexer.inspect_chars(1) == "="
+                        and self.lexer.inspect_chars(2)[1] not in "="
+                    ):
                         self.lexer.get_chars(1)
 
                         expr = self.try_parse_expression()
 
                         if expr is None:
-                            raise SyntaxError
+                            print(identifier)
+                            print(self.lexer.inspect_chars(5))
+                            raise SyntaxError(
+                                "expected <expression> after '=' in function call"
+                            )
 
                         arg = CallExpression.CallExpressionArgument(
                             expr,
@@ -4603,7 +4664,10 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
                     expr = self.try_parse_expression()
 
                     if expr is None:
-                        raise SyntaxError
+                        print(self.lexer.inspect_chars(10))
+                        raise SyntaxError(
+                            "expected <expression> after '(' or ',' in call function"
+                        )
 
                     arg = CallExpression.CallExpressionArgument(
                         expr,
@@ -4620,7 +4684,7 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
                 ):
                     print(args)
                     raise SyntaxError(
-                        f"expected ')', got '{self.lexer.inspect_chars(4)}'"
+                        f"expected ')', got '{repr(self.lexer.inspect_chars(4))}'"
                     )
 
                 break
@@ -4791,6 +4855,10 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
 
         self.lexer.try_parse_whitespaces()
 
+        if self.lexer.inspect_chars(2) == "==":
+            self.lexer.rollback_state()
+            return
+
         eq_sign = self.lexer.try_parse_equal_sign()
 
         if eq_sign is None:
@@ -4870,10 +4938,12 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
             self.lexer.discard_save_state()
             # todo: store equal sign somewhere!
 
-        expression = self.try_parse_expression()
+        expression = self.try_parse_expression(tuple_require_brackets=False)
 
         if expression is None:
-            raise SyntaxError
+            raise SyntaxError(
+                "expected <expression> or <assignment target> (followed by another '=') after '='"
+            )
 
         return AssignmentExpression(
             assigned_variables,
@@ -5304,12 +5374,13 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
 
         self.lexer.try_parse_whitespaces()
 
-        iterator = self.try_parse_expression()
+        iterator = self.try_parse_expression(tuple_require_brackets=False)
 
         if iterator is None:
             raise SyntaxError("expected <expression> after 'while'")
 
         if self.lexer.get_chars(1) != ":":
+            print(self.lexer.inspect_chars(10))
             raise SyntaxError("expected ':' after <iterator>")
 
         self.lexer.try_parse_whitespaces()
@@ -5391,11 +5462,13 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
 
             self.indent_level -= 1
 
+        self.lexer.save_state()
         self.lexer.try_parse_whitespaces()
 
         elif_nodes = []
 
         while self.lexer.inspect_chars(len("elif ")) == "elif ":
+            self.lexer.discard_save_state()
             self.lexer.get_chars(len("elif"))
             self.lexer.try_parse_whitespaces()
 
@@ -5424,6 +5497,7 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
 
                 self.indent_level -= 1
 
+            self.lexer.save_state()
             self.lexer.try_parse_whitespaces()
 
             elif_nodes.append((condition, body))
@@ -5432,6 +5506,7 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
 
         if self.lexer.inspect_chars(len("else:")) == "else:":
             self.lexer.get_chars(len("else:"))
+            self.lexer.discard_save_state()
             self.lexer.try_parse_whitespaces()
 
             if self.lexer.inspect_chars(1) != "\n":
@@ -5451,7 +5526,9 @@ PyObjectContainer* PY_MODULE_INSTANCE_{normal_module_name};
 
                 self.indent_level -= 1
 
-            self.lexer.try_parse_whitespaces()
+            self.lexer.save_state()
+
+        self.lexer.rollback_state()
 
         return IfStatement(main_condition, main_body, elif_nodes, else_body)
 

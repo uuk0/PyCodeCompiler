@@ -22,11 +22,13 @@ PyClassContainer* PY_TYPE_DICT;
 int64_t HASH_py_object(void* raw_obj)
 {
     PyObjectContainer* obj = raw_obj;
+    assert(obj != NULL && "tried to hash NULL, which is impossible");
     PyObjectContainer* hash_method = PY_getObjectAttributeByNameOrStatic(obj, "__hash__");
-
     if (hash_method != NULL)
     {
-        return PY_unpackInteger(PY_invokeBoxedMethod(hash_method, obj, 0, NULL, NULL));
+        int64_t result = PY_unpackInteger(PY_invokeBoxedMethod(hash_method, obj, 0, NULL, NULL));
+        DECREF(hash_method);
+        return result;
     }
 
     // Cast the object pointer to an int, so it can be used as a hash
@@ -201,10 +203,12 @@ PyObjectContainer* PY_STD_dict_eq_fast(PyObjectContainer* self, PyObjectContaine
     assert(self->py_type == PY_TYPE_DICT);
     assert(self->raw_value != NULL);
 
-    if (other->type != PY_TYPE_PY_IMPL || other->py_type != PY_TYPE_DICT || other->raw_value == NULL)
+    if (other->type != PY_TYPE_PY_IMPL || other->py_type != PY_TYPE_DICT)
     {
         return PY_FALSE;
     }
+
+    PY_THROW_EXCEPTION_IF(other->raw_value == NULL, NULL);
 
     HashMapContainer* self_cont = self->raw_value;
     HashMapContainer* other_cont = other->raw_value;
@@ -217,6 +221,12 @@ PyObjectContainer* PY_STD_dict_eq_fast(PyObjectContainer* self, PyObjectContaine
     for (int i = 0; i < self_cont->alloc_size; i++)
     {
         PyObjectContainer* key = self_cont->key_memory[i];
+
+        if (key == NULL || key == (PyObjectContainer*)&HASHMAP_MARKER_UNSET)
+        {
+            continue;
+        }
+
         PyObjectContainer* other_value = HASHMAP_lookup(other_cont, key);
         if (other_value == NULL)
         {
@@ -224,7 +234,13 @@ PyObjectContainer* PY_STD_dict_eq_fast(PyObjectContainer* self, PyObjectContaine
         }
         PyObjectContainer* self_value = self_cont->value_memory[i];
         PyObjectContainer* eq_method = PY_getObjectAttributeByNameOrStatic(self_value, "__eq__");
-        if (PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(eq_method, self_value, 1, &other_value, NULL)) == PY_FALSE)
+
+        if (eq_method == NULL) {
+            if (self_value != other_value) {
+                return PY_FALSE;
+            }
+        }
+        else if (PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(eq_method, self_value, 1, &other_value, NULL)) == PY_FALSE)
         {
             return PY_FALSE;
         }
@@ -292,6 +308,7 @@ PyObjectContainer* PY_STD_dict_copy_fast(PyObjectContainer* self)
 
     memcpy(copy_container->key_memory, container->key_memory, container->alloc_size * sizeof(void*));
     memcpy(copy_container->value_memory, container->value_memory, container->alloc_size * sizeof(void*));
+    copy_container->used_size = container->used_size;
 
     return copy;
 }
@@ -308,8 +325,9 @@ PyObjectContainer* PY_STD_dict_concat_fast(PyObjectContainer* self, PyObjectCont
     assert(self->py_type == PY_TYPE_DICT);
     assert(self->raw_value != NULL);
 
-    assert(other->type == PY_TYPE_PY_IMPL);
-    assert(other->py_type == PY_TYPE_DICT);
+    if (other->type != PY_TYPE_PY_IMPL || other->py_type != PY_TYPE_DICT) {
+        return PY_NOT_IMPLEMENTED;
+    }
     assert(other->raw_value != NULL);
 
     PyObjectContainer* new_map = PY_STD_dict_CREATE(0);
@@ -355,8 +373,9 @@ PyObjectContainer* PY_STD_dict_concat_inplace_fast(PyObjectContainer* self, PyOb
     assert(self->py_type == PY_TYPE_DICT);
     assert(self->raw_value != NULL);
 
-    assert(other->type == PY_TYPE_PY_IMPL);
-    assert(other->py_type == PY_TYPE_DICT);
+    if (other->type != PY_TYPE_PY_IMPL || other->py_type != PY_TYPE_DICT) {
+        return PY_NOT_IMPLEMENTED;
+    }
     assert(other->raw_value != NULL);
 
     HashMapContainer* other_container = other->raw_value;
@@ -428,6 +447,19 @@ PyObjectContainer* PY_STD_dict_repr_fast(PyObjectContainer* self) {
     }
 
     return PY_createString(buffer);
+}
+
+PyObjectContainer* PY_STD_dict_bool(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info) {
+    assert(argc == 0);
+    return PY_STD_dict_bool_fast(self);
+}
+
+PyObjectContainer* PY_STD_dict_bool_fast(PyObjectContainer* self) {
+    assert(self->type == PY_TYPE_PY_IMPL);
+    assert(self->py_type == PY_TYPE_DICT);
+    assert(self->raw_value != NULL);
+    HashMapContainer* this_container = self->raw_value;
+    return PY_createBoolean(this_container->used_size != 0);
 }
 
 #ifdef PY_ENABLE_GENERATORS
@@ -577,9 +609,11 @@ void PY_STD_initDictType(void)
     PY_setClassAttributeByNameOrCreate(PY_TYPE_DICT, "clear", PY_createBoxForFunction(PY_STD_dict_clear));
     PY_setClassAttributeByNameOrCreate(PY_TYPE_DICT, "copy", PY_createBoxForFunction(PY_STD_dict_copy));
     PY_setClassAttributeByNameOrCreate(PY_TYPE_DICT, "__or__", PY_createBoxForFunction(PY_STD_dict_concat));
-    PY_setClassAttributeByNameOrCreate(PY_TYPE_DICT, "__or__", PY_createBoxForFunction(PY_STD_dict_concat_inplace));
+    PY_setClassAttributeByNameOrCreate(PY_TYPE_DICT, "__ior__", PY_createBoxForFunction(PY_STD_dict_concat_inplace));
+    PY_setClassAttributeByNameOrCreate(PY_TYPE_DICT, "update", PY_createBoxForFunction(PY_STD_dict_concat_inplace));
     PY_setClassAttributeByNameOrCreate(PY_TYPE_DICT, "__repr__", PY_createBoxForFunction(PY_STD_dict_repr));
     PY_setClassAttributeByNameOrCreate(PY_TYPE_DICT, "__str__", PY_createBoxForFunction(PY_STD_dict_repr));
+    PY_setClassAttributeByNameOrCreate(PY_TYPE_DICT, "__bool__", PY_createBoxForFunction(PY_STD_dict_bool));
 
 #ifdef PY_ENABLE_GENERATORS
     PY_setClassAttributeByNameOrCreate(PY_TYPE_DICT, "__iter__", PY_createBoxForFunction(PY_STD_dict_keys));

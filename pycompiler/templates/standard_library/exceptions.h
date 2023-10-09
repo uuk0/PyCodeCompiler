@@ -28,7 +28,7 @@ PyObjectContainer* PY_STD_wrapException(PyObjectContainer* exception);
 
 #else
 
-#define PY_THROW_EXCEPTION(exception) assert(false);
+#define PY_THROW_EXCEPTION(exception) { fprintf(stderr, "%s\n", PY_getObjectRepr(exception)); int* x = NULL; int y = *x; } // assert(false);
 #define PY_THROW_EXCEPTION_IF(condition, exception) assert(!(condition));
 
 #define PY_THROW_EXCEPTION_WITH_MESSAGE(exception, message) { printf("%s\n", message); assert(false); }

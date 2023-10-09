@@ -623,9 +623,8 @@ class GenericFuncCallInliner(SyntaxTreeVisitor):
             and isinstance(node.base.base, ConstantAccessExpression)
             and isinstance(node.base.base.value, FunctionDefinitionNode)
         ):
-            node.base = (
-                node.base.base
-            )  # todo: add generic information to CallExpression!
+            # todo: add generic information to CallExpression!
+            node.base = node.base.base
 
 
 class LocalNameValidator(SyntaxTreeVisitor):
@@ -672,6 +671,8 @@ class LocalNameValidator(SyntaxTreeVisitor):
                 )
                 return
 
+        print(access.parent)
+        print(access.scope.class_name_stack)
         raise NameError(
             f"Cannot find '{access.name.text}' at {access} in scope {access.scope}"
         )
@@ -869,6 +870,7 @@ class ResolveClassFunctionNode(SyntaxTreeVisitor):
             and isinstance(expression.base.static_value_type, ClassExactDataType)
             and isinstance(expression.parent[0], CallExpression)
         ):
+            call: CallExpression = expression.parent[0]
             data_type = expression.base.static_value_type.ref
             target = None
 
@@ -876,20 +878,20 @@ class ResolveClassFunctionNode(SyntaxTreeVisitor):
                 target = data_type.function_table[expression.attribute.text]
             elif (
                 expression.attribute.text,
-                len(expression.parent[0].args),
+                len(call.args),
             ) in data_type.function_table:
                 target = data_type.function_table[
-                    expression.attribute.text, len(expression.parent[0].args)
+                    expression.attribute.text, len(call.args)
                 ]
 
             if target:
-                expression.parent[0].args.insert(
+                call.args.insert(
                     0,
                     CallExpression.CallExpressionArgument(
                         expression.base, CallExpression.ParameterType.NORMAL
                     ),
                 )
-                expression.parent[0].try_replace_child(
+                call.try_replace_child(
                     expression,
                     target.copy(),
                     expression.parent[1],

@@ -106,6 +106,7 @@ struct PyFunctionContext
 extern PyObjectContainer* PY_NONE;
 extern PyObjectContainer* PY_FALSE;
 extern PyObjectContainer* PY_TRUE;
+extern PyObjectContainer* PY_NOT_IMPLEMENTED;
 
 extern PyClassContainer* PY_TYPE_OBJECT;
 
@@ -125,6 +126,7 @@ PyObjectContainer* PY_createClassWrapper(PyClassContainer* cls);
 PyClassContainer* PY_unwrapClassContainer(PyObjectContainer* obj);
 PyObjectContainer* PY_createClass(char* name, PyObjectContainer* init(PyClassContainer**));
 
+bool PY_hasObjectAttribute(PyObjectContainer* obj, char* name);
 PyObjectContainer* PY_getObjectAttributeByName(PyObjectContainer* obj, char* name);
 PyObjectContainer* PY_getObjectAttributeByNameOrStatic(PyObjectContainer* obj, char* name);
 void PY_setObjectAttributeByName(PyObjectContainer* obj, char* name, PyObjectContainer* value);
@@ -135,6 +137,7 @@ char* PY_getObjectClassName(PyObjectContainer* obj);
 char* PY_getObjectRepr(PyObjectContainer* obj);
 PyObjectContainer* PY_getObjectRepr_wrapper(PyObjectContainer* obj);
 PyObjectContainer* PY_getObjectStr_wrapper(PyObjectContainer* obj);
+PyObjectContainer* PY_STD_id(PyObjectContainer* obj);
 
 PyObjectContainer* PY_invokeBoxedMethod(PyObjectContainer* method, PyObjectContainer* self, uint8_t param_count, PyObjectContainer** args, CallStructureInfo* info);
 
@@ -156,6 +159,13 @@ PyObjectContainer* PY_createBoolean(bool value);
 bool PY_unpackBoolean(PyObjectContainer* obj);
 
 bool PY_getTruthValueOf(PyObjectContainer* obj);
+PyObjectContainer* PY_getTruthValueOf_BOXED(PyObjectContainer* obj);
+
+PyObjectContainer* PY_toInt(PyObjectContainer* obj);
+
+PyObjectContainer* PY_STD_hasattr(PyObjectContainer* obj, PyObjectContainer* attr);
+PyObjectContainer* PY_STD_getattr(PyObjectContainer* obj, PyObjectContainer* attr);
+PyObjectContainer* PY_STD_getattr_with_default(PyObjectContainer* obj, PyObjectContainer* attr, PyObjectContainer* default_value);
 
 void initialize();
 
@@ -175,6 +185,7 @@ free(obj);                                                     \
 };
  * **/
 
+extern PyObjectContainer* PY_NOOP_CONTAINER;
 PyObjectContainer* PY_NOOP(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info);
 
 #endif

@@ -17,7 +17,7 @@ PyClassContainer* PY_MODULE_unittest_TestCase;
 PyObjectContainer* PY_MODULE_unittest_TestCase_REGISTERED;
 char* current_test_name;
 
-#define PY_TEST_FAIL() fprintf(stderr, "failed test: %s\n", current_test_name); PY_THROW_EXCEPTION_WITH_MESSAGE(NULL, "test failed");
+#define PY_TEST_FAIL() fprintf(stderr, "failed test: %s\n", current_test_name); fflush(stdout); fflush(stderr); int* x = NULL; int y = *x;
 
 PyObjectContainer* PY_MODULE_unittest_main(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
 {
@@ -65,6 +65,7 @@ PyObjectContainer* PY_MODULE_unittest_main_fast(void)
                     fprintf(stderr, "\rtest %s.%s completed successfully!\n", cls_instance->class_name, cls_instance->static_attribute_names[j]);
                 }
                 j++;
+                fflush(stdout);
             }
         }
     }
@@ -166,6 +167,40 @@ PyObjectContainer* PY_MODULE_unittest_TestCase_assertNotEqual_fast(PyObjectConta
     return PY_NONE;
 }
 
+PyObjectContainer* PY_MODULE_unittest_TestCase_assertIs(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
+{
+    assert(argc == 2);
+    return PY_MODULE_unittest_TestCase_assertIs_fast(self, args[0], args[1]);
+}
+
+PyObjectContainer* PY_MODULE_unittest_TestCase_assertIs_fast(PyObjectContainer* self, PyObjectContainer* value, PyObjectContainer* other)
+{
+    if (!PY_getTruthValueOf(PY_STD_operator_is(value, other)))
+    {
+        fprintf(stderr, "\nlhs: %s is not \n", PY_getObjectRepr(value));
+        fprintf(stderr, "rhs: %s\n", PY_getObjectRepr(other));
+        PY_TEST_FAIL();
+    }
+    return PY_NONE;
+}
+
+PyObjectContainer* PY_MODULE_unittest_TestCase_assertIsNot(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
+{
+    assert(argc == 2);
+    return PY_MODULE_unittest_TestCase_assertIsNot_fast(self, args[0], args[1]);
+}
+
+PyObjectContainer* PY_MODULE_unittest_TestCase_assertIsNot_fast(PyObjectContainer* self, PyObjectContainer* value, PyObjectContainer* other)
+{
+    if (PY_getTruthValueOf(PY_STD_operator_is(value, other)))
+    {
+        fprintf(stderr, "\nlhs: %s is \n", PY_getObjectRepr(value));
+        fprintf(stderr, "rhs: %s\n", PY_getObjectRepr(other));
+        PY_TEST_FAIL();
+    }
+    return PY_NONE;
+}
+
 PyObjectContainer* PY_MODULE_unittest_init(void)
 {
     INVOKE_SINGLE();
@@ -183,6 +218,8 @@ PyObjectContainer* PY_MODULE_unittest_init(void)
     PY_setClassAttributeByNameOrCreate(PY_MODULE_unittest_TestCase, "assertFalse", PY_createBoxForFunction(PY_MODULE_unittest_TestCase_assertFalse));
     PY_setClassAttributeByNameOrCreate(PY_MODULE_unittest_TestCase, "assertEqual", PY_createBoxForFunction(PY_MODULE_unittest_TestCase_assertEqual));
     PY_setClassAttributeByNameOrCreate(PY_MODULE_unittest_TestCase, "assertNotEqual", PY_createBoxForFunction(PY_MODULE_unittest_TestCase_assertNotEqual));
+    PY_setClassAttributeByNameOrCreate(PY_MODULE_unittest_TestCase, "assertIs", PY_createBoxForFunction(PY_MODULE_unittest_TestCase_assertIs));
+    PY_setClassAttributeByNameOrCreate(PY_MODULE_unittest_TestCase, "assertIsNot", PY_createBoxForFunction(PY_MODULE_unittest_TestCase_assertIsNot));
 
     PY_setObjectAttributeByName(PY_MODULE_INSTANCE_unittest, "main", PY_createBoxForFunction(PY_MODULE_unittest_main));
 

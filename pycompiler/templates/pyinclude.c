@@ -19,6 +19,7 @@ static bool initialized = false;
 PyObjectContainer* PY_NONE;
 PyObjectContainer* PY_FALSE;
 PyObjectContainer* PY_TRUE;
+PyObjectContainer* PY_NOT_IMPLEMENTED;
 
 PyObjectContainer* PY_builtin_int_compare_container;
 PyObjectContainer* PY_builtin_int_hash_container;
@@ -185,6 +186,12 @@ PyObjectContainer* PY_createClass(char* name, PyObjectContainer* init(PyClassCon
     PyClassContainer* cls = PY_createClassContainer(name);
     PY_CHECK_EXCEPTION(init(&cls));
     return PY_createClassWrapper(cls);
+}
+
+// todo: do a better check!
+bool PY_hasObjectAttribute(PyObjectContainer* obj, char* name) {
+    PyObjectContainer* value = PY_getObjectAttributeByNameOrStatic(obj, name);
+    return value == NULL ? PY_FALSE : PY_TRUE;
 }
 
 PyObjectContainer* PY_getObjectAttributeByName(PyObjectContainer* obj, char* name)
@@ -502,6 +509,8 @@ char* PY_getObjectClassName(PyObjectContainer* obj) {
 
 char* PY_getObjectRepr(PyObjectContainer* obj)
 {
+    if (obj == NULL) return "C_NULL";
+
     if (obj->type == PY_TYPE_PY_IMPL)
     {
         PyObjectContainer* method = PY_getObjectAttributeByNameOrStatic(obj, "__repr__");
@@ -621,11 +630,18 @@ PyObjectContainer* PY_getObjectStr_wrapper(PyObjectContainer* obj)
     return PY_invokeBoxedMethod(method, obj, 0, NULL, NULL);
 }
 
+PyObjectContainer* PY_STD_id(PyObjectContainer* obj) {
+    return PY_createInteger(*(int64_t*)&obj);
+}
+
 PyObjectContainer* PY_invokeBoxedMethod(PyObjectContainer* method, PyObjectContainer* self, uint8_t param_count, PyObjectContainer** args, CallStructureInfo* info)
 {
     if (method == NULL)
     {
-        printf("FAULT: method is NULL");
+        fprintf(stderr, "FAULT: method is NULL\n");
+        fprintf(stderr, "self is %s, args: %i\n", PY_getObjectRepr(self), param_count);
+        fflush(stdout);
+        fflush(stderr);
         PyObjectContainer** x = NULL;
         self = (PyObjectContainer*)*x;
     }
@@ -804,21 +820,14 @@ bool PY_unpackBoolean(PyObjectContainer* obj)
 }
 
 
-static bool PY_getTruthValueOfPyObj(PyObjectContainer* obj)
-{
-    PyObjectContainer* bool_method = PY_getObjectAttributeByNameOrStatic(obj, "__bool__");
+bool PY_getTruthValueOf(PyObjectContainer* obj) {
+    head:;
 
-    if (bool_method != NULL)
-    {
-        PyObjectContainer* result = PY_invokeBoxedMethod(bool_method, NULL, 0, NULL, NULL);
-        return PY_getTruthValueOf(result);
+    if (obj == NULL) {
+        fprintf(stderr, "WARN: tried to get truth value of C_NULL\n");
+        return false;
     }
 
-    return true;
-}
-
-bool PY_getTruthValueOf(PyObjectContainer* obj)
-{
     switch (obj->type)
     {
         case PY_TYPE_BOOL:
@@ -828,17 +837,76 @@ bool PY_getTruthValueOf(PyObjectContainer* obj)
         case PY_TYPE_INT:
             return PY_unpackInteger(obj) != 0;
         case PY_TYPE_FLOAT:
-            // TODO
-            return false;
+            return PY_unpackFloat(obj) != 0;
         case PY_TYPE_FUNC_POINTER:
             return true;
         case PY_EXCEPTION:
             assert(0 && "tried to check exception for truth value; aborting");
-        case PY_TYPE_PY_IMPL:
-            return PY_getTruthValueOfPyObj(obj);
+        case PY_TYPE_PY_IMPL: {
+            PyObjectContainer* bool_method = PY_getObjectAttributeByNameOrStatic(obj, "__bool__");
+
+            if (bool_method != NULL)
+            {
+                obj = PY_invokeBoxedMethod(bool_method, NULL, 0, NULL, NULL);
+                goto head;  // check the result again
+            }
+
+            return true;
+        }
+        case PY_TYPE_STRING:
+            return strlen(obj->raw_value) > 0;
+        case PY_TYPE_PY_TYPE:
+            return PY_TRUE;
+        case PY_TYPE_SPECIAL:
+            assert(0 && "BOOL() on SPECIAL is not allowed");
     }
 
     return false;
+}
+
+PyObjectContainer* PY_getTruthValueOf_BOXED(PyObjectContainer* obj) {
+    return PY_createBoolean(PY_getTruthValueOf(obj));
+}
+
+PyObjectContainer* PY_toInt(PyObjectContainer* obj) {
+    switch (obj->type) {
+        case PY_TYPE_INT:
+        case PY_EXCEPTION:
+            return obj;
+        case PY_TYPE_FLOAT:
+            return PY_createInteger((int64_t)PY_unpackFloat(obj));
+        case PY_TYPE_FUNC_POINTER:
+        case PY_TYPE_STRING:
+        case PY_TYPE_SPECIAL:
+        case PY_TYPE_NONE:
+        case PY_TYPE_PY_TYPE:
+            PY_THROW_EXCEPTION(NULL);
+        case PY_TYPE_PY_IMPL: {
+            PyObjectContainer* method = PY_getObjectAttributeByNameOrStatic(obj, "__index__");
+            PY_THROW_EXCEPTION_IF(method == NULL, NULL);
+            return PY_invokeBoxedMethod(method, obj, 0, NULL, NULL);
+        }
+        case PY_TYPE_BOOL:
+            return obj == PY_FALSE ? PY_createInteger(0) : PY_createInteger(1);
+    }
+}
+
+PyObjectContainer* PY_STD_hasattr(PyObjectContainer* obj, PyObjectContainer* attr) {
+    assert(attr->type == PY_TYPE_STRING);
+    return PY_createBoolean(PY_hasObjectAttribute(obj, PY_unpackString(attr)));
+}
+
+PyObjectContainer* PY_STD_getattr(PyObjectContainer* obj, PyObjectContainer* attr) {
+    assert(attr->type == PY_TYPE_STRING);
+    PyObjectContainer* value = PY_getObjectAttributeByNameOrStatic(obj, PY_unpackString(attr));
+    PY_THROW_EXCEPTION_IF(value == NULL, NULL);
+    return value;
+}
+
+PyObjectContainer* PY_STD_getattr_with_default(PyObjectContainer* obj, PyObjectContainer* attr, PyObjectContainer* default_value) {
+    assert(attr->type == PY_TYPE_STRING);
+    PyObjectContainer* value = PY_getObjectAttributeByNameOrStatic(obj, PY_unpackString(attr));
+    return value ? value : default_value;
 }
 
 int8_t PY_getArgumentFlags(CallStructureInfo* info, uint8_t index)
@@ -858,6 +926,11 @@ int8_t PY_getArgumentFlags(CallStructureInfo* info, uint8_t index)
     return (int8_t)section;
 }
 
+PyObjectContainer* PY_NOOP_CONTAINER;
+PyObjectContainer* PY_NOOP(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info) {
+    return PY_NONE;
+}
+
 void initialize()
 {
     if (initialized) return;
@@ -873,6 +946,11 @@ void initialize()
 
     PY_TYPE_OBJECT = PY_createClassContainer("object");
     PY_setClassAttributeByNameOrCreate(PY_TYPE_OBJECT, "__init__", PY_createBoxForFunction(PY_NOOP));
+
+    PY_NOT_IMPLEMENTED = PY_createClassInstance(PY_TYPE_OBJECT);
+    PY_NOT_IMPLEMENTED->flags |= PY_OBJ_NO_FREE;
+
+    PY_NOOP_CONTAINER = PY_createBoxForFunction(PY_NOOP);
 
     initialized = true;
 }
@@ -901,9 +979,5 @@ void DECREF(PyObjectContainer* obj) {
             break;
     }
     free(obj);
-}
-
-PyObjectContainer* PY_NOOP(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info) {
-    return PY_NONE;
 }
 
