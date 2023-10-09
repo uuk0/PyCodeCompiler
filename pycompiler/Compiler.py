@@ -288,6 +288,9 @@ PyObjectContainer* PY_MODULE_{module.replace('.', '___')}_init(void);
                 if self.compiler_output
                 else []
             )
+            + [
+                "-lm",  # math
+            ]
         )
 
         print(command)
