@@ -151,6 +151,18 @@
             "c name": "PY_STD_dict_init_fast_arg_zero"
           },
           {
+            "name": "fromkeys",
+            "type": "method",
+            "arguments": 1,
+            "c name": "PY_STD_dict_fromkeys_fast_arg_1"
+          },
+          {
+            "name": "fromkeys",
+            "type": "method",
+            "arguments": 2,
+            "c name": "PY_STD_dict_fromkeys_fast_arg_2"
+          },
+          {
             "name": "get",
             "type": "method",
             "arguments": 1,

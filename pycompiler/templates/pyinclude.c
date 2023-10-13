@@ -363,13 +363,18 @@ PyObjectContainer* PY_getObjectAttributeByNameOrStatic(PyObjectContainer* obj, c
     return NULL;
 }
 
+static PyObjectContainer* PY_AttributeAccess_FAILED(PyObjectContainer* obj, char* name) {
+    fprintf(stderr, "Attribute: %s\n", name);
+    fprintf(stderr, "Object: %s\n", PY_getObjectRepr(obj));
+    fflush(stderr);
+    PY_THROW_EXCEPTION_IF_WITH_MESSAGE_AND_OBJ(1, NULL, "%s-object has no attribute\n", obj);
+}
+
 PyObjectContainer* PY_getObjectAttributeByNameOrStatic_ThrowOnNull(PyObjectContainer* obj, char* name) {
     PyObjectContainer* value = PY_getObjectAttributeByNameOrStatic(obj, name);
 
     if (value == NULL) {
-        fprintf(stderr, "Attribute: %s\n", name);
-        fflush(stderr);
-        PY_THROW_EXCEPTION_IF_WITH_MESSAGE_AND_OBJ(value == NULL, NULL, "%s-object has no attribute\n", obj);
+        return PY_AttributeAccess_FAILED(obj, name);
     }
     return value;
 }

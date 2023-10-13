@@ -1958,7 +1958,7 @@ container->next_section = {func_name}_ENTRY;
 
         self.generate_safe_wrapper(base, func_name)
 
-    def generate_safe_wrapper(self, base, func_name):
+    def generate_safe_wrapper(self, base: CCodeEmitter, func_name):
         # todo: when bound object method, forward 'self' as first argument!
         base.add_include("<assert.h>")
         safe_name = f"{func_name}_safeWrap"
@@ -3738,6 +3738,9 @@ class Parser:
                 )
                 builder.add_global_variable("PyObjectContainer*", global_name)
                 node.global_container_name = global_name
+                builder.init_function.add_code(
+                    f"{global_name} = PY_createBoxForFunction({node.normal_name}_safeWrap);\n"
+                )
                 super().visit_function_definition(node)
 
         FuncDefVisitor().visit_any_list(expr)

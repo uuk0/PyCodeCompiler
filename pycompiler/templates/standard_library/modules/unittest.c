@@ -45,6 +45,7 @@ PyObjectContainer* PY_MODULE_unittest_main_fast(void)
             if (PY_STD_string_startswith_impl(cls_instance->static_attribute_names[j], "test"))
             {
                 fprintf(stderr, "running test %s.%s...", cls_instance->class_name, cls_instance->static_attribute_names[j]);
+                fflush(stderr);
 
                 current_test_name = cls_instance->static_attribute_names[j];
                 PyObjectContainer* method = PY_getObjectAttributeByNameOrStatic(obj, cls_instance->static_attribute_names[j]);
@@ -66,6 +67,7 @@ PyObjectContainer* PY_MODULE_unittest_main_fast(void)
                 }
                 j++;
                 fflush(stdout);
+                fflush(stderr);
             }
         }
     }

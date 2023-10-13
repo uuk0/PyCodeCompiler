@@ -12,6 +12,7 @@
 #include "exceptions.h"
 #include "config.h"
 #include "tuple.h"
+#include "list.h"
 
 #ifdef PY_ENABLE_GENERATORS
 #include "generator.h"
@@ -68,6 +69,40 @@ PyObjectContainer* PY_STD_dict_init_fast_arg_zero(PyObjectContainer* self)
 {
     self->raw_value = HASHMAP_create(HASH_py_object, HASH_compare_py_object);
     return PY_NONE;
+}
+
+PyObjectContainer* PY_STD_dict_fromkeys(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info) {
+    if (argc == 1)
+    {
+        return PY_STD_dict_fromkeys_fast_arg_2(self, args[0], PY_NONE);
+    }
+    else if (argc == 2)
+    {
+        return PY_STD_dict_fromkeys_fast_arg_2(self, args[0], args[1]);
+    }
+
+    PY_THROW_EXCEPTION_WITH_MESSAGE(NULL, "expected 1 or 2 arguments");
+}
+
+PyObjectContainer* PY_STD_dict_fromkeys_fast_arg_1(PyObjectContainer* self, PyObjectContainer* key) {
+    return PY_STD_dict_fromkeys_fast_arg_2(self, key, PY_NONE);
+}
+
+PyObjectContainer* PY_STD_dict_fromkeys_fast_arg_2(PyObjectContainer* self, PyObjectContainer* keys, PyObjectContainer* default_value) {
+    assert(keys != NULL);
+    assert(default_value != NULL);
+
+    PyObjectContainer* key_list = PY_createClassInstance(PY_TYPE_LIST);
+    PY_STD_list_init_fast_arg_1(key_list, keys);
+    PY_STD_list_container* list = key_list->raw_value;
+
+    PyObjectContainer* dict = PY_STD_dict_CREATE(0);
+
+    for (int i = 0; i < list->curr_size; i++) {
+        HASHMAP_insert(dict->raw_value, list->array[i], default_value);
+    }
+
+    return dict;
 }
 
 PyObjectContainer* PY_STD_dict_get(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info)
@@ -639,6 +674,7 @@ PyObjectContainer* PY_STD_dict_items_fast(PyObjectContainer* self)
 void PY_STD_initDictType(void)
 {
     PY_TYPE_DICT = PY_createClassContainer("dict");
+    PY_setClassAttributeByNameOrCreate(PY_TYPE_DICT, "fromkeys", PY_createBoxForFunction(PY_STD_dict_fromkeys));
     PY_setClassAttributeByNameOrCreate(PY_TYPE_DICT, "get", PY_createBoxForFunction(PY_STD_dict_get));
     PY_setClassAttributeByNameOrCreate(PY_TYPE_DICT, "pop", PY_createBoxForFunction(PY_STD_dict_pop));
     PY_setClassAttributeByNameOrCreate(PY_TYPE_DICT, "__init__", PY_createBoxForFunction(PY_STD_dict_init));

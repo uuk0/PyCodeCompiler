@@ -13,6 +13,10 @@ PyObjectContainer* PY_STD_dict_CREATE(uint8_t argc, ...);
 PyObjectContainer* PY_STD_dict_init(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info);
 PyObjectContainer* PY_STD_dict_init_fast_arg_zero(PyObjectContainer* self);
 
+PyObjectContainer* PY_STD_dict_fromkeys(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info);
+PyObjectContainer* PY_STD_dict_fromkeys_fast_arg_1(PyObjectContainer* self, PyObjectContainer* key);
+PyObjectContainer* PY_STD_dict_fromkeys_fast_arg_2(PyObjectContainer* self, PyObjectContainer* key, PyObjectContainer* default_value);
+
 PyObjectContainer* PY_STD_dict_get(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info);
 PyObjectContainer* PY_STD_dict_get_fast_arg_2(PyObjectContainer* self, PyObjectContainer* key, PyObjectContainer* default_value);
 
