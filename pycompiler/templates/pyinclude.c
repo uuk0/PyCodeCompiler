@@ -363,6 +363,17 @@ PyObjectContainer* PY_getObjectAttributeByNameOrStatic(PyObjectContainer* obj, c
     return NULL;
 }
 
+PyObjectContainer* PY_getObjectAttributeByNameOrStatic_ThrowOnNull(PyObjectContainer* obj, char* name) {
+    PyObjectContainer* value = PY_getObjectAttributeByNameOrStatic(obj, name);
+
+    if (value == NULL) {
+        fprintf(stderr, "Attribute: %s\n", name);
+        fflush(stderr);
+        PY_THROW_EXCEPTION_IF_WITH_MESSAGE_AND_OBJ(value == NULL, NULL, "%s-object has no attribute\n", obj);
+    }
+    return value;
+}
+
 void PY_setObjectAttributeByName(PyObjectContainer* obj, char* name, PyObjectContainer* value)
 {
     // todo: can we implement it for other types also?

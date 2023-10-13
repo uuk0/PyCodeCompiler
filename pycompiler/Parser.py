@@ -1137,6 +1137,8 @@ class DictConstructor(AbstractASTNodeExpression):
 
 
 class AttributeExpression(AbstractASTNodeExpression):
+    SAFE_ATTRIBUTE_ACCESS = True
+
     def __init__(self, base: AbstractASTNode, dot: Lexer.Token, attribute: Lexer.Token):
         super().__init__()
         self.base = base
@@ -1168,7 +1170,11 @@ class AttributeExpression(AbstractASTNodeExpression):
         return True
 
     def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder):
-        context.add_code("PY_getObjectAttributeByNameOrStatic(")
+        context.add_code(
+            "PY_getObjectAttributeByNameOrStatic("
+            if not self.SAFE_ATTRIBUTE_ACCESS
+            else "PY_getObjectAttributeByNameOrStatic_ThrowOnNull("
+        )
 
         self.base.emit_c_code(base, context)
         context.add_code(f', "{self.attribute.text}")')
@@ -3605,7 +3611,7 @@ class Parser:
                         print(self.indent_level)
                         print(repr(self.lexer.file[self.lexer.file_cursor :]))
                         raise SyntaxError(
-                            f"expected <newline> or ';' after <expression>, got '{repr(self.lexer.get_chars(4))}'"
+                            f"expected <newline> or ';' after <expression>, got {repr(self.lexer.get_chars(10))}"
                         )
 
             self.skip_end_check = False

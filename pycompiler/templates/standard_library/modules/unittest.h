@@ -38,6 +38,12 @@ PyObjectContainer* PY_MODULE_unittest_TestCase_assertIs_fast(PyObjectContainer* 
 PyObjectContainer* PY_MODULE_unittest_TestCase_assertIsNot(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info);
 PyObjectContainer* PY_MODULE_unittest_TestCase_assertIsNot_fast(PyObjectContainer* self, PyObjectContainer* value, PyObjectContainer* other);
 
+PyObjectContainer* PY_MODULE_unittest_TestCase_assertIn(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info);
+PyObjectContainer* PY_MODULE_unittest_TestCase_assertIn_fast(PyObjectContainer* self, PyObjectContainer* item, PyObjectContainer* container);
+
+PyObjectContainer* PY_MODULE_unittest_TestCase_assertNotIn(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info);
+PyObjectContainer* PY_MODULE_unittest_TestCase_assertNotIn_fast(PyObjectContainer* self, PyObjectContainer* item, PyObjectContainer* container);
+
 PyObjectContainer* PY_MODULE_unittest_init(void);
 
 #endif //PYCCOMPILER_UNITTEST_H

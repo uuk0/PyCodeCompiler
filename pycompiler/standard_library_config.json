@@ -510,26 +510,38 @@
           {
             "name": "assertEqual",
             "type": "method",
-            "arguments": 1,
+            "arguments": 2,
             "c name": "PY_MODULE_unittest_TestCase_assertEqual_fast"
           },
           {
             "name": "assertNotEqual",
             "type": "method",
-            "arguments": 1,
+            "arguments": 2,
             "c name": "PY_MODULE_unittest_TestCase_assertNotEqual_fast"
           },
           {
             "name": "assertIs",
             "type": "method",
-            "arguments": 1,
+            "arguments": 2,
             "c name": "PY_MODULE_unittest_TestCase_assertIs_fast"
           },
           {
             "name": "assertIsNot",
             "type": "method",
-            "arguments": 1,
+            "arguments": 2,
             "c name": "PY_MODULE_unittest_TestCase_assertIsNot_fast"
+          },
+          {
+            "name": "assertIn",
+            "type": "method",
+            "arguments": 2,
+            "c name": "PY_MODULE_unittest_TestCase_assertIn_fast"
+          },
+          {
+            "name": "assertNotIn",
+            "type": "method",
+            "arguments": 2,
+            "c name": "PY_MODULE_unittest_TestCase_assertNotIn_fast"
           },
           {
             "name": "fail",

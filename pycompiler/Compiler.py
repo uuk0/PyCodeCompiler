@@ -293,10 +293,11 @@ PyObjectContainer* PY_MODULE_{module.replace('.', '___')}_init(void);
             ]
         )
 
-        print(command)
+        # print(command)
 
         exit_code = subprocess.call(command)
 
+        # todo: can we use the defined code for success?
         if exit_code != 0:
             raise RuntimeError(
                 f"exit code {exit_code} of compiler {self.compiler} != 0"

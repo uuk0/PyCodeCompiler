@@ -129,6 +129,7 @@ PyObjectContainer* PY_createClass(char* name, PyObjectContainer* init(PyClassCon
 bool PY_hasObjectAttribute(PyObjectContainer* obj, char* name);
 PyObjectContainer* PY_getObjectAttributeByName(PyObjectContainer* obj, char* name);
 PyObjectContainer* PY_getObjectAttributeByNameOrStatic(PyObjectContainer* obj, char* name);
+PyObjectContainer* PY_getObjectAttributeByNameOrStatic_ThrowOnNull(PyObjectContainer* obj, char* name);
 void PY_setObjectAttributeByName(PyObjectContainer* obj, char* name, PyObjectContainer* value);
 PyObjectContainer* PY_getClassAttributeByName(PyClassContainer* cls, char* name);
 void PY_setClassAttributeByName(PyClassContainer* cls, char* name, PyObjectContainer* value);
