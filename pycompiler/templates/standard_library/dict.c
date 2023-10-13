@@ -91,14 +91,56 @@ PyObjectContainer* PY_STD_dict_get_fast_arg_2(PyObjectContainer* self, PyObjectC
     assert(self->raw_value != NULL);
     assert(key != NULL);
     assert(default_value != NULL);
-    PY_CHECK_EXCEPTION(key);
-    PY_CHECK_EXCEPTION(default_value);
 
     PyObjectContainer* obj = HASHMAP_lookup(self->raw_value, key);
     if (obj == NULL)
     {
         return default_value;
     }
+    return obj;
+}
+
+PyObjectContainer* PY_STD_dict_pop(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info) {
+    if (argc == 1)
+    {
+        return PY_STD_dict_pop_fast_arg_1(self, args[0]);
+    }
+    else if (argc == 2)
+    {
+        return PY_STD_dict_pop_fast_arg_2(self, args[0], args[1]);
+    }
+
+    PY_THROW_EXCEPTION_WITH_MESSAGE(NULL, "expected 1 or 2 arguments");
+}
+
+PyObjectContainer* PY_STD_dict_pop_fast_arg_1(PyObjectContainer* self, PyObjectContainer* key) {
+    assert(self->type == PY_TYPE_PY_IMPL);
+    assert(self->py_type == PY_TYPE_DICT);
+    assert(self->raw_value != NULL);
+    assert(key != NULL);
+
+    // todo: can be find the index beforehand and reuse it for del-ing?
+    PyObjectContainer* obj = HASHMAP_lookup(self->raw_value, key);
+    if (obj == NULL) {
+        PY_THROW_EXCEPTION(NULL);  // todo: KeyError
+    }
+    HASHMAP_remove(self->raw_value, key);
+    return obj;
+}
+
+PyObjectContainer* PY_STD_dict_pop_fast_arg_2(PyObjectContainer* self, PyObjectContainer* key, PyObjectContainer* default_value) {
+    assert(self->type == PY_TYPE_PY_IMPL);
+    assert(self->py_type == PY_TYPE_DICT);
+    assert(self->raw_value != NULL);
+    assert(key != NULL);
+    assert(default_value != NULL);
+
+    // todo: can be find the index beforehand and reuse it for del-ing?
+    PyObjectContainer* obj = HASHMAP_lookup(self->raw_value, key);
+    if (obj == NULL) {
+        return default_value;
+    }
+    HASHMAP_remove(self->raw_value, key);
     return obj;
 }
 
@@ -598,6 +640,7 @@ void PY_STD_initDictType(void)
 {
     PY_TYPE_DICT = PY_createClassContainer("dict");
     PY_setClassAttributeByNameOrCreate(PY_TYPE_DICT, "get", PY_createBoxForFunction(PY_STD_dict_get));
+    PY_setClassAttributeByNameOrCreate(PY_TYPE_DICT, "pop", PY_createBoxForFunction(PY_STD_dict_pop));
     PY_setClassAttributeByNameOrCreate(PY_TYPE_DICT, "__init__", PY_createBoxForFunction(PY_STD_dict_init));
     PY_setClassAttributeByNameOrCreate(PY_TYPE_DICT, "__setitem__", PY_createBoxForFunction(PY_STD_dict_setitem));
     PY_setClassAttributeByNameOrCreate(PY_TYPE_DICT, "__getitem__", PY_createBoxForFunction(PY_STD_dict_getitem));

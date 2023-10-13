@@ -3501,6 +3501,8 @@ def _parse_std_lib_decl_entry(entry: dict) -> AbstractASTNode:
         return cls
 
     elif entry["type"] == "method" and entry.get("boxed", False):
+        assert entry["name"]
+        assert entry["box name"]
         obj = BuiltinBoxedMethod(TokenType.IDENTIFIER(entry["name"]), [], [], [])
         obj.global_container_name = obj.normal_name = entry["box name"]
 
@@ -3510,6 +3512,8 @@ def _parse_std_lib_decl_entry(entry: dict) -> AbstractASTNode:
         return ConstantAccessExpression(obj, construct_ref=False)
 
     elif entry["type"] in ("method", "constant"):
+        assert entry["name"]
+        assert entry["c name"]
         obj = GlobalCNameAccessExpression(entry["c name"], declare=False)
 
         if entry["type"] == "method" and "return type" in entry:
