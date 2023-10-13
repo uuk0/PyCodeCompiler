@@ -39,6 +39,7 @@ PyObjectContainer* PY_MODULE_source_init(void) {
     #ifdef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE
     PY_MODULE_INSTANCE_source = PY_createModuleObject("source");
     #endif
+    function_container_test_0 = PY_createBoxForFunction(test_0_safeWrap);
     #ifdef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE
     PY_setObjectAttributeByName(PY_MODULE_INSTANCE_source, "test", (function_container_test_0 = PY_createBoxForFunction(test_0_safeWrap)));
     #endif
@@ -69,7 +70,7 @@ PyObjectContainer* test_0(void) {
 
 
     PyObjectContainer* temporary_4 = PY_createInteger(10);
-    PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(PY_getObjectAttributeByNameOrStatic(obj_2, "remove"), NULL, 1, &temporary_4, NULL));
+    PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(PY_getObjectAttributeByNameOrStatic_ThrowOnNull(obj_2, "remove"), NULL, 1, &temporary_4, NULL));
 
     PY_CHECK_EXCEPTION(PY_STD_list_append_fast (obj_2 , PY_createInteger(30)));
 

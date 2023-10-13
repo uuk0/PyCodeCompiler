@@ -38,6 +38,10 @@ PyObjectContainer* PY_MODULE_source_init(void) {
     #ifdef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE
     PY_MODULE_INSTANCE_source = PY_createModuleObject("source");
     #endif
+    function_container_test_one_0 = PY_createBoxForFunction(testone_0_safeWrap);
+    function_container_test_two_1 = PY_createBoxForFunction(testtwo_1_safeWrap);
+    function_container_test_three_2 = PY_createBoxForFunction(testthree_2_safeWrap);
+    function_container_test_four_3 = PY_createBoxForFunction(testfour_3_safeWrap);
     #ifdef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE
     PY_setObjectAttributeByName(PY_MODULE_INSTANCE_source, "test_one", (function_container_test_one_0 = PY_createBoxForFunction(testone_0_safeWrap)));
     #endif

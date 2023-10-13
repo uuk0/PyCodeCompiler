@@ -38,6 +38,7 @@ PyObjectContainer* PY_MODULE_source_init(void) {
     #endif
     PyObjectContainer* obj_3;
     PyObjectContainer* test_2;
+    function_container___init___0 = PY_createBoxForFunction(init_1_safeWrap);
     #ifdef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE
     PY_setObjectAttributeByName(PY_MODULE_INSTANCE_source, "__init__", (function_container___init___0 = PY_createBoxForFunction(init_1_safeWrap)));
     #endif

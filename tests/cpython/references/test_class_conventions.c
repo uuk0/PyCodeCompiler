@@ -56,6 +56,16 @@ PyObjectContainer* PY_MODULE_test_class_conventions_init(void) {
     PyObjectContainer* TestClassInClass_20;
     PyObjectContainer* TestClassInFunction_27;
     PyObjectContainer* unittest_32;
+    function_container___call___0 = PY_createBoxForFunction(call_1_safeWrap);
+    function_container___init___1 = PY_createBoxForFunction(init_5_safeWrap);
+    function_container___call___2 = PY_createBoxForFunction(call_7_safeWrap);
+    function_container_test_basic_3 = PY_createBoxForFunction(testbasic_10_safeWrap);
+    function_container_test_attribute_4 = PY_createBoxForFunction(testattribute_12_safeWrap);
+    function_container_get_5 = PY_createBoxForFunction(get_15_safeWrap);
+    function_container_test_basic_6 = PY_createBoxForFunction(testbasic_19_safeWrap);
+    function_container_get_7 = PY_createBoxForFunction(get_22_safeWrap);
+    function_container_target_8 = PY_createBoxForFunction(target_24_safeWrap);
+    function_container_test_basic_9 = PY_createBoxForFunction(testbasic_26_safeWrap);
     PY_CHECK_EXCEPTION(PY_MODULE_unittest_init());
     unittest_32 = PY_MODULE_INSTANCE_unittest;
 
@@ -104,7 +114,7 @@ PyObjectContainer* PY_MODULE_test_class_conventions_init(void) {
     PY_CLASS_INIT_PY_CLASS_TestClassInFunction_27(&PY_CLASS_TestClassInFunction_27);
 
     if (PY_unpackBoolean(PY_CHECK_EXCEPTION(PY_CHECK_EXCEPTION(PY_STD_string_eq_fast (PY_createString("__main__") , PY_createString("__main__")))))) {
-        PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(PY_getObjectAttributeByNameOrStatic(PY_MODULE_INSTANCE_unittest, "main"), NULL, 0, NULL, NULL));
+        PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(PY_getObjectAttributeByNameOrStatic_ThrowOnNull(PY_MODULE_INSTANCE_unittest, "main"), NULL, 0, NULL, NULL));
     }
     #ifdef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE
     PY_exposeModuleObject(PY_MODULE_INSTANCE_test_class_conventions);
@@ -200,7 +210,7 @@ PyObjectContainer* init_5_safeWrap(PyObjectContainer* self , uint8_t argc , PyOb
 PyObjectContainer* call_7(PyObjectContainer* self_6) {
     // Source Location: Test.__call__
 
-    return PY_getObjectAttributeByNameOrStatic(self_6, "value");
+    return PY_getObjectAttributeByNameOrStatic_ThrowOnNull(self_6, "value");
 
 
     return PY_NONE;
@@ -229,7 +239,7 @@ PyObjectContainer* PY_CLASS_INIT_PY_CLASS_TestClassCallable_13(PyClassContainer*
     PY_ClassContainer_AllocateParentArray(*cls, 1);
 
     // Create Parent Objects for class 'TestClassCallable'
-    (*cls)->parents[0] = PY_unwrapClassContainer(PY_CHECK_EXCEPTION(PY_getObjectAttributeByNameOrStatic(PY_MODULE_INSTANCE_unittest, "TestCase")));
+    (*cls)->parents[0] = PY_unwrapClassContainer(PY_CHECK_EXCEPTION(PY_getObjectAttributeByNameOrStatic_ThrowOnNull(PY_MODULE_INSTANCE_unittest, "TestCase")));
     PyObjectContainer* init_subclass_11 = PY_getClassAttributeByName((*cls)->parents[0], "__init_subclass__");
     if (init_subclass_11 != NULL) {
         PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(init_subclass_11, PY_createClassWrapper(*cls), 0, NULL, NULL));
@@ -253,7 +263,7 @@ PyObjectContainer* testbasic_10(PyObjectContainer* self_9) {
     Test_2 = PY_createClass("Test", PY_CLASS_INIT_PY_CLASS_Test_2);
     a_33 = PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(Test_2, NULL, 0, NULL, NULL));
 
-    PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(PY_getObjectAttributeByNameOrStatic(self_9, "assertEqual"), NULL, 2, (PyObjectContainer*[]) {PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(a_33, NULL, 0, NULL, NULL)), PY_createInteger(10)}, NULL));
+    PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(PY_getObjectAttributeByNameOrStatic_ThrowOnNull(self_9, "assertEqual"), NULL, 2, (PyObjectContainer*[]) {PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(a_33, NULL, 0, NULL, NULL)), PY_createInteger(10)}, NULL));
 
 
     return PY_NONE;
@@ -285,7 +295,7 @@ PyObjectContainer* testattribute_12(PyObjectContainer* self_11) {
     PyObjectContainer* temporary_13 = PY_createInteger(20);
     a_34 = PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(Test_8, NULL, 1, &temporary_13, NULL));
 
-    PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(PY_getObjectAttributeByNameOrStatic(self_11, "assertEqual"), NULL, 2, (PyObjectContainer*[]) {PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(a_34, NULL, 0, NULL, NULL)), PY_createInteger(20)}, NULL));
+    PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(PY_getObjectAttributeByNameOrStatic_ThrowOnNull(self_11, "assertEqual"), NULL, 2, (PyObjectContainer*[]) {PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(a_34, NULL, 0, NULL, NULL)), PY_createInteger(20)}, NULL));
 
 
 
@@ -373,7 +383,7 @@ PyObjectContainer* PY_CLASS_INIT_PY_CLASS_TestClassInClass_20(PyClassContainer**
     PY_ClassContainer_AllocateParentArray(*cls, 1);
 
     // Create Parent Objects for class 'TestClassInClass'
-    (*cls)->parents[0] = PY_unwrapClassContainer(PY_CHECK_EXCEPTION(PY_getObjectAttributeByNameOrStatic(PY_MODULE_INSTANCE_unittest, "TestCase")));
+    (*cls)->parents[0] = PY_unwrapClassContainer(PY_CHECK_EXCEPTION(PY_getObjectAttributeByNameOrStatic_ThrowOnNull(PY_MODULE_INSTANCE_unittest, "TestCase")));
     PyObjectContainer* init_subclass_15 = PY_getClassAttributeByName((*cls)->parents[0], "__init_subclass__");
     if (init_subclass_15 != NULL) {
         PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(init_subclass_15, PY_createClassWrapper(*cls), 0, NULL, NULL));
@@ -395,16 +405,16 @@ PyObjectContainer* testbasic_19(PyObjectContainer* self_18) {
     PyObjectContainer* x_37;
 
     A_17 = PY_createClass("A", PY_CLASS_INIT_PY_CLASS_A_17);
-    x_37 = PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(PY_getObjectAttributeByNameOrStatic(A_17, "B"), NULL, 0, NULL, NULL));
+    x_37 = PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(PY_getObjectAttributeByNameOrStatic_ThrowOnNull(A_17, "B"), NULL, 0, NULL, NULL));
 
-    PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(PY_getObjectAttributeByNameOrStatic(self_18, "assertEqual"), NULL, 2, (PyObjectContainer*[]) {PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(PY_getObjectAttributeByNameOrStatic(x_37, "get"), NULL, 0, NULL, NULL)), PY_createInteger(10)}, NULL));
+    PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(PY_getObjectAttributeByNameOrStatic_ThrowOnNull(self_18, "assertEqual"), NULL, 2, (PyObjectContainer*[]) {PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(PY_getObjectAttributeByNameOrStatic_ThrowOnNull(x_37, "get"), NULL, 0, NULL, NULL)), PY_createInteger(10)}, NULL));
 
 
     a_35 = PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(A_17, NULL, 0, NULL, NULL));
 
-    b_36 = PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(PY_getObjectAttributeByNameOrStatic(a_35, "B"), NULL, 0, NULL, NULL));
+    b_36 = PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(PY_getObjectAttributeByNameOrStatic_ThrowOnNull(a_35, "B"), NULL, 0, NULL, NULL));
 
-    PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(PY_getObjectAttributeByNameOrStatic(self_18, "assertEqual"), NULL, 2, (PyObjectContainer*[]) {PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(PY_getObjectAttributeByNameOrStatic(b_36, "get"), NULL, 0, NULL, NULL)), PY_createInteger(10)}, NULL));
+    PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(PY_getObjectAttributeByNameOrStatic_ThrowOnNull(self_18, "assertEqual"), NULL, 2, (PyObjectContainer*[]) {PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(PY_getObjectAttributeByNameOrStatic_ThrowOnNull(b_36, "get"), NULL, 0, NULL, NULL)), PY_createInteger(10)}, NULL));
 
 
 
@@ -492,7 +502,7 @@ PyObjectContainer* PY_CLASS_INIT_PY_CLASS_TestClassInFunction_27(PyClassContaine
     PY_ClassContainer_AllocateParentArray(*cls, 1);
 
     // Create Parent Objects for class 'TestClassInFunction'
-    (*cls)->parents[0] = PY_unwrapClassContainer(PY_CHECK_EXCEPTION(PY_getObjectAttributeByNameOrStatic(PY_MODULE_INSTANCE_unittest, "TestCase")));
+    (*cls)->parents[0] = PY_unwrapClassContainer(PY_CHECK_EXCEPTION(PY_getObjectAttributeByNameOrStatic_ThrowOnNull(PY_MODULE_INSTANCE_unittest, "TestCase")));
     PyObjectContainer* init_subclass_18 = PY_getClassAttributeByName((*cls)->parents[0], "__init_subclass__");
     if (init_subclass_18 != NULL) {
         PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(init_subclass_18, PY_createClassWrapper(*cls), 0, NULL, NULL));
@@ -514,7 +524,7 @@ PyObjectContainer* testbasic_26(PyObjectContainer* self_25) {
     target_24 = function_container_target_8;
     obj_38 = PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(target_24, NULL, 0, NULL, NULL)), NULL, 0, NULL, NULL));
 
-    PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(PY_getObjectAttributeByNameOrStatic(self_25, "assertEqual"), NULL, 2, (PyObjectContainer*[]) {PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(PY_getObjectAttributeByNameOrStatic(obj_38, "get"), NULL, 0, NULL, NULL)), PY_createInteger(20)}, NULL));
+    PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(PY_getObjectAttributeByNameOrStatic_ThrowOnNull(self_25, "assertEqual"), NULL, 2, (PyObjectContainer*[]) {PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(PY_getObjectAttributeByNameOrStatic_ThrowOnNull(obj_38, "get"), NULL, 0, NULL, NULL)), PY_createInteger(20)}, NULL));
 
 
 

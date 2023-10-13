@@ -37,6 +37,8 @@ PyObjectContainer* PY_MODULE_source_init(void) {
     #ifdef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE
     PY_MODULE_INSTANCE_source = PY_createModuleObject("source");
     #endif
+    function_container_target_0 = PY_createBoxForFunction(target_1_safeWrap);
+    function_container_test_target_1 = PY_createBoxForFunction(testtarget_3_safeWrap);
     #ifdef PY_ENABLE_DYNAMIC_OBJECT_ATTRIBUTE
     PY_setObjectAttributeByName(PY_MODULE_INSTANCE_source, "target", (function_container_target_0 = PY_createBoxForFunction(target_1_safeWrap)));
     #endif
@@ -96,7 +98,7 @@ PyObjectContainer* target_1_safeWrap(PyObjectContainer* self , uint8_t argc , Py
 PyObjectContainer* testtarget_3(PyObjectContainer* self_2) {
     // Source Location: test.test_target
 
-    return PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(PY_getObjectAttributeByNameOrStatic(self_2, "target"), NULL, 0, NULL, NULL));
+    return PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(PY_getObjectAttributeByNameOrStatic_ThrowOnNull(self_2, "target"), NULL, 0, NULL, NULL));
 }
 
 PyObjectContainer* testtarget_3_safeWrap(PyObjectContainer* self , uint8_t argc , PyObjectContainer** args , CallStructureInfo* info) {

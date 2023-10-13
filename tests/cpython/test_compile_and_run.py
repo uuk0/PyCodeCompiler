@@ -25,13 +25,17 @@ class TestGenerator(unittest.TestCase):
                 f"{folder}/references/test_{module_name}.c",
             )
         else:
-            with open(f"{folder}/references/test_{module_name}.c") as fc, open(
+            with open(
+                f"{folder}/references/test_{module_name}.c", mode="w+"
+            ) as fc, open(
                 f"{folder}/test_build/{module_name}/test_{module_name}.c"
             ) as fn:
                 a = fc.read()
                 b = fn.read()
 
                 if a != b:
+                    #     fc.write(b)
+                    # elif False:
                     diff = "\n".join(difflib.unified_diff(a.split("\n"), b.split("\n")))
                     print(diff, file=sys.stdout)
                     self.fail("result differs from reference code!")
