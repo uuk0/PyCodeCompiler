@@ -24,6 +24,10 @@ extern PyObjectContainer* PY_STD_string_startswith_CONTAINER;
 PyObjectContainer* PY_STD_string_startswith(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info);
 PyObjectContainer* PY_STD_string_startswith_fast(PyObjectContainer* self, PyObjectContainer* other);
 
+extern PyObjectContainer* PY_STD_string_len_CONTAINER;
+PyObjectContainer* PY_STD_string_len(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info);
+PyObjectContainer* PY_STD_string_len_fast(PyObjectContainer* self);
+
 bool PY_STD_string_startswith_impl(char* self, char* other);
 
 PyObjectContainer* PY_STD_string_add(PyObjectContainer* lhs, PyObjectContainer* rhs);

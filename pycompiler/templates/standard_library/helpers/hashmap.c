@@ -86,8 +86,7 @@ void HASHMAP_insert(HashMapContainer* container, void* key, void* value)
         goto start;
     }
 
-    while (1)
-    {
+    for (int i = 0; i < container->alloc_size * 2; i++) {
         partial_hash = HASHMAP_generateNewKey(partial_hash, container->alloc_size);
         current_key = container->key_memory[partial_hash];
 
@@ -115,8 +114,7 @@ void* HASHMAP_lookup(HashMapContainer* container, void* key)
     uint64_t original_hash = partial_hash;
     void* current_key;
 
-    while (1)
-    {
+    for (int i = 0; i < container->alloc_size * 2; i++) {
         current_key = container->key_memory[partial_hash];
 
         if (current_key == NULL)
@@ -141,6 +139,9 @@ void* HASHMAP_lookup(HashMapContainer* container, void* key)
             return NULL;
         }
     }
+
+    // should in theory not be needed
+    return NULL;
 }
 
 bool HASHMAP_has_key(HashMapContainer* container, void* key)

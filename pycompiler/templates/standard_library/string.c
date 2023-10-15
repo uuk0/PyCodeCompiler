@@ -95,6 +95,17 @@ PyObjectContainer* PY_STD_string_startswith_fast(PyObjectContainer* self, PyObje
     return PY_createBoolean(PY_STD_string_startswith_impl(PY_unpackString(self), PY_unpackString(other)));
 }
 
+PyObjectContainer* PY_STD_string_len_CONTAINER;
+
+PyObjectContainer* PY_STD_string_len(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info) {
+    assert(argc == 0);
+    return PY_createInteger((int64_t)strlen(PY_unpackString(args[0])));
+}
+
+PyObjectContainer* PY_STD_string_len_fast(PyObjectContainer* self) {
+    return PY_createInteger((int64_t)strlen(PY_unpackString(self)));
+}
+
 bool PY_STD_string_startswith_impl(char* self, char* other)
 {
     if (strlen(self) < strlen(other)) return false;
@@ -115,4 +126,5 @@ void PY_STD_initStringType(void)
     PY_STD_string_eq_CONTAINER = PY_createBoxForFunction(PY_STD_string_eq);
     PY_STD_string_iter_CONTAINER = PY_createBoxForFunction(PY_STD_string_iter);
     PY_STD_string_startswith_CONTAINER = PY_createBoxForFunction(PY_STD_string_startswith);
+    PY_STD_string_len_CONTAINER = PY_createBoxForFunction(PY_STD_string_len);
 }

@@ -29,13 +29,13 @@ PyObjectContainer* PY_STD_wrapException(PyObjectContainer* exception);
 #else
 
 #define PY_THROW_EXCEPTION(exception) { fprintf(stderr, "%s\n", PY_getObjectRepr(exception)); int* x = NULL; int y = *x; } // assert(false);
-#define PY_THROW_EXCEPTION_IF(condition, exception) assert(!(condition));
+#define PY_THROW_EXCEPTION_IF(condition, exception) {if (condition) PY_THROW_EXCEPTION(exception); }
 
-#define PY_THROW_EXCEPTION_WITH_MESSAGE(exception, message) { printf("%s\n", message); assert(false); }
-#define PY_THROW_EXCEPTION_IF_WITH_MESSAGE(condition, exception, message) if (condition) { printf("%s\n", message); assert(false); }
-#define PY_THROW_EXCEPTION_MESSAGE_AND_OBJ(exception, message, obj) { printf(message, PY_getObjectRepr(obj)); assert(false); }
+#define PY_THROW_EXCEPTION_WITH_MESSAGE(exception, message) { printf("%s\n", message); PY_THROW_EXCEPTION(exception); }
+#define PY_THROW_EXCEPTION_IF_WITH_MESSAGE(condition, exception, message) if (condition) { printf("%s\n", message); PY_THROW_EXCEPTION(exception); }
+#define PY_THROW_EXCEPTION_MESSAGE_AND_OBJ(exception, message, obj) { printf(message, PY_getObjectRepr(obj)); PY_THROW_EXCEPTION(exception); }
 
-#define PY_THROW_EXCEPTION_IF_WITH_MESSAGE_AND_OBJ(condition, exception, message, obj) if (condition) { printf(message, PY_getObjectRepr(obj)); assert(false); }
+#define PY_THROW_EXCEPTION_IF_WITH_MESSAGE_AND_OBJ(condition, exception, message, obj) if (condition) { printf(message, PY_getObjectRepr(obj)); PY_THROW_EXCEPTION(exception); }
 
 #endif
 

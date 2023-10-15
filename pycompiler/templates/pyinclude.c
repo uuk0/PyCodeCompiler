@@ -301,8 +301,13 @@ static PyObjectContainer* PY_getObjectAttributeByNameOrStatic_primitive(PyObject
     {
         return obj;  // rethrow the exception
     }
+    else if (obj->type == PY_TYPE_STRING) {
+        if (strcmp(name, "__len__") == 0) {
+            return PY_STD_string_len_CONTAINER;
+        }
+    }
 
-    printf("Type: %s, Attr: %s\n", PY_getObjectClassName(obj), name);
+    printf("AttributeError: Type: %s, Attr: %s\n", PY_getObjectClassName(obj), name);
     return NULL;
 }
 
@@ -508,7 +513,7 @@ char* PY_getObjectClassName(PyObjectContainer* obj) {
         case PY_TYPE_INT:
             return "int";
         case PY_TYPE_STRING:
-            return "string";
+            return "str";
         case PY_TYPE_FLOAT:
             return "float";
         case PY_TYPE_PY_TYPE:
