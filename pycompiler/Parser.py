@@ -2814,7 +2814,7 @@ class BinaryOperatorExpression(AbstractASTNodeExpression):
         BinaryOperation.MATRIX_MULTIPLY: 10,
         BinaryOperation.POW: 20,
         BinaryOperation.CONTAINS: 30,  # warn: rhs is holder of __contains__, not lhs!
-        BinaryOperation.CONTAINS_NOT: 30,
+        BinaryOperation.CONTAINS_NOT: 30,  # warn: rhs is holder of __contains__, not lhs!
         BinaryOperation.IS_SAME: 40,
         BinaryOperation.IS_SAME_NOT: 40,
     }
@@ -2891,7 +2891,10 @@ class BinaryOperatorExpression(AbstractASTNodeExpression):
 
     def emit_c_code(self, base: CCodeEmitter, context: CCodeEmitter.CExpressionBuilder):
         if self.operator in self.OPERATOR_CALL_FUNCTIONS:
-            reverse = self.operator == BinaryOperatorExpression.BinaryOperation.CONTAINS
+            reverse = self.operator in (
+                BinaryOperatorExpression.BinaryOperation.CONTAINS,
+                BinaryOperatorExpression.BinaryOperation.CONTAINS_NOT,
+            )
 
             func_name = self.OPERATOR_CALL_FUNCTIONS[self.operator]
             context.add_code(f"{func_name}(")

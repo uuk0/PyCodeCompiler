@@ -2456,7 +2456,7 @@ PyObjectContainer* testcontains_12(PyObjectContainer* self_11) {
     PyObjectContainer* temporary_36 = PY_STD_operator_contains(d_45, PY_createString("a"));
     PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(PY_getObjectAttributeByNameOrStatic_ThrowOnNull(self_11, "assertFalse"), NULL, 1, &temporary_36, NULL));
 
-    PyObjectContainer* temporary_37 = PY_STD_operator_not_contains(PY_createString("a"), d_45);
+    PyObjectContainer* temporary_37 = PY_STD_operator_not_contains(d_45, PY_createString("a"));
     PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(PY_getObjectAttributeByNameOrStatic_ThrowOnNull(self_11, "assertTrue"), NULL, 1, &temporary_37, NULL));
 
 
