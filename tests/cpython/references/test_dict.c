@@ -45,8 +45,8 @@ PyObjectContainer* function_container_test_eq_16;
 PyObjectContainer* function_container_test_missing_17;
 PyObjectContainer* function_container_test_resize1_18;
 PyClassContainer* PY_CLASS_DictTest_39;
+PyObjectContainer* value_93;
 PyObjectContainer* value_96;
-PyObjectContainer* value_99;
 
 
 
@@ -2351,7 +2351,7 @@ PyObjectContainer* testmergeoperator_8(PyObjectContainer* self_7) {
     c_44 = PY_CHECK_EXCEPTION(PY_STD_operator_inplace_bin_or (c_44 , b_43));
 
 
-    PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(PY_getObjectAttributeByNameOrStatic_ThrowOnNull(self_7, "assertEqual"), NULL, 2, (PyObjectContainer*[]) {PY_CHECK_EXCEPTION(PY_STD_dict_concat_fast (a_42 , b_43)), PY_STD_dict_CREATE(4, PY_createInteger(0), PY_createInteger(0), PY_createInteger(1), PY_createInteger(1), PY_createInteger(2), PY_createInteger(2), PY_createInteger(3), PY_createInteger(3))}, NULL));
+    PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(PY_getObjectAttributeByNameOrStatic_ThrowOnNull(self_7, "assertEqual"), NULL, 2, (PyObjectContainer*[]) {PY_STD_operator_bin_or(a_42, b_43), PY_STD_dict_CREATE(4, PY_createInteger(0), PY_createInteger(0), PY_createInteger(1), PY_createInteger(1), PY_createInteger(2), PY_createInteger(2), PY_createInteger(3), PY_createInteger(3))}, NULL));
 
     PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(PY_getObjectAttributeByNameOrStatic_ThrowOnNull(self_7, "assertEqual"), NULL, 2, (PyObjectContainer*[]) {c_44, PY_STD_dict_CREATE(4, PY_createInteger(0), PY_createInteger(0), PY_createInteger(1), PY_createInteger(1), PY_createInteger(2), PY_createInteger(2), PY_createInteger(3), PY_createInteger(3))}, NULL));
 
@@ -2361,7 +2361,7 @@ PyObjectContainer* testmergeoperator_8(PyObjectContainer* self_7) {
     c_44 = PY_CHECK_EXCEPTION(PY_STD_operator_inplace_bin_or (c_44 , a_42));
 
 
-    PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(PY_getObjectAttributeByNameOrStatic_ThrowOnNull(self_7, "assertEqual"), NULL, 2, (PyObjectContainer*[]) {PY_CHECK_EXCEPTION(PY_STD_dict_concat_fast (b_43 , a_42)), PY_STD_dict_CREATE(4, PY_createInteger(1), PY_createInteger(1), PY_createInteger(2), PY_createInteger(1), PY_createInteger(3), PY_createInteger(3), PY_createInteger(0), PY_createInteger(0))}, NULL));
+    PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(PY_getObjectAttributeByNameOrStatic_ThrowOnNull(self_7, "assertEqual"), NULL, 2, (PyObjectContainer*[]) {PY_STD_operator_bin_or(b_43, a_42), PY_STD_dict_CREATE(4, PY_createInteger(1), PY_createInteger(1), PY_createInteger(2), PY_createInteger(1), PY_createInteger(3), PY_createInteger(3), PY_createInteger(0), PY_createInteger(0))}, NULL));
 
     PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(PY_getObjectAttributeByNameOrStatic_ThrowOnNull(self_7, "assertEqual"), NULL, 2, (PyObjectContainer*[]) {c_44, PY_STD_dict_CREATE(4, PY_createInteger(1), PY_createInteger(1), PY_createInteger(2), PY_createInteger(1), PY_createInteger(3), PY_createInteger(3), PY_createInteger(0), PY_createInteger(0))}, NULL));
 
@@ -2660,17 +2660,17 @@ PyObjectContainer* testupdate_20(PyObjectContainer* self_19) {
 
     d_49 = PY_STD_dict_CREATE(0);
 
-    PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(PY_NOOP_CONTAINER, NULL, 2, (PyObjectContainer*[]) {d_49, PY_STD_dict_CREATE(1, PY_createInteger(1), PY_createInteger(100))}, NULL));
+    PY_CHECK_EXCEPTION(PY_STD_dict_concat_inplace_fast (d_49 , PY_STD_dict_CREATE(1, PY_createInteger(1), PY_createInteger(100))));
 
-    PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(PY_NOOP_CONTAINER, NULL, 2, (PyObjectContainer*[]) {d_49, PY_STD_dict_CREATE(1, PY_createInteger(2), PY_createInteger(20))}, NULL));
+    PY_CHECK_EXCEPTION(PY_STD_dict_concat_inplace_fast (d_49 , PY_STD_dict_CREATE(1, PY_createInteger(2), PY_createInteger(20))));
 
-    PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(PY_NOOP_CONTAINER, NULL, 2, (PyObjectContainer*[]) {d_49, PY_STD_dict_CREATE(3, PY_createInteger(1), PY_createInteger(1), PY_createInteger(2), PY_createInteger(2), PY_createInteger(3), PY_createInteger(3))}, NULL));
+    PY_CHECK_EXCEPTION(PY_STD_dict_concat_inplace_fast (d_49 , PY_STD_dict_CREATE(3, PY_createInteger(1), PY_createInteger(1), PY_createInteger(2), PY_createInteger(2), PY_createInteger(3), PY_createInteger(3))));
 
     PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(PY_getObjectAttributeByNameOrStatic_ThrowOnNull(self_19, "assertEqual"), NULL, 2, (PyObjectContainer*[]) {d_49, PY_STD_dict_CREATE(3, PY_createInteger(1), PY_createInteger(1), PY_createInteger(2), PY_createInteger(2), PY_createInteger(3), PY_createInteger(3))}, NULL));
 
 
-    PyObjectContainer* temporary_52 = d_49;
-    PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(PY_NOOP_CONTAINER, NULL, 1, &temporary_52, NULL));
+    PyObjectContainer* temporary_49 = d_49;
+    PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(PY_NOOP_CONTAINER, NULL, 1, &temporary_49, NULL));
 
     PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(PY_getObjectAttributeByNameOrStatic_ThrowOnNull(self_19, "assertEqual"), NULL, 2, (PyObjectContainer*[]) {d_49, PY_STD_dict_CREATE(3, PY_createInteger(1), PY_createInteger(1), PY_createInteger(2), PY_createInteger(2), PY_createInteger(3), PY_createInteger(3))}, NULL));
 
@@ -2841,8 +2841,8 @@ PyObjectContainer* testfromkeys_22(PyObjectContainer* self_21) {
     PyObjectContainer* d_50;
     PyObjectContainer* g_0;
 
-    PyObjectContainer* temporary_55 = PY_createString("abc");
-    PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(PY_getObjectAttributeByNameOrStatic_ThrowOnNull(self_21, "assertEqual"), NULL, 2, (PyObjectContainer*[]) {PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(PY_getObjectAttributeByNameOrStatic_ThrowOnNull(PY_createClassWrapper(PY_TYPE_DICT), "fromkeys"), NULL, 1, &temporary_55, NULL)), PY_STD_dict_CREATE(3, PY_createString("a"), PY_NONE, PY_createString("b"), PY_NONE, PY_createString("c"), PY_NONE)}, NULL));
+    PyObjectContainer* temporary_52 = PY_createString("abc");
+    PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(PY_getObjectAttributeByNameOrStatic_ThrowOnNull(self_21, "assertEqual"), NULL, 2, (PyObjectContainer*[]) {PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(PY_getObjectAttributeByNameOrStatic_ThrowOnNull(PY_createClassWrapper(PY_TYPE_DICT), "fromkeys"), NULL, 1, &temporary_52, NULL)), PY_STD_dict_CREATE(3, PY_createString("a"), PY_NONE, PY_createString("b"), PY_NONE, PY_createString("c"), PY_NONE)}, NULL));
 
     d_50 = PY_STD_dict_CREATE(0);
 
@@ -3079,13 +3079,13 @@ PyObjectContainer* testsetdefault_28(PyObjectContainer* self_27) {
 
 
 
-    PyObjectContainer* temporary_72 = PY_createInteger(3);
-    PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(PY_getObjectAttributeByNameOrStatic_ThrowOnNull(PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(PY_getObjectAttributeByNameOrStatic_ThrowOnNull(d_54, "setdefault"), NULL, 2, (PyObjectContainer*[]) {PY_createString("key"), PY_STD_list_CREATE(0)}, NULL)), "append"), NULL, 1, &temporary_72, NULL));
+    PyObjectContainer* temporary_69 = PY_createInteger(3);
+    PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(PY_getObjectAttributeByNameOrStatic_ThrowOnNull(PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(PY_getObjectAttributeByNameOrStatic_ThrowOnNull(d_54, "setdefault"), NULL, 2, (PyObjectContainer*[]) {PY_createString("key"), PY_STD_list_CREATE(0)}, NULL)), "append"), NULL, 1, &temporary_69, NULL));
 
     PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(PY_getObjectAttributeByNameOrStatic_ThrowOnNull(self_27, "assertEqual"), NULL, 2, (PyObjectContainer*[]) {PY_GetSubscriptionValue(PY_GetSubscriptionValue(d_54, PY_createString("key")), PY_createInteger(0)), PY_createInteger(3)}, NULL));
 
-    PyObjectContainer* temporary_75 = PY_createInteger(4);
-    PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(PY_getObjectAttributeByNameOrStatic_ThrowOnNull(PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(PY_getObjectAttributeByNameOrStatic_ThrowOnNull(d_54, "setdefault"), NULL, 2, (PyObjectContainer*[]) {PY_createString("key"), PY_STD_list_CREATE(0)}, NULL)), "append"), NULL, 1, &temporary_75, NULL));
+    PyObjectContainer* temporary_72 = PY_createInteger(4);
+    PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(PY_getObjectAttributeByNameOrStatic_ThrowOnNull(PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(PY_getObjectAttributeByNameOrStatic_ThrowOnNull(d_54, "setdefault"), NULL, 2, (PyObjectContainer*[]) {PY_createString("key"), PY_STD_list_CREATE(0)}, NULL)), "append"), NULL, 1, &temporary_72, NULL));
 
     PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(PY_getObjectAttributeByNameOrStatic_ThrowOnNull(self_27, "assertEqual"), NULL, 2, (PyObjectContainer*[]) {PY_CHECK_EXCEPTION(PY_STD_operator_len (PY_CHECK_EXCEPTION(PY_STD_dict_getitem_fast (d_54 , PY_createString("key"))))), PY_createInteger(2)}, NULL));
 
@@ -3152,10 +3152,10 @@ PyObjectContainer* testpop_30(PyObjectContainer* self_29) {
 
     d_55 = PY_STD_dict_CREATE(0);
 
-    PyObjectContainer* temporary_tuple_78 = PY_STD_tuple_CREATE(2, PY_createString("abc"), PY_createString("def"));
-    assert(PY_unpackInteger(PY_STD_operator_len(temporary_tuple_78)) == 2);
-    k_56 = PY_GetSubscriptionValue(temporary_tuple_78, PY_createInteger(0));
-    v_57 = PY_GetSubscriptionValue(temporary_tuple_78, PY_createInteger(1));
+    PyObjectContainer* temporary_tuple_75 = PY_STD_tuple_CREATE(2, PY_createString("abc"), PY_createString("def"));
+    assert(PY_unpackInteger(PY_STD_operator_len(temporary_tuple_75)) == 2);
+    k_56 = PY_GetSubscriptionValue(temporary_tuple_75, PY_createInteger(0));
+    v_57 = PY_GetSubscriptionValue(temporary_tuple_75, PY_createInteger(1));
     ;
 
     PY_CHECK_EXCEPTION(PY_STD_dict_setitem_fast (d_55 , k_56 , v_57));
@@ -3354,11 +3354,11 @@ PyObjectContainer* testmissing_36(PyObjectContainer* self_35) {
 
 
 
-    PyObjectContainer* temporary_87 = PY_CHECK_EXCEPTION(PY_STD_hasattr (PY_createClassWrapper(PY_TYPE_DICT) , PY_createString("__missing__")));
-    PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(PY_getObjectAttributeByNameOrStatic_ThrowOnNull(self_35, "assertFalse"), NULL, 1, &temporary_87, NULL));
+    PyObjectContainer* temporary_84 = PY_CHECK_EXCEPTION(PY_STD_hasattr (PY_createClassWrapper(PY_TYPE_DICT) , PY_createString("__missing__")));
+    PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(PY_getObjectAttributeByNameOrStatic_ThrowOnNull(self_35, "assertFalse"), NULL, 1, &temporary_84, NULL));
 
-    PyObjectContainer* temporary_88 = PY_CHECK_EXCEPTION(PY_STD_hasattr (PY_STD_dict_CREATE(0) , PY_createString("__missing__")));
-    PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(PY_getObjectAttributeByNameOrStatic_ThrowOnNull(self_35, "assertFalse"), NULL, 1, &temporary_88, NULL));
+    PyObjectContainer* temporary_85 = PY_CHECK_EXCEPTION(PY_STD_hasattr (PY_STD_dict_CREATE(0) , PY_createString("__missing__")));
+    PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(PY_getObjectAttributeByNameOrStatic_ThrowOnNull(self_35, "assertFalse"), NULL, 1, &temporary_85, NULL));
 
 
 
@@ -3372,8 +3372,8 @@ PyObjectContainer* testmissing_36(PyObjectContainer* self_35) {
 
 
     D_4 = PY_createClass("D", PY_CLASS_INIT_PY_CLASS_D_4);
-    PyObjectContainer* temporary_89 = PY_STD_dict_CREATE(2, PY_createInteger(1), PY_createInteger(2), PY_createInteger(3), PY_createInteger(4));
-    d_59 = PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(D_4, NULL, 1, &temporary_89, NULL));
+    PyObjectContainer* temporary_86 = PY_STD_dict_CREATE(2, PY_createInteger(1), PY_createInteger(2), PY_createInteger(3), PY_createInteger(4));
+    d_59 = PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(D_4, NULL, 1, &temporary_86, NULL));
 
     PY_CHECK_EXCEPTION(PY_invokeBoxedMethod(PY_getObjectAttributeByNameOrStatic_ThrowOnNull(self_35, "assertEqual"), NULL, 2, (PyObjectContainer*[]) {PY_GetSubscriptionValue(d_59, PY_createInteger(1)), PY_createInteger(2)}, NULL));
 
@@ -3474,32 +3474,32 @@ PyObjectContainer* testresize1_38(PyObjectContainer* self_37) {
 
     d_60 = PY_STD_dict_CREATE(0);
 
-    PyObjectContainer* iterator_95 = PY_CHECK_EXCEPTION(PY_STD_operator_iter(PY_CHECK_EXCEPTION(PY_STD_range_arg_1 (PY_createInteger(5)))));
-    PyObjectContainer* value_96 = PY_STD_NEXT_FORWARD_arg_1(iterator_95, NULL);
-    while (value_96 != NULL) {
-        PY_CHECK_EXCEPTION(value_96);
-        i_61 = value_96;
-        PyObjectContainer* temp_97 = i_61;
-        PY_SetSubscriptionValue(d_60, temp_97, i_61);
+    PyObjectContainer* iterator_92 = PY_CHECK_EXCEPTION(PY_STD_operator_iter(PY_CHECK_EXCEPTION(PY_STD_range_arg_1 (PY_createInteger(5)))));
+    PyObjectContainer* value_93 = PY_STD_NEXT_FORWARD_arg_1(iterator_92, NULL);
+    while (value_93 != NULL) {
+        PY_CHECK_EXCEPTION(value_93);
+        i_61 = value_93;
+        PyObjectContainer* temp_94 = i_61;
+        PY_SetSubscriptionValue(d_60, temp_94, i_61);
 
-        value_96 = PY_STD_NEXT_FORWARD_arg_1(iterator_95, NULL);
+        value_93 = PY_STD_NEXT_FORWARD_arg_1(iterator_92, NULL);
     }
 
 
 
 
-    PyObjectContainer* iterator_98 = PY_CHECK_EXCEPTION(PY_STD_operator_iter(PY_CHECK_EXCEPTION(PY_STD_range_arg_2 (PY_createInteger(5) , PY_createInteger(9)))));
-    PyObjectContainer* value_99 = PY_STD_NEXT_FORWARD_arg_1(iterator_98, NULL);
-    while (value_99 != NULL) {
-        PY_CHECK_EXCEPTION(value_99);
-        i_61 = value_99;
+    PyObjectContainer* iterator_95 = PY_CHECK_EXCEPTION(PY_STD_operator_iter(PY_CHECK_EXCEPTION(PY_STD_range_arg_2 (PY_createInteger(5) , PY_createInteger(9)))));
+    PyObjectContainer* value_96 = PY_STD_NEXT_FORWARD_arg_1(iterator_95, NULL);
+    while (value_96 != NULL) {
+        PY_CHECK_EXCEPTION(value_96);
+        i_61 = value_96;
 
 
-        PyObjectContainer* temp_100 = i_61;
-        PY_SetSubscriptionValue(d_60, temp_100, i_61);
+        PyObjectContainer* temp_97 = i_61;
+        PY_SetSubscriptionValue(d_60, temp_97, i_61);
 
 
-        value_99 = PY_STD_NEXT_FORWARD_arg_1(iterator_98, NULL);
+        value_96 = PY_STD_NEXT_FORWARD_arg_1(iterator_95, NULL);
     }
     return PY_NONE;
 }

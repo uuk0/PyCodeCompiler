@@ -225,61 +225,61 @@
             "name": "setdefault",
             "type": "method",
             "c name": "PY_STD_dict_setdefault_fast",
-            "parameters": 2
+            "arguments": 2
           },
           {
             "name": "clear",
             "type": "method",
             "c name": "PY_STD_dict_clear_fast",
-            "parameters": 0
+            "arguments": 0
           },
           {
             "name": "copy",
             "type": "method",
             "c name": "PY_STD_dict_copy_fast",
-            "parameters": 0
+            "arguments": 0
           },
           {
             "name": "keys",
             "type": "method",
             "c name": "PY_STD_dict_keys_fast",
-            "parameters": 0
+            "arguments": 0
           },
           {
             "name": "values",
             "type": "method",
             "c name": "PY_STD_dict_values_fast",
-            "parameters": 0
+            "arguments": 0
           },
           {
             "name": "items",
             "type": "method",
             "c name": "PY_STD_dict_items_fast",
-            "parameters": 0
+            "arguments": 0
           },
           {
             "name": "__or__",
             "type": "method",
             "c name": "PY_STD_dict_concat_fast",
-            "parameters": 1
+            "arguments": 1
           },
           {
             "name": "__ior__",
             "type": "method",
             "c name": "PY_STD_dict_concat_inplace_fast",
-            "parameters": 1
+            "arguments": 1
           },
           {
             "name": "update",
             "type": "method",
             "c name": "PY_STD_dict_concat_inplace_fast",
-            "parameters": 1
+            "arguments": 1
           },
           {
             "name": "update",
             "type": "method",
             "box name": "PY_NOOP_CONTAINER",
-            "parameters": 0,
+            "arguments": 0,
             "boxed": true
           },
           {
