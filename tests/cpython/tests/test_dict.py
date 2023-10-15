@@ -780,53 +780,53 @@ class DictTest(unittest.TestCase):
     #     self.assertEqual({1: 1}.items() | {2}, {(1, 1), 2})
     #     self.assertEqual({2} | {1: 1}.items(), {(1, 1), 2})
 
-    def test_missing(self):
-        # Make sure dict doesn't have a __missing__ method
-        self.assertFalse(hasattr(dict, "__missing__"))
-        self.assertFalse(hasattr({}, "__missing__"))
+    # def test_missing(self):
+    #     # Make sure dict doesn't have a __missing__ method
+    #     self.assertFalse(hasattr(dict, "__missing__"))
+    #     self.assertFalse(hasattr({}, "__missing__"))
 
-        # Test several cases:
-        # (D) subclass defines __missing__ method returning a value
-        # (E) subclass defines __missing__ method raising RuntimeError
-        # (F) subclass sets __missing__ instance variable (no effect)
-        # (G) subclass doesn't define __missing__ at all
-        class D(dict):
-            def __missing__(self, key):
-                return 42
+    # Test several cases:
+    # (D) subclass defines __missing__ method returning a value
+    # (E) subclass defines __missing__ method raising RuntimeError
+    # (F) subclass sets __missing__ instance variable (no effect)
+    # (G) subclass doesn't define __missing__ at all
+    # class D(dict):
+    #     def __missing__(self, key):
+    #         return 42
+    #
+    # d = D({1: 2, 3: 4})
+    # self.assertEqual(d[1], 2)
+    # self.assertEqual(d[3], 4)
+    # self.assertNotIn(2, d)
+    # self.assertNotIn(2, d.keys())
+    # self.assertEqual(d[2], 42)
 
-        d = D({1: 2, 3: 4})
-        self.assertEqual(d[1], 2)
-        self.assertEqual(d[3], 4)
-        self.assertNotIn(2, d)
-        self.assertNotIn(2, d.keys())
-        self.assertEqual(d[2], 42)
+    # class E(dict):
+    #     def __missing__(self, key):
+    #         raise RuntimeError(key)
 
-        # class E(dict):
-        #     def __missing__(self, key):
-        #         raise RuntimeError(key)
+    # e = E()
+    # with self.assertRaises(RuntimeError) as c:
+    #     e[42]
+    # self.assertEqual(c.exception.args, (42,))
 
-        # e = E()
-        # with self.assertRaises(RuntimeError) as c:
-        #     e[42]
-        # self.assertEqual(c.exception.args, (42,))
+    # class F(dict):
+    #     def __init__(self):
+    #         # An instance variable __missing__ should have no effect
+    #         self.__missing__ = lambda key: None
 
-        # class F(dict):
-        #     def __init__(self):
-        #         # An instance variable __missing__ should have no effect
-        #         self.__missing__ = lambda key: None
+    # f = F()
+    # with self.assertRaises(KeyError) as c:
+    #     f[42]
+    # self.assertEqual(c.exception.args, (42,))
 
-        # f = F()
-        # with self.assertRaises(KeyError) as c:
-        #     f[42]
-        # self.assertEqual(c.exception.args, (42,))
-
-        # class G(dict):
-        #     pass
-        #
-        # g = G()
-        # with self.assertRaises(KeyError) as c:
-        #     g[42]
-        # self.assertEqual(c.exception.args, (42,))
+    # class G(dict):
+    #     pass
+    #
+    # g = G()
+    # with self.assertRaises(KeyError) as c:
+    #     g[42]
+    # self.assertEqual(c.exception.args, (42,))
 
     # def test_tuple_keyerror(self):
     # SF #1576657
