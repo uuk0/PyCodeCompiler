@@ -109,7 +109,7 @@ PyObjectContainer* PY_STD_dict_get(PyObjectContainer* self, uint8_t argc, PyObje
 {
     if (argc == 1)
     {
-        return PY_STD_dict_getitem_fast(self, args[0]);
+        return  PY_STD_dict_get_fast_arg_1(self, args[0]);
     }
     else if (argc == 2)
     {
@@ -117,6 +117,21 @@ PyObjectContainer* PY_STD_dict_get(PyObjectContainer* self, uint8_t argc, PyObje
     }
 
     PY_THROW_EXCEPTION_WITH_MESSAGE(NULL, "expected 1 or 2 arguments");
+}
+
+PyObjectContainer* PY_STD_dict_get_fast_arg_1(PyObjectContainer* self, PyObjectContainer* key)
+{
+    assert(self->type == PY_TYPE_PY_IMPL);
+    assert(self->py_type == PY_TYPE_DICT);
+    assert(self->raw_value != NULL);
+    assert(key != NULL);
+
+    PyObjectContainer* obj = HASHMAP_lookup(self->raw_value, key);
+    if (obj == NULL)
+    {
+        return PY_NONE;
+    }
+    return obj;
 }
 
 PyObjectContainer* PY_STD_dict_get_fast_arg_2(PyObjectContainer* self, PyObjectContainer* key, PyObjectContainer* default_value)

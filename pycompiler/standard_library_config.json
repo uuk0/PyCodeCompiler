@@ -166,7 +166,13 @@
             "name": "get",
             "type": "method",
             "arguments": 1,
-            "c name": "PY_STD_dict_getitem_fast"
+            "c name": "PY_STD_dict_get_fast_arg_1"
+          },
+          {
+            "name": "get",
+            "type": "method",
+            "arguments": 2,
+            "c name": "PY_STD_dict_get_fast_arg_2"
           },
           {
             "name": "pop",
