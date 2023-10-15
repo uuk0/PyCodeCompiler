@@ -204,6 +204,7 @@ void* HASHMAP_remove(HashMapContainer* container, void* key)
             container->key_memory[partial_hash] = &HASHMAP_MARKER_UNSET;
             void* value = container->value_memory[partial_hash];
             container->value_memory[partial_hash] = NULL;
+            container->used_size--;
             return value;
         }
 

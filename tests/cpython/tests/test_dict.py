@@ -123,6 +123,7 @@ class DictTest(unittest.TestCase):
         self.assertNotIn("a", d)
         self.assertFalse("a" in d)
         self.assertTrue("a" not in d)
+
         d = {"a": 1, "b": 2}
         self.assertIn("a", d)
         self.assertIn("b", d)
