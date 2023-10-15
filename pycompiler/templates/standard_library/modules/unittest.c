@@ -220,7 +220,7 @@ PyObjectContainer* PY_MODULE_unittest_TestCase_assertIn_fast(PyObjectContainer* 
 
 PyObjectContainer* PY_MODULE_unittest_TestCase_assertNotIn(PyObjectContainer* self, uint8_t argc, PyObjectContainer** args, CallStructureInfo* info) {
     assert(argc == 2);
-    return PY_MODULE_unittest_TestCase_assertIn_fast(self, args[0], args[1]);
+    return PY_MODULE_unittest_TestCase_assertNotIn_fast(self, args[0], args[1]);
 }
 
 PyObjectContainer* PY_MODULE_unittest_TestCase_assertNotIn_fast(PyObjectContainer* self, PyObjectContainer* item, PyObjectContainer* container) {
