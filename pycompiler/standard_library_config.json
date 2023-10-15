@@ -501,6 +501,32 @@
         "name": "TYPE_CHECKING",
         "type": "constant",
         "c name": "PY_FALSE"
+      },
+      {
+        "name": "Generic",
+        "type": "class",
+        "type variable": "PY_MODULE_typing_Generic",
+        "static attributes": [
+          {
+            "name": "__class_getitem__",
+            "type": "method",
+            "box name": "PY_MODULE_typing_Generic_class_getitem",
+            "boxed": true
+          }
+        ]
+      },
+      {
+        "name": "TypeVar",
+        "type": "class",
+        "type variable": "PY_MODULE_typing_TypeVar",
+        "static attributes": [
+          {
+            "name": "__init__",
+            "type": "method",
+            "arguments": 1,
+            "c name": "PY_MODULE_typing_TypeVar_init_arg_1"
+          }
+        ]
       }
     ]
   },

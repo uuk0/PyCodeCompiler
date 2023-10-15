@@ -726,6 +726,16 @@ PyObjectContainer* PY_GetSubscriptionValue(PyObjectContainer* obj, PyObjectConta
         return obj;
     }
 
+    if (obj->type == PY_TYPE_PY_TYPE) {
+        PyObjectContainer* method = PY_getObjectAttributeByNameOrStatic(obj, "__class_getitem__");
+        if (method == NULL)
+        {
+            PY_THROW_EXCEPTION(NULL);
+        }
+
+        return PY_invokeBoxedMethod(method, NULL, 1, &index, NULL);
+    }
+
     assert(obj->type == PY_TYPE_PY_IMPL);
 
     PyObjectContainer* method = PY_getObjectAttributeByNameOrStatic(obj, "__getitem__");
