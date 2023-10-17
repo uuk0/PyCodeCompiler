@@ -39,6 +39,7 @@ class TokenType(enum.Enum):
     COLON = enum.auto()
     MINUS = enum.auto()
     UNDERSCORE = enum.auto()
+    AT_SIGN = enum.auto()
 
     STRING_LITERAL = enum.auto()
 
@@ -69,6 +70,11 @@ SPECIAL_TYPE_MAP = {
     TokenType.COLON: ":",
     TokenType.MINUS: "-",
     TokenType.UNDERSCORE: "_",
+    TokenType.AT_SIGN: "@",
+}
+
+REVERSE_SPECIAL_TYPE_MAP = {
+    text: token_type for token_type, text in SPECIAL_TYPE_MAP.items()
 }
 
 
@@ -99,6 +105,9 @@ class Token(NamedTuple):
             self.span + rhs.span,
             self.value or rhs.value,
         )
+
+    def __repr__(self):
+        return f"{self.token_type.name}({self.text})"
 
 
 class Lexer:
@@ -144,7 +153,7 @@ class Lexer:
         if len(self.code) < self.cursor + 1:
             return
 
-        return self.column[self.cursor : self.cursor + count]
+        return self.code[self.cursor : self.cursor + count]
 
     def increment_cursor(self, count: int | str):
         count = count if isinstance(count, int) else len(count)
@@ -185,12 +194,12 @@ class Lexer:
                 len(c),
             )
 
-        elif c in SPECIAL_TYPE_MAP:
+        elif c in REVERSE_SPECIAL_TYPE_MAP:
             pos = self.get_position_info()
             self.increment_cursor(1)
 
             return Token(
-                SPECIAL_TYPE_MAP[c],
+                REVERSE_SPECIAL_TYPE_MAP[c],
                 c,
                 *pos,
                 1,
@@ -200,7 +209,7 @@ class Lexer:
             pos = self.get_position_info()
             self.increment_cursor(1)
 
-            while (x := self.get_chars(1)).isidentifier():
+            while (x := self.get_chars(1)) and x.isidentifier():
                 c += x
                 self.increment_cursor(1)
 
