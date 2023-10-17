@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 import typing
 from typing import NamedTuple
 import enum
@@ -101,7 +102,7 @@ class Token(NamedTuple):
 
 
 class Lexer:
-    def __init__(self, code: str):
+    def __init__(self, code: str, filename: str = None):
         self.code = code
 
         self.line = 0
@@ -110,6 +111,22 @@ class Lexer:
         self.cursor = 0
 
         self.info_stack = []
+
+        self.filename = filename
+
+    def raise_positioned_syntax_error(self, message: str, span=1):
+        print(
+            f"File \"{self.filename or '<unknown>'}\", line {self.line}",
+            file=sys.stdout,
+        )
+        line = self.code[self.cursor - self.column :]
+        if "\n" in line:
+            line = line[: line.index("\n")]
+        print(line)
+        print((" " * self.column) + ("^" * span))
+        raise SyntaxError(
+            message
+        )  # todo: throw something only propagating major levels
 
     def push_state(self):
         self.info_stack.append((self.cursor, self.line, self.column))
@@ -283,15 +300,24 @@ class Lexer:
             self.rollback_state()
             break
 
-        if number_repr == 0:
-            token.value = int(token.text)
-        elif number_repr == 1:
-            token.value = int(token.text, base=2)
-        elif number_repr == 2:
-            token.value = int(token.text, base=8)
-        elif number_repr == 3:
-            token.value = int(token.text, base=16)
+        error: SyntaxError | None = None
+        try:
+            if number_repr == 0:
+                token.value = int(token.text)
+            elif number_repr == 1:
+                token.value = int(token.text, base=2)
+            elif number_repr == 2:
+                token.value = int(token.text, base=8)
+            elif number_repr == 3:
+                token.value = int(token.text, base=16)
+        except SyntaxError as error:
+            pass
         else:
-            raise RuntimeError
+            self.pop_state()
+            return token
 
-        return token
+        self.rollback_state()
+        self.raise_positioned_syntax_error(
+            error.text,
+            span=token.span,
+        )
