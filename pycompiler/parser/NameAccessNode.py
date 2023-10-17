@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import typing
+
 from pycompiler.Lexer import Token
 from pycompiler.parser.AbstractSyntaxTreeNode import (
     AbstractSyntaxTreeExpressionNode,
@@ -11,6 +13,9 @@ class NameAccessNode(AbstractSyntaxTreeExpressionNode):
     def __init__(self, name: str, token: Token = None):
         self.name = name
         self.token = token
+
+    def get_tokens(self) -> typing.List[Token]:
+        return [self.token]
 
     def copy(self) -> NameAccessNode:
         return NameAccessNode(self.name, self.token)

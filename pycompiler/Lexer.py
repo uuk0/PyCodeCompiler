@@ -123,9 +123,9 @@ class Lexer:
 
         self.filename = filename
 
-    def raise_positioned_syntax_error(self, message: str, span=1):
+    def raise_positioned_syntax_error(self, message: str, span=1) -> typing.NoReturn:
         print(
-            f"File \"{self.filename or '<unknown>'}\", line {self.line}",
+            f"File \"{self.filename or '<unknown>'}\", line {self.line + 1}",
             file=sys.stdout,
         )
         line = self.code[self.cursor - self.column :]
@@ -167,8 +167,11 @@ class Lexer:
 
         self.cursor += count
 
-    def parse_partial_token(self) -> Token:
+    def parse_partial_token(self) -> Token | None:
         c = self.get_chars(1)
+
+        if c is None:
+            return
 
         if c in string.whitespace:
             pos = self.get_position_info()
@@ -183,7 +186,7 @@ class Lexer:
             pos = self.get_position_info()
             self.increment_cursor(1)
 
-            while (x := self.get_chars(1)) in string.digits:
+            while (x := self.get_chars(1)) and x and x in string.digits:
                 c += x
                 self.increment_cursor(1)
 
@@ -209,7 +212,7 @@ class Lexer:
             pos = self.get_position_info()
             self.increment_cursor(1)
 
-            while (x := self.get_chars(1)) and x.isidentifier():
+            while (x := self.get_chars(1)) and (c + x).isidentifier():
                 c += x
                 self.increment_cursor(1)
 
@@ -222,9 +225,20 @@ class Lexer:
 
         raise ValueError(f"unsupported start token: {c}")
 
-    def parse_token(self):
+    def parse_token(self, include_whitespace=False) -> Token | None:
         self.push_state()
-        token = self.parse_partial_token()
+
+        while (
+            (token := self.parse_partial_token())
+            and token
+            and token.token_type == TokenType.WHITESPACE
+            and not include_whitespace
+        ):
+            pass
+
+        if token is None:
+            self.rollback_state()
+            return
 
         if token.token_type == TokenType.IDENTIFIER:
             self.pop_state()
