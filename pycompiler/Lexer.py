@@ -1,301 +1,297 @@
-import enum
-import io
-import string
+from __future__ import annotations
+
 import typing
-
-
-_WHITESPACE = " \t"
-_KEYWORDS = [
-    "def",
-    "class",
-    "if",
-    "elif",
-    "else",
-    "while",
-    "for",
-    "return",
-    "yield",
-    "pass",
-    "import",
-    "from",
-    "as",
-    "and",
-    "or",
-    "assert",
-]
+from typing import NamedTuple
+import enum
+import string
 
 
 class TokenType(enum.Enum):
+    WHITESPACE = enum.auto()
     NEWLINE = enum.auto()
-    WHITESPACES = enum.auto()
-
+    COMMENT = enum.auto()
     IDENTIFIER = enum.auto()
-    KEYWORD = enum.auto()
+    NUMBER = enum.auto()
 
-    OPENING_ROUND_BRACKET = enum.auto()  # todo
-    CLOSING_ROUND_BRACKET = enum.auto()  # todo
-
-    OPENING_SQUARE_BRACKET = enum.auto()  # todo
-    CLOSING_SQUARE_BRACKET = enum.auto()  # todo
-
-    OPENING_CURLY_BRACKET = enum.auto()  # todo
-    CLOSING_CURLY_BRACKET = enum.auto()  # todo
-
-    DOT = enum.auto()
-    COLON = enum.auto()  # todo
-    SEMICOLON = enum.auto()  # todo
-    PLUS = enum.auto()  # todo
-    MINUS = enum.auto()  # todo
-    STAR = enum.auto()  # todo
-    TILDE = enum.auto()  # todo
-    PERCENT = enum.auto()  # todo
+    EXCLAMATION_POINT = enum.auto()
+    DOUBLE_QUOTES = enum.auto()
+    PERCENT = enum.auto()
+    LOGIC_AND = enum.auto()
+    FORWARD_SLASH = enum.auto()
+    OPENING_CURLY_BRACKET = enum.auto()
+    OPENING_ROUND_BRACKET = enum.auto()
+    OPENING_SQUARE_BRACKET = enum.auto()
+    CLOSING_ROUND_BRACKET = enum.auto()
+    CLOSING_SQUARE_BRACKET = enum.auto()
     EQUAL_SIGN = enum.auto()
+    CLOSING_CURLY_BRACKET = enum.auto()
+    QUESTION_MARK = enum.auto()
+    BACKSLASH = enum.auto()
+    PLUS = enum.auto()
+    STAR = enum.auto()
+    TILDE = enum.auto()
     HASHTAG = enum.auto()
+    SINGLE_QUOTE = enum.auto()
+    COMMA = enum.auto()
+    SEMICOLON = enum.auto()
+    POINT = enum.auto()
+    COLON = enum.auto()
+    MINUS = enum.auto()
+    UNDERSCORE = enum.auto()
 
-    SINGLE_QUOTE = enum.auto()  # todo
-    DOUBLE_QUOTE = enum.auto()  # todo
-
-    REMAINING_STRING = enum.auto()
-
-    def __call__(self, text: str):
-        return Token(self, text)
+    STRING_LITERAL = enum.auto()
 
 
-class Token:
-    def __init__(self, token_type: TokenType, text: str):
-        self.token_type = token_type
-        self.text = text
+SPECIAL_TYPE_MAP = {
+    TokenType.EXCLAMATION_POINT: "!",
+    TokenType.DOUBLE_QUOTES: '"',
+    TokenType.PERCENT: "%",
+    TokenType.LOGIC_AND: "&",
+    TokenType.FORWARD_SLASH: "/",
+    TokenType.OPENING_CURLY_BRACKET: "{",
+    TokenType.OPENING_ROUND_BRACKET: "(",
+    TokenType.OPENING_SQUARE_BRACKET: "[",
+    TokenType.CLOSING_ROUND_BRACKET: ")",
+    TokenType.CLOSING_SQUARE_BRACKET: "]",
+    TokenType.EQUAL_SIGN: "=",
+    TokenType.CLOSING_CURLY_BRACKET: "}",
+    TokenType.QUESTION_MARK: "?",
+    TokenType.BACKSLASH: "\\",
+    TokenType.PLUS: "+",
+    TokenType.STAR: "*",
+    TokenType.TILDE: "~",
+    TokenType.HASHTAG: "#",
+    TokenType.SINGLE_QUOTE: "'",
+    TokenType.COMMA: ",",
+    TokenType.SEMICOLON: ";",
+    TokenType.POINT: ".",
+    TokenType.COLON: ":",
+    TokenType.MINUS: "-",
+    TokenType.UNDERSCORE: "_",
+}
 
-    def __eq__(self, other):
+
+class Token(NamedTuple):
+    token_type: TokenType
+    text: str
+    line: int = -1
+    column: int = -1
+    span: int = 0
+    value: object = None
+
+    def __hash__(self):
+        return hash((self.token_type, self.text))
+
+    def __eq__(self, other: Token):
         return (
-            type(other) == Token
+            type(other) is TokenType
             and self.token_type == other.token_type
             and self.text == other.text
         )
 
-    def __repr__(self):
-        return f"{self.token_type.name}({repr(self.text)})"
+    def merge(self, rhs: Token, new_token_type: TokenType = None):
+        return Token(
+            new_token_type or self.token_type,
+            self.text + rhs.text,
+            self.line,
+            self.column,
+            self.span + rhs.span,
+            self.value or rhs.value,
+        )
 
 
 class Lexer:
-    def __init__(self, file: str):
-        self.file = file
-        self.file_cursor = 0
-        self._saved_states: typing.List[int] = []
+    def __init__(self, code: str):
+        self.code = code
 
-        self._token_parse_table: typing.Dict[
-            TokenType, typing.Callable[[], Token | None]
-        ] = {
-            TokenType.NEWLINE: self.try_parse_newline,
-            TokenType.WHITESPACES: self.try_parse_whitespaces,
-            TokenType.IDENTIFIER: self.try_parse_identifier,
-            TokenType.KEYWORD: self.try_parse_keyword,
-            TokenType.HASHTAG: self.try_parse_hashtag,
-            TokenType.EQUAL_SIGN: self.try_parse_equal_sign,
-        }
+        self.line = 0
+        self.column = 0
 
-    def has_text(self) -> bool:
-        return len(self.file) > self.file_cursor + 1
+        self.cursor = 0
 
-    def save_state(self):
-        self._saved_states.append(self.file_cursor)
+        self.info_stack = []
+
+    def push_state(self):
+        self.info_stack.append((self.cursor, self.line, self.column))
+
+    def pop_state(self):
+        self.info_stack.pop(-1)
 
     def rollback_state(self):
-        self.file_cursor = self._saved_states.pop(-1)
+        self.cursor, self.line, self.column = self.info_stack.pop(-1)
 
-    def discard_save_state(self):
-        self._saved_states.pop(-1)
-
-    def inspect_chars(self, count: int) -> str | None:
-        if self.file_cursor + count > len(self.file):
-            return
-        return self.file[self.file_cursor : self.file_cursor + count]
+    def get_position_info(self) -> typing.Tuple[int, int]:
+        return self.line, self.column
 
     def get_chars(self, count: int) -> str | None:
-        if self.file_cursor + count > len(self.file):
+        if len(self.code) < self.cursor + 1:
             return
 
-        text = self.file[self.file_cursor : self.file_cursor + count]
-        self.file_cursor += count
-        return text
+        return self.column[self.cursor : self.cursor + count]
 
-    def give_back(self, text: str | Token | typing.List[str | Token | None] | None):
-        if text is None:
-            return self
+    def increment_cursor(self, count: int | str):
+        count = count if isinstance(count, int) else len(count)
+        text = self.get_chars(count)
 
-        if isinstance(text, str):
-            self.file_cursor -= len(text)
-            assert self.inspect_chars(len(text)) == text, (
-                text,
-                self.inspect_chars(len(text)),
+        if "\n" in text:
+            self.line += text.count("\n")
+            self.column = count - text.rindex("\n") - 1
+        else:
+            self.column += count
+
+        self.cursor += count
+
+    def parse_partial_token(self) -> Token:
+        c = self.get_chars(1)
+
+        if c in string.whitespace:
+            pos = self.get_position_info()
+            self.increment_cursor(1)
+
+            if c == "\n":
+                return Token(TokenType.NEWLINE, "\n", *pos, 1)
+
+            return Token(TokenType.WHITESPACE, c, *pos, 1)
+
+        elif c in string.digits:
+            pos = self.get_position_info()
+            self.increment_cursor(1)
+
+            while (x := self.get_chars(1)) in string.digits:
+                c += x
+                self.increment_cursor(1)
+
+            return Token(
+                TokenType.NUMBER,
+                c,
+                *pos,
+                len(c),
             )
 
-        elif isinstance(text, Token):
-            self.file_cursor -= len(text.text)
-            assert self.inspect_chars(len(text.text)) == text.text
+        elif c in SPECIAL_TYPE_MAP:
+            pos = self.get_position_info()
+            self.increment_cursor(1)
 
-        elif isinstance(text, list):
-            for e in text:
-                self.give_back(e)
+            return Token(
+                SPECIAL_TYPE_MAP[c],
+                c,
+                *pos,
+                1,
+            )
 
-        else:
-            raise ValueError(text)
+        elif c.isidentifier():
+            pos = self.get_position_info()
+            self.increment_cursor(1)
 
-        return self
+            while (x := self.get_chars(1)).isidentifier():
+                c += x
+                self.increment_cursor(1)
 
-    def try_parse_token(self, token_type: TokenType) -> Token | None:
-        if token_type not in self._token_parse_table:
+            return Token(
+                TokenType.IDENTIFIER,
+                c,
+                *pos,
+                len(c),
+            )
+
+        raise ValueError(f"unsupported start token: {c}")
+
+    def parse_token(self):
+        self.push_state()
+        token = self.parse_partial_token()
+
+        if token.token_type == TokenType.IDENTIFIER:
+            self.pop_state()
+            return token
+
+        if token.token_type in (TokenType.PLUS, TokenType.MINUS):
+            self.pop_state()
+            number = self.try_parse_number()
+
+            if number:
+                merged = token.merge(number, TokenType.NUMBER)
+
+                if token.token_type == TokenType.MINUS:
+                    merged.value = -merged.value
+
+                return merged
+
+            return token
+
+        # todo: are we missing any other cases?
+        return token
+
+    def try_parse_number(self) -> Token | None:
+        self.push_state()
+        token = self.parse_partial_token()
+
+        if token.token_type != TokenType.NUMBER:
+            self.rollback_state()
             return
 
-        return self._token_parse_table[token_type]()
+        number_repr = 0  # 0: normal, 1: binary, 2: octal, 3: hexadecimal
 
-    def parse_until_newline(self) -> Token | None:
-        c = self.get_chars(1)
+        if token.text == "0":
+            self.push_state()
+            next_token = self.parse_partial_token()
+            itoken: Token | None = None
 
-        if not c:
-            return
+            if next_token.token_type == TokenType.IDENTIFIER:
+                if next_token.text.lower() == "b":
+                    number_repr = 1
+                    itoken = token.merge(next_token)
+                elif next_token.text.lower() == "o":
+                    number_repr = 2
+                    itoken = token.merge(next_token)
+                elif next_token.text.lower() == "x":
+                    number_repr = 3
+                    itoken = token.merge(next_token)
 
-        if c == "\n":
-            return Token(TokenType.REMAINING_STRING, "")
+            if number_repr != 0:
+                next_token = self.parse_partial_token()
 
-        text = c
-        c = self.get_chars(1)
+                if next_token.token_type == TokenType.NUMBER:
+                    token = itoken.merge(next_token)
+                    self.pop_state()
+                    self.push_state()
+                else:
+                    self.rollback_state()
+                    self.push_state()
+            else:
+                self.rollback_state()
+                self.push_state()
 
-        while c and c != "\n":
-            text += c
-            c = self.get_chars(1)
+        has_seen_dot = False
+        while True:
+            self.pop_state()
+            self.push_state()
+            next_token = self.parse_partial_token()
 
-        self.give_back(c)
+            if next_token.token_type == TokenType.POINT:
+                if has_seen_dot:
+                    self.rollback_state()
+                    break
 
-        return Token(TokenType.REMAINING_STRING, text)
+                token = token.merge(next_token)
+                has_seen_dot = True
+                continue
 
-    def try_parse_newline(self) -> Token | None:
-        c = self.get_chars(1)
+            elif next_token.token_type in (TokenType.UNDERSCORE, TokenType.NUMBER):
+                token = token.merge(next_token)
+                continue
 
-        if c != "\n":
-            self.give_back(c)
+            self.rollback_state()
+            break
+
+        if number_repr == 0:
+            token.value = int(token.text)
+        elif number_repr == 1:
+            token.value = int(token.text, base=2)
+        elif number_repr == 2:
+            token.value = int(token.text, base=8)
+        elif number_repr == 3:
+            token.value = int(token.text, base=16)
         else:
-            return Token(TokenType.NEWLINE, c)
+            raise RuntimeError
 
-    def try_parse_whitespaces(self, include_newline=False) -> Token | None:
-        c = self.get_chars(1)
-        text = ""
-
-        search = _WHITESPACE
-        if include_newline:
-            search += "\n"
-
-        while c and c in search:
-            text += c
-            c = self.get_chars(1)
-
-        self.give_back(c)
-
-        if text:
-            return Token(TokenType.WHITESPACES, text)
-
-    def try_parse_identifier(self) -> Token | None:
-        c = self.get_chars(1)
-
-        if not c or c not in f"{string.ascii_letters}_":
-            self.give_back(c)
-            return
-
-        text = c
-        c = self.get_chars(1)
-
-        while c and c in string.ascii_letters + string.digits + "_":
-            text += c
-            c = self.get_chars(1)
-
-        self.give_back(c)
-
-        if text in _KEYWORDS:
-            self.give_back(text)
-            return
-
-        return Token(TokenType.IDENTIFIER, text)
-
-    def try_parse_keyword(self) -> Token | None:
-        identifier = self.try_parse_identifier()
-
-        if not identifier:
-            return
-
-        if identifier.text in _KEYWORDS:
-            identifier.token_type = TokenType.IDENTIFIER
-            return identifier
-
-        self.give_back(identifier.text)
-
-    def try_parse_equal_sign(self) -> Token | None:
-        c = self.get_chars(1)
-
-        if c != "=":
-            self.give_back(c)
-        else:
-            return Token(TokenType.EQUAL_SIGN, c)
-
-    def try_parse_hashtag(self) -> Token | None:
-        c = self.get_chars(1)
-
-        if c != "#":
-            self.give_back(c)
-        else:
-            return Token(TokenType.HASHTAG, c)
-
-    def try_parse_dot(self) -> Token | None:
-        c = self.get_chars(1)
-
-        if c != ".":
-            self.give_back(c)
-        else:
-            return Token(TokenType.DOT, c)
-
-    def try_parse_opening_round_bracket(self) -> Token | None:
-        c = self.get_chars(1)
-
-        if c != "(":
-            self.give_back(c)
-        else:
-            return Token(TokenType.OPENING_ROUND_BRACKET, c)
-
-    def try_parse_closing_round_bracket(self) -> Token | None:
-        c = self.get_chars(1)
-
-        if c != ")":
-            self.give_back(c)
-        else:
-            return Token(TokenType.CLOSING_ROUND_BRACKET, c)
-
-    def try_parse_opening_square_bracket(self) -> Token | None:
-        c = self.get_chars(1)
-
-        if c != "[":
-            self.give_back(c)
-        else:
-            return Token(TokenType.OPENING_SQUARE_BRACKET, c)
-
-    def try_parse_closing_square_bracket(self) -> Token | None:
-        c = self.get_chars(1)
-
-        if c != "]":
-            self.give_back(c)
-        else:
-            return Token(TokenType.CLOSING_SQUARE_BRACKET, c)
-
-    def try_parse_opening_curly_bracket(self) -> Token | None:
-        c = self.get_chars(1)
-
-        if c != "{":
-            self.give_back(c)
-        else:
-            return Token(TokenType.OPENING_CURLY_BRACKET, c)
-
-    def try_parse_closing_curly_bracket(self) -> Token | None:
-        c = self.get_chars(1)
-
-        if c != "}":
-            self.give_back(c)
-        else:
-            return Token(TokenType.CLOSING_CURLY_BRACKET, c)
+        return token
