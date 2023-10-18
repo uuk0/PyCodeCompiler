@@ -149,6 +149,54 @@ class TestFunctionDefinition(TestCase):
             ],
         )
 
+    def test_generic_trailing(self):
+        parser = Parser("def test[a,]():\n    b")
+        self.assertEqual(
+            parser.parse_code_block(),
+            [
+                FunctionDefinitionNode(
+                    "test",
+                    ["a"],
+                    None,
+                    [
+                        NameAccessNode("b"),
+                    ],
+                ),
+            ],
+        )
+
+    def test_generic_multi(self):
+        parser = Parser("def test[a, c]():\n    b")
+        self.assertEqual(
+            parser.parse_code_block(),
+            [
+                FunctionDefinitionNode(
+                    "test",
+                    ["a", "c"],
+                    None,
+                    [
+                        NameAccessNode("b"),
+                    ],
+                ),
+            ],
+        )
+
+    def test_generic_multi_trailing(self):
+        parser = Parser("def test[a, c, ]():\n    b")
+        self.assertEqual(
+            parser.parse_code_block(),
+            [
+                FunctionDefinitionNode(
+                    "test",
+                    ["a", "c"],
+                    None,
+                    [
+                        NameAccessNode("b"),
+                    ],
+                ),
+            ],
+        )
+
     def test_parameter(self):
         parser = Parser("def test(a):\n    b")
         self.assertEqual(
@@ -161,6 +209,77 @@ class TestFunctionDefinition(TestCase):
                         FunctionDefinitionArg(
                             ArgType.NORMAL,
                             "a",
+                        ),
+                    ],
+                    [
+                        NameAccessNode("b"),
+                    ],
+                ),
+            ],
+        )
+
+    def test_parameter_trailing(self):
+        parser = Parser("def test(a,):\n    b")
+        self.assertEqual(
+            parser.parse_code_block(),
+            [
+                FunctionDefinitionNode(
+                    "test",
+                    None,
+                    [
+                        FunctionDefinitionArg(
+                            ArgType.NORMAL,
+                            "a",
+                        ),
+                    ],
+                    [
+                        NameAccessNode("b"),
+                    ],
+                ),
+            ],
+        )
+
+    def test_parameter_multi(self):
+        parser = Parser("def test(a, b):\n    b")
+        self.assertEqual(
+            parser.parse_code_block(),
+            [
+                FunctionDefinitionNode(
+                    "test",
+                    None,
+                    [
+                        FunctionDefinitionArg(
+                            ArgType.NORMAL,
+                            "a",
+                        ),
+                        FunctionDefinitionArg(
+                            ArgType.NORMAL,
+                            "b",
+                        ),
+                    ],
+                    [
+                        NameAccessNode("b"),
+                    ],
+                ),
+            ],
+        )
+
+    def test_parameter_multi_trailing(self):
+        parser = Parser("def test(a, b,):\n    b")
+        self.assertEqual(
+            parser.parse_code_block(),
+            [
+                FunctionDefinitionNode(
+                    "test",
+                    None,
+                    [
+                        FunctionDefinitionArg(
+                            ArgType.NORMAL,
+                            "a",
+                        ),
+                        FunctionDefinitionArg(
+                            ArgType.NORMAL,
+                            "b",
                         ),
                     ],
                     [

@@ -155,11 +155,13 @@ class FunctionDefinitionNode(AbstractSyntaxTreeNode):
                 generic_pair = opening, generic_name
                 opening = None
                 parser.pop_state()
+
             elif generic_name.token_type != TokenType.IDENTIFIER:
                 parser.rollback_state()
                 parser.lexer.raise_positioned_syntax_error(
                     "expected <name> after '[' in <function definition> - <generics>"
                 )
+
             else:
                 parser.pop_state()
                 generics.append(generic_name)
@@ -174,6 +176,7 @@ class FunctionDefinitionNode(AbstractSyntaxTreeNode):
                         parser.pop_state()
                         parser.pop_state()
                         break
+
                     elif comma.token_type != TokenType.COMMA:
                         parser.rollback_state()
                         parser.lexer.raise_positioned_syntax_error(
@@ -182,19 +185,21 @@ class FunctionDefinitionNode(AbstractSyntaxTreeNode):
 
                     generic_commas.append(comma)
 
-                    name = parser.lexer.parse_token()
-                    if name.token_type == TokenType.CLOSING_SQUARE_BRACKET:
-                        generic_pair = opening, name
+                    generic_name = parser.lexer.parse_token()
+                    if generic_name.token_type == TokenType.CLOSING_SQUARE_BRACKET:
+                        generic_pair = opening, generic_name
                         opening = None
                         parser.pop_state()
                         parser.pop_state()
-                    elif name.token_type != TokenType.IDENTIFIER:
+                        break
+
+                    elif generic_name.token_type != TokenType.IDENTIFIER:
                         parser.lexer.raise_positioned_syntax_error(
                             "expected <name> or ']' after ','  in <function definition> - <generics>"
                         )
 
                     parser.pop_state()
-                    generics.append(name)
+                    generics.append(generic_name)
 
         if opening is None:
             parser.pop_state()
