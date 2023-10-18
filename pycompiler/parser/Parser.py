@@ -15,12 +15,14 @@ from pycompiler.parser.AttributeAccessExpressionNode import (
 from pycompiler.parser.SubscriptionAccessExpressionNode import (
     SubscriptionAccessExpressionNode,
 )
+from pycompiler.parser.FunctionDefinitionNode import FunctionDefinitionNode
 
 
 class Parser:
     def __init__(self, code: str, filename: str = None):
         self.code = code
         self.lexer = Lexer(code, filename=filename)
+        self.indent = 0
 
     def push_state(self):
         self.lexer.push_state()
@@ -34,6 +36,8 @@ class Parser:
     def parse_code_block(
         self, expected_indent=0
     ) -> typing.List[AbstractSyntaxTreeNode]:
+        old_indent = self.indent
+        self.indent = expected_indent
         result = []
 
         while True:
@@ -49,9 +53,11 @@ class Parser:
             if next_token is None:
                 self.rollback_state()
                 break
+
             if next_token.token_type == TokenType.SEMICOLON:
                 self.pop_state()
                 continue
+
             elif next_token.token_type != TokenType.NEWLINE:
                 self.lexer.raise_positioned_syntax_error(
                     "expected ';' or NEWLINE after <expression>"
@@ -63,26 +69,35 @@ class Parser:
             exit_block = False
 
             while True:
+                self.push_state()
+
                 if not all(
                     self.lexer.parse_indent_block() for _ in range(expected_indent)
                 ):
                     next_token = self.lexer.parse_token()
 
                     if next_token.token_type == TokenType.NEWLINE:
+                        self.pop_state()
                         continue
 
                     self.rollback_state()
+                    self.lexer.increment_cursor(-1)  # \n unrolling
                     exit_block = True
-                    break
-
-                self.pop_state()
+                else:
+                    self.pop_state()
+                break
 
             if exit_block:
                 break
 
+        self.indent = old_indent
+
         return result
 
     def try_parse_code_line_obj(self) -> AbstractSyntaxTreeNode:
+        if expr := FunctionDefinitionNode.decode_from_paser(self):
+            return expr
+
         if expr := self.try_parse_assignment():
             return expr
 
