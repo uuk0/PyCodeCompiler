@@ -43,6 +43,3 @@ class AssignmentExpressionNode(AbstractSyntaxTreeNode):
             self.base.copy(),
             self.equal_signs.copy(),
         )
-
-    def can_be_assignment_target(self) -> bool:
-        return True
