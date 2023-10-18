@@ -47,6 +47,16 @@ class TestAssignmentParsing(TestCase):
             ],
         )
 
+    def test_slice_expression_single_none(self):
+        parser = Parser("test[:]")
+        self.assertEqual(
+            parser.try_parse_expression(),
+            SubscriptionAccessExpressionNode(
+                NameAccessNode("test"),
+                SliceExpressionNode(None, None, None),
+            ),
+        )
+
     def test_slice_expression_single_colon(self):
         parser = Parser("test[test2:]")
         self.assertEqual(
