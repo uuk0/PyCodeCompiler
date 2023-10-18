@@ -40,6 +40,9 @@ class TokenType(enum.Enum):
     MINUS = enum.auto()
     UNDERSCORE = enum.auto()
     AT_SIGN = enum.auto()
+    LESS_THAN = enum.auto()
+    BIGGER_THAN = enum.auto()
+    VBAR = enum.auto()
 
     STRING_LITERAL = enum.auto()
 
@@ -71,6 +74,9 @@ SPECIAL_TYPE_MAP = {
     TokenType.MINUS: "-",
     TokenType.UNDERSCORE: "_",
     TokenType.AT_SIGN: "@",
+    TokenType.LESS_THAN: "<",
+    TokenType.BIGGER_THAN: ">",
+    TokenType.VBAR: "|",
 }
 
 REVERSE_SPECIAL_TYPE_MAP = {
