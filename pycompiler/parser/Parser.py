@@ -5,6 +5,9 @@ from pycompiler.parser.AbstractSyntaxTreeNode import (
 )
 from pycompiler.parser.NameAccessNode import NameAccessNode
 from pycompiler.parser.AssignmentExpressionNode import AssignmentExpressionNode
+from pycompiler.parser.AttributeAccessExpressionNode import (
+    AttributeAccessExpressionNode,
+)
 
 
 class Parser:
@@ -90,6 +93,28 @@ class Parser:
             self.lexer.rollback_state()
             return
 
+        while True:
+            self.lexer.push_state()
+            token = self.lexer.parse_token()
+
+            if token is None:
+                self.rollback_state()
+                break
+
+            if token.token_type == TokenType.POINT:
+                name = self.lexer.parse_token()
+
+                if name is None or name.token_type != TokenType.IDENTIFIER:
+                    self.rollback_state()
+                    break
+
+                base = AttributeAccessExpressionNode(base, name.text, token, name)
+            else:
+                self.rollback_state()
+                break
+
+            self.pop_state()
+
         return base
 
     def try_parse_assignment_target(self) -> AbstractSyntaxTreeExpressionNode | None:
@@ -105,5 +130,27 @@ class Parser:
         else:
             self.lexer.rollback_state()
             return
+
+        while True:
+            self.lexer.push_state()
+            token = self.lexer.parse_token()
+
+            if token is None:
+                self.lexer.rollback_state()
+                break
+
+            if token.token_type == TokenType.POINT:
+                name = self.lexer.parse_token()
+
+                if name is None or name.token_type != TokenType.IDENTIFIER:
+                    self.rollback_state()
+                    break
+
+                base = AttributeAccessExpressionNode(base, name.text, token, name)
+            else:
+                self.rollback_state()
+                break
+
+            self.pop_state()
 
         return base

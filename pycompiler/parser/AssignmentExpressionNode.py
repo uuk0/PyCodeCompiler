@@ -16,6 +16,7 @@ class AssignmentExpressionNode(AbstractSyntaxTreeNode):
         base: AbstractSyntaxTreeExpressionNode,
         equal_signs: typing.List[Token] = None,
     ):
+        super().__init__()
         self.targets = targets
         self.base = base
         self.equal_signs = equal_signs

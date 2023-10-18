@@ -11,6 +11,7 @@ from pycompiler.parser.AbstractSyntaxTreeNode import (
 
 class NameAccessNode(AbstractSyntaxTreeExpressionNode):
     def __init__(self, name: str, token: Token = None):
+        super().__init__()
         self.name = name
         self.token = token
 

@@ -133,9 +133,8 @@ class Lexer:
             line = line[: line.index("\n")]
         print(line)
         print((" " * self.column) + ("^" * span))
-        raise SyntaxError(
-            message
-        )  # todo: throw something only propagating major levels
+        # todo: throw something only propagating major levels
+        raise SyntaxError(message)
 
     def push_state(self):
         self.info_stack.append((self.cursor, self.line, self.column))
@@ -257,6 +256,8 @@ class Lexer:
                 return merged
 
             return token
+
+        self.pop_state()
 
         # todo: are we missing any other cases?
         return token

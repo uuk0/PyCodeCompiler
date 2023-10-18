@@ -6,6 +6,9 @@ from pycompiler.Lexer import Token
 
 
 class AbstractSyntaxTreeNode(ABC):
+    def __init__(self):
+        pass
+
     def get_tokens(self) -> typing.List[Token]:
         return []
 
@@ -23,4 +26,6 @@ class AbstractSyntaxTreeNode(ABC):
 
 
 class AbstractSyntaxTreeExpressionNode(AbstractSyntaxTreeNode, ABC):
-    pass
+    def __init__(self):
+        super().__init__()
+        self.result_type = None
