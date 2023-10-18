@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+import typing
+
 from pycompiler.Lexer import Lexer, Token, TokenType
 from pycompiler.parser.AbstractSyntaxTreeNode import (
     AbstractSyntaxTreeNode,
@@ -26,6 +30,57 @@ class Parser:
 
     def rollback_state(self):
         self.lexer.rollback_state()
+
+    def parse_code_block(
+        self, expected_indent=0
+    ) -> typing.List[AbstractSyntaxTreeNode]:
+        result = []
+
+        while True:
+            expr = self.try_parse_code_line_obj()
+
+            if expr is None:
+                break
+
+            result.append(expr)
+
+            self.push_state()
+            next_token = self.lexer.parse_token()
+            if next_token is None:
+                self.rollback_state()
+                break
+            if next_token.token_type == TokenType.SEMICOLON:
+                self.pop_state()
+                continue
+            elif next_token.token_type != TokenType.NEWLINE:
+                self.lexer.raise_positioned_syntax_error(
+                    "expected ';' or NEWLINE after <expression>"
+                )
+
+            self.pop_state()
+            self.push_state()
+
+            exit_block = False
+
+            while True:
+                if not all(
+                    self.lexer.parse_indent_block() for _ in range(expected_indent)
+                ):
+                    next_token = self.lexer.parse_token()
+
+                    if next_token.token_type == TokenType.NEWLINE:
+                        continue
+
+                    self.rollback_state()
+                    exit_block = True
+                    break
+
+                self.pop_state()
+
+            if exit_block:
+                break
+
+        return result
 
     def try_parse_code_line_obj(self) -> AbstractSyntaxTreeNode:
         if expr := self.try_parse_assignment():

@@ -19,3 +19,14 @@ class TestAssignmentParsing(TestCase):
             parser.try_parse_code_line_obj(),
             AssignmentExpressionNode([NameAccessNode("test")], NameAccessNode("test2")),
         )
+
+    def test_code_block_expression(self):
+        parser = Parser("test = test2")
+        self.assertEqual(
+            parser.parse_code_block(),
+            [
+                AssignmentExpressionNode(
+                    [NameAccessNode("test")], NameAccessNode("test2")
+                )
+            ],
+        )

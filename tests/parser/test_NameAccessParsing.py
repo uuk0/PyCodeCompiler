@@ -17,3 +17,7 @@ class TestNameAccessParsing(TestCase):
     def test_code_line_expression(self):
         parser = Parser("test")
         self.assertEqual(parser.try_parse_code_line_obj(), NameAccessNode("test"))
+
+    def test_code_block_expression(self):
+        parser = Parser("test")
+        self.assertEqual(parser.parse_code_block(), [NameAccessNode("test")])

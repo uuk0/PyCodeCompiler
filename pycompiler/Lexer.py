@@ -123,6 +123,15 @@ class Lexer:
 
         self.filename = filename
 
+    def parse_indent_block(self) -> bool:
+        block = self.get_chars(4)
+
+        if block is None or block != "    ":
+            return False
+
+        self.increment_cursor(4)
+        return True
+
     def raise_positioned_syntax_error(self, message: str, span=1) -> typing.NoReturn:
         print(
             f"File \"{self.filename or '<unknown>'}\", line {self.line + 1}",

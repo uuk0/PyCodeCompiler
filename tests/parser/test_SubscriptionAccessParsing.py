@@ -34,3 +34,14 @@ class TestAssignmentParsing(TestCase):
                 NameAccessNode("test"), NameAccessNode("test2")
             ),
         )
+
+    def test_code_block_expression(self):
+        parser = Parser("test[test2]")
+        self.assertEqual(
+            parser.parse_code_block(),
+            [
+                SubscriptionAccessExpressionNode(
+                    NameAccessNode("test"), NameAccessNode("test2")
+                )
+            ],
+        )
