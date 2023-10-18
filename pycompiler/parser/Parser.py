@@ -8,6 +8,9 @@ from pycompiler.parser.AssignmentExpressionNode import AssignmentExpressionNode
 from pycompiler.parser.AttributeAccessExpressionNode import (
     AttributeAccessExpressionNode,
 )
+from pycompiler.parser.SubscriptionAccessExpressionNode import (
+    SubscriptionAccessExpressionNode,
+)
 
 
 class Parser:
@@ -109,6 +112,27 @@ class Parser:
                     break
 
                 base = AttributeAccessExpressionNode(base, name.text, token, name)
+
+            elif token.token_type == TokenType.OPENING_SQUARE_BRACKET:
+                inner_expr = self.try_parse_expression()
+
+                if inner_expr is None:
+                    self.rollback_state()
+                    break
+
+                closing = self.lexer.parse_token()
+
+                if closing.token_type != TokenType.CLOSING_SQUARE_BRACKET:
+                    self.rollback_state()
+                    break
+
+                base = SubscriptionAccessExpressionNode(
+                    base,
+                    inner_expr,
+                    token,
+                    closing,
+                )
+
             else:
                 self.rollback_state()
                 break
@@ -147,6 +171,27 @@ class Parser:
                     break
 
                 base = AttributeAccessExpressionNode(base, name.text, token, name)
+
+            elif token.token_type == TokenType.OPENING_SQUARE_BRACKET:
+                inner_expr = self.try_parse_expression()
+
+                if inner_expr is None:
+                    self.rollback_state()
+                    break
+
+                closing = self.lexer.parse_token()
+
+                if closing.token_type != TokenType.CLOSING_SQUARE_BRACKET:
+                    self.rollback_state()
+                    break
+
+                base = SubscriptionAccessExpressionNode(
+                    base,
+                    inner_expr,
+                    token,
+                    closing,
+                )
+
             else:
                 self.rollback_state()
                 break

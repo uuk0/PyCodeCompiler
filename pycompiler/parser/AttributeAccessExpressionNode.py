@@ -42,3 +42,6 @@ class AttributeAccessExpressionNode(AbstractSyntaxTreeExpressionNode):
             self.dot_token,
             self.name_token,
         )
+
+    def can_be_assignment_target(self) -> bool:
+        return True
