@@ -6,6 +6,7 @@ from pycompiler.parser.FunctionDefinitionNode import (
     FunctionDefinitionNode,
     FunctionDefinitionArg,
 )
+from pycompiler.parser.util import ArgType
 
 
 class TestFunctionDefinition(TestCase):
@@ -129,5 +130,127 @@ class TestFunctionDefinition(TestCase):
                     ],
                 ),
                 NameAccessNode("b"),
+            ],
+        )
+
+    def test_generic(self):
+        parser = Parser("def test[a]():\n    b")
+        self.assertEqual(
+            parser.parse_code_block(),
+            [
+                FunctionDefinitionNode(
+                    "test",
+                    ["a"],
+                    None,
+                    [
+                        NameAccessNode("b"),
+                    ],
+                ),
+            ],
+        )
+
+    def test_parameter(self):
+        parser = Parser("def test(a):\n    b")
+        self.assertEqual(
+            parser.parse_code_block(),
+            [
+                FunctionDefinitionNode(
+                    "test",
+                    None,
+                    [
+                        FunctionDefinitionArg(
+                            ArgType.NORMAL,
+                            "a",
+                        ),
+                    ],
+                    [
+                        NameAccessNode("b"),
+                    ],
+                ),
+            ],
+        )
+
+    def test_generic_and_parameter(self):
+        parser = Parser("def test[c](a):\n    b")
+        self.assertEqual(
+            parser.parse_code_block(),
+            [
+                FunctionDefinitionNode(
+                    "test",
+                    ["c"],
+                    [
+                        FunctionDefinitionArg(
+                            ArgType.NORMAL,
+                            "a",
+                        ),
+                    ],
+                    [
+                        NameAccessNode("b"),
+                    ],
+                ),
+            ],
+        )
+
+    def test_parameter_keyword(self):
+        parser = Parser("def test(a=c):\n    b")
+        self.assertEqual(
+            parser.parse_code_block(),
+            [
+                FunctionDefinitionNode(
+                    "test",
+                    None,
+                    [
+                        FunctionDefinitionArg(
+                            ArgType.KEYWORD,
+                            "a",
+                            NameAccessNode("c"),
+                        ),
+                    ],
+                    [
+                        NameAccessNode("b"),
+                    ],
+                ),
+            ],
+        )
+
+    def test_parameter_star(self):
+        parser = Parser("def test(*a):\n    b")
+        self.assertEqual(
+            parser.parse_code_block(),
+            [
+                FunctionDefinitionNode(
+                    "test",
+                    None,
+                    [
+                        FunctionDefinitionArg(
+                            ArgType.STAR,
+                            "a",
+                        ),
+                    ],
+                    [
+                        NameAccessNode("b"),
+                    ],
+                ),
+            ],
+        )
+
+    def test_parameter_star_star(self):
+        parser = Parser("def test(**a):\n    b")
+        self.assertEqual(
+            parser.parse_code_block(),
+            [
+                FunctionDefinitionNode(
+                    "test",
+                    None,
+                    [
+                        FunctionDefinitionArg(
+                            ArgType.STAR_STAR,
+                            "a",
+                        ),
+                    ],
+                    [
+                        NameAccessNode("b"),
+                    ],
+                ),
             ],
         )

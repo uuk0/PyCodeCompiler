@@ -45,7 +45,7 @@ class FunctionDefinitionArg(AbstractSyntaxTreeNode):
 
     def __eq__(self, other: FunctionDefinitionArg):
         return (
-            type(other) is FunctionDefinitionNode
+            type(other) is FunctionDefinitionArg
             and self.arg_type == other.arg_type
             and self.name == other.name
             and self.default_value == other.default_value
@@ -220,40 +220,49 @@ class FunctionDefinitionNode(AbstractSyntaxTreeNode):
                 break
 
             if token.token_type == TokenType.STAR:
+                parser.push_state()
                 next_token = parser.lexer.parse_token()
 
                 if next_token.token_type == TokenType.STAR:
-                    expr = parser.try_parse_expression()
-
-                    if expr is None:
-                        parser.lexer.raise_positioned_syntax_error(
-                            "expected <expression> after '**'"
-                        )
-
                     parser.pop_state()
+                    parser.push_state()
+                    param_name = parser.lexer.parse_token()
 
-                    parameters.append(
-                        FunctionDefinitionArg(
-                            ArgType.STAR_STAR,
-                            token.text,
-                            name_token=token,
-                        )
-                    )
-
-                else:
-                    expr = parser.try_parse_expression()
-
-                    if expr is None:
+                    if param_name.token_type != TokenType.IDENTIFIER:
+                        parser.rollback_state()
                         parser.lexer.raise_positioned_syntax_error(
                             "expected <expression> or '*' after '*'"
                         )
 
                     parser.pop_state()
+                    parser.pop_state()
+
+                    parameters.append(
+                        FunctionDefinitionArg(
+                            ArgType.STAR_STAR,
+                            param_name.text,
+                            name_token=token,
+                        )
+                    )
+
+                else:
+                    parser.rollback_state()
+                    parser.push_state()
+                    param_name = parser.lexer.parse_token()
+
+                    if param_name.token_type != TokenType.IDENTIFIER:
+                        parser.rollback_state()
+                        parser.lexer.raise_positioned_syntax_error(
+                            "expected <expression> or '*' after '*'"
+                        )
+
+                    parser.pop_state()
+                    parser.pop_state()
 
                     parameters.append(
                         FunctionDefinitionArg(
                             ArgType.STAR,
-                            token.text,
+                            param_name.text,
                             name_token=token,
                         )
                     )
