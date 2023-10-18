@@ -6,3 +6,5 @@
 **/test.exe
 **/result.c
 /tests/cpython/test_build/
+/includes/cmake-build-debug/
+/includes/.idea/

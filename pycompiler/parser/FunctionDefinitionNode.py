@@ -62,6 +62,37 @@ class FunctionDefinitionArg(AbstractSyntaxTreeNode):
         )
 
 
+class FunctionDefinitionArgReference(AbstractSyntaxTreeExpressionNode):
+    def __init__(
+        self, arg_ref: FunctionDefinitionArg, access_tokens: typing.List[Token] = None
+    ):
+        super().__init__()
+        self.arg_ref = arg_ref
+        self.access_tokens = access_tokens
+
+    def get_tokens(self) -> typing.List[Token]:
+        return self.access_tokens
+
+    def __repr__(self):
+        return f"->{repr(self.arg_ref)}"
+
+    def __eq__(self, other: FunctionDefinitionArgReference):
+        return (
+            type(other) is FunctionDefinitionArgReference
+            and self.arg_ref == other.arg_ref
+        )
+
+    def copy(self) -> FunctionDefinitionArgReference:
+        # We are only ref-ing an arg decl, we don't need to copy the ref target
+        return FunctionDefinitionArgReference(
+            self.arg_ref,
+            self.access_tokens,
+        )
+
+    def can_be_assignment_target(self) -> bool:
+        return True
+
+
 class FunctionDefinitionNode(AbstractSyntaxTreeNode):
     @classmethod
     def decode_from_paser(cls, parser: Parser):
