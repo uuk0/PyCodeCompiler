@@ -93,6 +93,35 @@ class FunctionDefinitionArgReference(AbstractSyntaxTreeExpressionNode):
         return True
 
 
+class FunctionDefinitionGenericReference(AbstractSyntaxTreeExpressionNode):
+    def __init__(self, name: str, index: int, name_token: Token = None):
+        super().__init__()
+        self.name = name
+        self.index = index
+        self.name_token = name_token
+
+    def get_tokens(self) -> typing.List[Token]:
+        return [self.name_token]
+
+    def __repr__(self):
+        return f"->GENERIC({self.name})"
+
+    def __eq__(self, other: FunctionDefinitionGenericReference):
+        return (
+            type(other) is FunctionDefinitionGenericReference
+            and self.name == other.name
+            and self.index == other.index
+        )
+
+    def copy(self) -> FunctionDefinitionGenericReference:
+        # We are only ref-ing an arg decl, we don't need to copy the ref target
+        return FunctionDefinitionGenericReference(
+            self.name,
+            self.index,
+            self.name_token,
+        )
+
+
 class FunctionDefinitionNode(AbstractSyntaxTreeNode):
     @classmethod
     def decode_from_paser(cls, parser: Parser):
