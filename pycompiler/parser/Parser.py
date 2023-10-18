@@ -16,6 +16,7 @@ from pycompiler.parser.SubscriptionAccessExpressionNode import (
     SubscriptionAccessExpressionNode,
 )
 from pycompiler.parser.FunctionDefinitionNode import FunctionDefinitionNode
+from pycompiler.parser.CallExpression import CallExpression
 
 
 class Parser:
@@ -202,6 +203,9 @@ class Parser:
                     token,
                     closing,
                 )
+
+            elif token.token_type == TokenType.OPENING_ROUND_BRACKET:
+                base = CallExpression.parse_from_parser(self, base, token)
 
             else:
                 self.rollback_state()
