@@ -17,6 +17,7 @@ from pycompiler.parser.SubscriptionAccessExpressionNode import (
 )
 from pycompiler.parser.FunctionDefinitionNode import FunctionDefinitionNode
 from pycompiler.parser.CallExpression import CallExpression
+from pycompiler.parser.SliceExpressionNode import SliceExpressionNode
 
 
 class Parser:
@@ -185,24 +186,7 @@ class Parser:
                 base = AttributeAccessExpressionNode(base, name.text, token, name)
 
             elif token.token_type == TokenType.OPENING_SQUARE_BRACKET:
-                inner_expr = self.try_parse_expression()
-
-                if inner_expr is None:
-                    self.rollback_state()
-                    break
-
-                closing = self.lexer.parse_token()
-
-                if closing.token_type != TokenType.CLOSING_SQUARE_BRACKET:
-                    self.rollback_state()
-                    break
-
-                base = SubscriptionAccessExpressionNode(
-                    base,
-                    inner_expr,
-                    token,
-                    closing,
-                )
+                base = self.parse_slice_operator(base, token)
 
             elif token.token_type == TokenType.OPENING_ROUND_BRACKET:
                 base = CallExpression.parse_from_parser(self, base, token)
@@ -247,24 +231,7 @@ class Parser:
                 base = AttributeAccessExpressionNode(base, name.text, token, name)
 
             elif token.token_type == TokenType.OPENING_SQUARE_BRACKET:
-                inner_expr = self.try_parse_expression()
-
-                if inner_expr is None:
-                    self.rollback_state()
-                    break
-
-                closing = self.lexer.parse_token()
-
-                if closing.token_type != TokenType.CLOSING_SQUARE_BRACKET:
-                    self.rollback_state()
-                    break
-
-                base = SubscriptionAccessExpressionNode(
-                    base,
-                    inner_expr,
-                    token,
-                    closing,
-                )
+                base = self.parse_slice_operator(base, token)
 
             else:
                 self.rollback_state()
@@ -273,3 +240,48 @@ class Parser:
             self.pop_state()
 
         return base
+
+    def parse_slice_operator(
+        self, base: AbstractSyntaxTreeExpressionNode, opening_bracket: Token
+    ) -> SubscriptionAccessExpressionNode:
+        inner_expr = self.try_parse_expression()
+
+        self.push_state()
+        token = self.lexer.parse_token()
+
+        if token.token_type != TokenType.COLON:
+            self.rollback_state()
+            if inner_expr is None:
+                self.lexer.raise_positioned_syntax_error(
+                    "expected <expression> or ':' after '['"
+                )
+        else:
+            self.pop_state()
+            middle_expr = self.try_parse_expression()
+
+            self.push_state()
+            other_token = self.lexer.parse_token()
+
+            if other_token.token_type != TokenType.COLON:
+                self.rollback_state()
+                other_token = None
+                end_expr = None
+            else:
+                end_expr = self.try_parse_expression()
+
+            inner_expr = SliceExpressionNode(
+                inner_expr, middle_expr, end_expr, token, other_token
+            )
+
+        closing = self.lexer.parse_token()
+
+        if closing.token_type != TokenType.CLOSING_SQUARE_BRACKET:
+            self.rollback_state()
+            self.lexer.raise_positioned_syntax_error("expected ']' after <expression>")
+
+        return SubscriptionAccessExpressionNode(
+            base,
+            inner_expr,
+            opening_bracket,
+            closing,
+        )
