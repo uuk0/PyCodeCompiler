@@ -18,6 +18,7 @@ from pycompiler.parser.SubscriptionAccessExpressionNode import (
 from pycompiler.parser.FunctionDefinitionNode import FunctionDefinitionNode
 from pycompiler.parser.CallExpression import CallExpression
 from pycompiler.parser.SliceExpressionNode import SliceExpressionNode
+from pycompiler.parser.ConstantValueExpressionNode import ConstantValueExpressionNode
 
 
 class Parser:
@@ -155,18 +156,24 @@ class Parser:
         )
 
     def try_parse_expression(self) -> AbstractSyntaxTreeExpressionNode | None:
-        self.lexer.push_state()
-        token = self.lexer.parse_token()
+        if number := self.lexer.try_parse_number():
+            base = ConstantValueExpressionNode(number.value, [number])
 
-        if token is None:
-            return
-
-        if token.token_type == TokenType.IDENTIFIER:
-            base = NameAccessNode(token.text, token)
-            self.lexer.pop_state()
+        elif string := self.lexer.try_parse_string():
+            base = ConstantValueExpressionNode(string.value, [string])
         else:
-            self.lexer.rollback_state()
-            return
+            self.lexer.push_state()
+            token = self.lexer.parse_token()
+
+            if token is None:
+                return
+
+            if token.token_type == TokenType.IDENTIFIER:
+                base = NameAccessNode(token.text, token)
+                self.lexer.pop_state()
+            else:
+                self.lexer.rollback_state()
+                return
 
         while True:
             self.lexer.push_state()

@@ -173,7 +173,7 @@ class Lexer:
         count = count if isinstance(count, int) else len(count)
         text = self.get_chars(count)
 
-        if "\n" in text:
+        if text and "\n" in text:
             self.line += text.count("\n")
             self.column = count - text.rindex("\n") - 1
         else:
@@ -281,6 +281,7 @@ class Lexer:
         self.push_state()
         token = self.parse_partial_token()
 
+        # todo: .0 style floats!
         if token.token_type != TokenType.NUMBER:
             self.rollback_state()
             return
@@ -323,7 +324,7 @@ class Lexer:
             self.push_state()
             next_token = self.parse_partial_token()
 
-            if next_token.token_type == TokenType.POINT:
+            if next_token and next_token.token_type == TokenType.POINT:
                 if has_seen_dot:
                     self.rollback_state()
                     break
@@ -332,7 +333,10 @@ class Lexer:
                 has_seen_dot = True
                 continue
 
-            elif next_token.token_type in (TokenType.UNDERSCORE, TokenType.NUMBER):
+            elif next_token and next_token.token_type in (
+                TokenType.UNDERSCORE,
+                TokenType.NUMBER,
+            ):
                 token = token.merge(next_token)
                 continue
 
@@ -342,17 +346,44 @@ class Lexer:
         error: SyntaxError | None = None
         try:
             if number_repr == 0:
-                token.value = int(token.text)
+                token = Token(
+                    token.token_type,
+                    token.text,
+                    token.line,
+                    token.column,
+                    token.span,
+                    int(token.text),
+                )
             elif number_repr == 1:
-                token.value = int(token.text, base=2)
+                token = Token(
+                    token.token_type,
+                    token.text,
+                    token.line,
+                    token.column,
+                    token.span,
+                    int(token.text, base=2),
+                )
             elif number_repr == 2:
-                token.value = int(token.text, base=8)
+                token = Token(
+                    token.token_type,
+                    token.text,
+                    token.line,
+                    token.column,
+                    token.span,
+                    int(token.text, base=8),
+                )
             elif number_repr == 3:
-                token.value = int(token.text, base=16)
+                token = Token(
+                    token.token_type,
+                    token.text,
+                    token.line,
+                    token.column,
+                    token.span,
+                    int(token.text, base=16),
+                )
         except SyntaxError as error:
             pass
         else:
-            self.pop_state()
             return token
 
         self.rollback_state()
@@ -360,3 +391,83 @@ class Lexer:
             error.text,
             span=token.span,
         )
+
+    def try_parse_string(self) -> Token | None:
+        self.push_state()
+        token = self.parse_token()
+
+        if token is None:
+            self.rollback_state()
+            return
+
+        if token.token_type == TokenType.SINGLE_QUOTE:
+            self.pop_state()
+            escapes = 0
+            string = "'"
+
+            while True:
+                c = self.get_chars(1)
+                self.increment_cursor(1)
+
+                if c == "\\":
+                    escapes += 1
+                    if escapes % 2 == 0:
+                        string += "\\"
+                elif c == "'":
+                    string += "'"
+                    if escapes % 2 == 0:
+                        break
+                    escapes = 0
+                elif c == "\n":
+                    self.raise_positioned_syntax_error(
+                        "did NOT expect '\n' in single-quoted string literal"
+                    )
+                else:
+                    string += c
+                    escapes = 0
+
+            return Token(
+                TokenType.STRING_LITERAL,
+                string,
+                token.line,
+                token.column,
+                token.span,
+                string[1:-1],
+            )
+
+        elif token.token_type == TokenType.DOUBLE_QUOTES:
+            self.pop_state()
+            escapes = 0
+            string = '"'
+
+            while True:
+                c = self.get_chars(1)
+                self.increment_cursor(1)
+
+                if c == "\\":
+                    escapes += 1
+                    if escapes % 2 == 0:
+                        string += "\\"
+                elif c == '"':
+                    string += '"'
+                    if escapes % 2 == 0:
+                        break
+                    escapes = 0
+                elif c == "\n":
+                    self.raise_positioned_syntax_error(
+                        "did NOT expect '\n' in double-quoted string literal"
+                    )
+                else:
+                    escapes = 0
+                    string += c
+
+            return Token(
+                TokenType.STRING_LITERAL,
+                string,
+                token.line,
+                token.column,
+                token.span,
+                string[1:-1],
+            )
+
+        self.rollback_state()
