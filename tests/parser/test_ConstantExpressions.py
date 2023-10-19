@@ -21,6 +21,27 @@ class TestIntegerLiterals(ConstantTestBase):
     def test_basic(self):
         self.variants("10", ConstantValueExpressionNode(10))
 
+    def test_basic_underscore(self):
+        self.variants("1_0", ConstantValueExpressionNode(10))
+
+    def test_float(self):
+        self.variants("10.0", ConstantValueExpressionNode(10.0))
+
+    def test_float_only_end(self):
+        self.variants("10.", ConstantValueExpressionNode(10.0))
+
+    def test_float_only_front(self):
+        self.variants(".10", ConstantValueExpressionNode(0.1))
+
+    def test_binary(self):
+        self.variants("0b10", ConstantValueExpressionNode(0b10))
+
+    def test_octal(self):
+        self.variants("0o10", ConstantValueExpressionNode(0o10))
+
+    def test_hex(self):
+        self.variants("0x10", ConstantValueExpressionNode(0x10))
+
 
 class TestStringLiterals(ConstantTestBase):
     def test_basic_single(self):

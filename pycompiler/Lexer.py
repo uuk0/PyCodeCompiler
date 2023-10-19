@@ -260,9 +260,7 @@ class Lexer:
 
         if token.token_type in (TokenType.PLUS, TokenType.MINUS):
             self.pop_state()
-            number = self.try_parse_number()
-
-            if number:
+            if number := self.try_parse_number():
                 merged = token.merge(number, TokenType.NUMBER)
 
                 if token.token_type == TokenType.MINUS:
@@ -279,117 +277,72 @@ class Lexer:
 
     def try_parse_number(self) -> Token | None:
         self.push_state()
-        token = self.parse_partial_token()
+        token = self.parse_token()
 
-        # todo: .0 style floats!
-        if token.token_type != TokenType.NUMBER:
+        fragments = []
+        has_seen_point = False
+
+        if token.token_type == TokenType.NUMBER:
+            fragments.append(token)
+
+            pos = self.get_position_info()
+            c = self.get_chars(1)
+
+            if c and fragments[0].text == "0" and c.lower() in tuple("box"):
+                self.increment_cursor(1)
+                fragments.append(Token(TokenType.IDENTIFIER, c, *pos))
+
+        elif token.token_type == TokenType.POINT:
+            has_seen_point = True
+            fragments.append(token)
+
+        else:
             self.rollback_state()
             return
 
-        number_repr = 0  # 0: normal, 1: binary, 2: octal, 3: hexadecimal
-
-        if token.text == "0":
+        while True:
             self.push_state()
-            next_token = self.parse_partial_token()
-            itoken: Token | None = None
+            token = self.parse_token()
 
-            if next_token.token_type == TokenType.IDENTIFIER:
-                if next_token.text.lower() == "b":
-                    number_repr = 1
-                    itoken = token.merge(next_token)
-                elif next_token.text.lower() == "o":
-                    number_repr = 2
-                    itoken = token.merge(next_token)
-                elif next_token.text.lower() == "x":
-                    number_repr = 3
-                    itoken = token.merge(next_token)
+            if token is None:
+                self.rollback_state()
+                break
 
-            if number_repr != 0:
-                next_token = self.parse_partial_token()
-
-                if next_token.token_type == TokenType.NUMBER:
-                    token = itoken.merge(next_token)
-                    self.pop_state()
-                    self.push_state()
-                else:
-                    self.rollback_state()
-                    self.push_state()
+            if token.token_type == TokenType.NUMBER:
+                fragments.append(token)
+            elif token.token_type == TokenType.UNDERSCORE:
+                fragments.append(token)
+            elif token.token_type == TokenType.POINT and not has_seen_point:
+                has_seen_point = True
+                fragments.append(token)
             else:
                 self.rollback_state()
-                self.push_state()
-
-        has_seen_dot = False
-        while True:
+                break
             self.pop_state()
-            self.push_state()
-            next_token = self.parse_partial_token()
 
-            if next_token and next_token.token_type == TokenType.POINT:
-                if has_seen_dot:
-                    self.rollback_state()
-                    break
+        total = "".join(token.text for token in fragments).lower()
 
-                token = token.merge(next_token)
-                has_seen_dot = True
-                continue
-
-            elif next_token and next_token.token_type in (
-                TokenType.UNDERSCORE,
-                TokenType.NUMBER,
-            ):
-                token = token.merge(next_token)
-                continue
-
-            self.rollback_state()
-            break
-
-        error: SyntaxError | None = None
         try:
-            if number_repr == 0:
-                token = Token(
-                    token.token_type,
-                    token.text,
-                    token.line,
-                    token.column,
-                    token.span,
-                    int(token.text),
-                )
-            elif number_repr == 1:
-                token = Token(
-                    token.token_type,
-                    token.text,
-                    token.line,
-                    token.column,
-                    token.span,
-                    int(token.text, base=2),
-                )
-            elif number_repr == 2:
-                token = Token(
-                    token.token_type,
-                    token.text,
-                    token.line,
-                    token.column,
-                    token.span,
-                    int(token.text, base=8),
-                )
-            elif number_repr == 3:
-                token = Token(
-                    token.token_type,
-                    token.text,
-                    token.line,
-                    token.column,
-                    token.span,
-                    int(token.text, base=16),
-                )
-        except SyntaxError as error:
-            pass
-        else:
-            return token
+            if "." in total:
+                result = float(total)
+            elif "b" in total:
+                result = int(total.removeprefix("0b"), base=2)
+            elif "o" in total:
+                result = int(total.removeprefix("0o"), base=8)
+            elif "x" in total:
+                result = int(total.removeprefix("0x"), base=16)
+            else:
+                result = int(total)
+        except ValueError:
+            self.raise_positioned_syntax_error("expected <integer literal>")
 
-        self.rollback_state()
-        self.raise_positioned_syntax_error(
-            error.text,
-            span=token.span,
+        return Token(
+            TokenType.NUMBER,
+            total,
+            fragments[0].line,
+            fragments[0].column,
+            sum(token.span for token in fragments),  # todo: add whitespaces!
+            result,
         )
 
     def try_parse_string(self) -> Token | None:
