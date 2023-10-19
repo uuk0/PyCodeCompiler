@@ -20,6 +20,7 @@ from pycompiler.parser.CallExpression import CallExpression
 from pycompiler.parser.SliceExpressionNode import SliceExpressionNode
 from pycompiler.parser.ConstantValueExpressionNode import ConstantValueExpressionNode
 from pycompiler.parser.ImportStatementNode import ImportStatement
+from pycompiler.parser.TypeStatementNode import TypeStatementNode
 
 
 class Parser:
@@ -100,6 +101,9 @@ class Parser:
 
     def try_parse_code_line_obj(self) -> AbstractSyntaxTreeNode:
         if expr := FunctionDefinitionNode.decode_from_paser(self):
+            return expr
+
+        if expr := TypeStatementNode.parse_from_parser(self):
             return expr
 
         if expr := ImportStatement.parse_from_parser(self):
@@ -250,6 +254,57 @@ class Parser:
                 break
 
             self.pop_state()
+
+        return base
+
+    def try_parse_type_annotation(
+        self, allow_attribute=True
+    ) -> AbstractSyntaxTreeExpressionNode | None:
+        self.lexer.push_state()
+        token = self.lexer.parse_token()
+
+        if token is None:
+            return
+
+        if token.token_type == TokenType.IDENTIFIER:
+            base = NameAccessNode(token.text, token)
+            self.lexer.pop_state()
+        else:
+            self.lexer.rollback_state()
+            return
+
+        if allow_attribute:
+            while True:
+                self.lexer.push_state()
+                token = self.lexer.parse_token()
+
+                if token is None:
+                    self.rollback_state()
+                    break
+
+                if token.token_type == TokenType.POINT:
+                    name = self.lexer.parse_token()
+
+                    if name is None or name.token_type != TokenType.IDENTIFIER:
+                        self.rollback_state()
+                        break
+
+                    base = AttributeAccessExpressionNode(base, name.text, token, name)
+
+                else:
+                    self.rollback_state()
+                    break
+
+                self.pop_state()
+
+        self.lexer.push_state()
+        token = self.lexer.parse_token()
+
+        if token and token.token_type == TokenType.OPENING_SQUARE_BRACKET:
+            self.lexer.pop_state()
+            base = self.parse_slice_operator(base, token)
+        else:
+            self.lexer.rollback_state()
 
         return base
 

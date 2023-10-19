@@ -22,6 +22,7 @@ from pycompiler.parser.CallExpression import CallExpression, CallExpressionArgum
 from pycompiler.parser.SliceExpressionNode import SliceExpressionNode
 from pycompiler.parser.ConstantValueExpressionNode import ConstantValueExpressionNode
 from pycompiler.parser.ImportStatementNode import ImportStatement
+from pycompiler.parser.TypeStatementNode import TypeStatementNode
 
 from pycompiler.parser.util import ArgType
 
@@ -124,3 +125,8 @@ class AbstractASTTreeVisitor(ABC):
     @_bind_to_datatype(ImportStatement)
     def visit_import_statement(self, statement: ImportStatement):
         pass
+
+    @_bind_to_datatype(TypeStatementNode)
+    def visit_type_statement(self, statement: TypeStatementNode):
+        self.visit_any(statement.base_type)
+        self.visit_any(statement.real_type)
