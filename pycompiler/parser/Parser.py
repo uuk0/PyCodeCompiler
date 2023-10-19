@@ -15,10 +15,11 @@ from pycompiler.parser.AttributeAccessExpressionNode import (
 from pycompiler.parser.SubscriptionAccessExpressionNode import (
     SubscriptionAccessExpressionNode,
 )
-from pycompiler.parser.FunctionDefinitionNode import FunctionDefinitionNode
+from pycompiler.parser.FunctionDefinitionStatementNode import FunctionDefinitionNode
 from pycompiler.parser.CallExpression import CallExpression
 from pycompiler.parser.SliceExpressionNode import SliceExpressionNode
 from pycompiler.parser.ConstantValueExpressionNode import ConstantValueExpressionNode
+from pycompiler.parser.ImportStatementNode import ImportStatement
 
 
 class Parser:
@@ -101,6 +102,9 @@ class Parser:
         if expr := FunctionDefinitionNode.decode_from_paser(self):
             return expr
 
+        if expr := ImportStatement.parse_from_parser(self):
+            return expr
+
         if expr := self.try_parse_assignment():
             return expr
 
@@ -161,6 +165,7 @@ class Parser:
 
         elif string := self.lexer.try_parse_string():
             base = ConstantValueExpressionNode(string.value, [string])
+
         else:
             self.lexer.push_state()
             token = self.lexer.parse_token()

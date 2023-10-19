@@ -12,7 +12,7 @@ from pycompiler.parser.AttributeAccessExpressionNode import (
 from pycompiler.parser.SubscriptionAccessExpressionNode import (
     SubscriptionAccessExpressionNode,
 )
-from pycompiler.parser.FunctionDefinitionNode import (
+from pycompiler.parser.FunctionDefinitionStatementNode import (
     FunctionDefinitionNode,
     FunctionDefinitionArg,
     FunctionDefinitionGenericReference,
@@ -20,6 +20,8 @@ from pycompiler.parser.FunctionDefinitionNode import (
 )
 from pycompiler.parser.CallExpression import CallExpression, CallExpressionArgument
 from pycompiler.parser.SliceExpressionNode import SliceExpressionNode
+from pycompiler.parser.ConstantValueExpressionNode import ConstantValueExpressionNode
+from pycompiler.parser.ImportStatementNode import ImportStatement
 
 from pycompiler.parser.util import ArgType
 
@@ -114,3 +116,11 @@ class AbstractASTTreeVisitor(ABC):
         self.visit_any(expression.start)
         self.visit_any(expression.stop)
         self.visit_any(expression.step)
+
+    @_bind_to_datatype(ConstantValueExpressionNode)
+    def visit_constant_access(self, expression: ConstantValueExpressionNode):
+        pass
+
+    @_bind_to_datatype(ImportStatement)
+    def visit_import_statement(self, statement: ImportStatement):
+        pass

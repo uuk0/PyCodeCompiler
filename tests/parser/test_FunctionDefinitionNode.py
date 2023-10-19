@@ -2,7 +2,7 @@ from unittest import TestCase
 
 from pycompiler.parser.Parser import Parser
 from pycompiler.parser.NameAccessNode import NameAccessNode
-from pycompiler.parser.FunctionDefinitionNode import (
+from pycompiler.parser.FunctionDefinitionStatementNode import (
     FunctionDefinitionNode,
     FunctionDefinitionArg,
 )
