@@ -7,7 +7,7 @@ from pycompiler.Lexer import Token
 
 class AbstractSyntaxTreeNode(ABC):
     def __init__(self):
-        pass
+        self.scope = None
 
     def get_tokens(self) -> typing.List[Token]:
         return []

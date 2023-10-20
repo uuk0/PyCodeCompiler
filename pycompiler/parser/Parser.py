@@ -166,9 +166,11 @@ class Parser:
     def try_parse_expression(self) -> AbstractSyntaxTreeExpressionNode | None:
         if number := self.lexer.try_parse_number():
             base = ConstantValueExpressionNode(number.value, [number])
+            base.result_type = int
 
         elif string := self.lexer.try_parse_string():
             base = ConstantValueExpressionNode(string.value, [string])
+            base.result_type = str
 
         else:
             self.lexer.push_state()
