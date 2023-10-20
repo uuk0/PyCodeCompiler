@@ -26,7 +26,7 @@ class TypeStatementNode(AbstractSyntaxTreeNode):
             parser.rollback_state()
             return
 
-        lhs = parser.try_parse_type_annotation(allow_attribute=False)
+        lhs = parser.try_parse_type_annotation(is_lhs=False)
         if lhs is None:
             parser.rollback_state()
             return

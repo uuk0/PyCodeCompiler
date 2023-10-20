@@ -258,7 +258,7 @@ class Parser:
         return base
 
     def try_parse_type_annotation(
-        self, allow_attribute=True
+        self, is_lhs=True
     ) -> AbstractSyntaxTreeExpressionNode | None:
         self.lexer.push_state()
         token = self.lexer.parse_token()
@@ -273,7 +273,7 @@ class Parser:
             self.lexer.rollback_state()
             return
 
-        if allow_attribute:
+        if is_lhs:
             while True:
                 self.lexer.push_state()
                 token = self.lexer.parse_token()
@@ -297,10 +297,12 @@ class Parser:
 
                 self.pop_state()
 
-        self.lexer.push_state()
+        self.push_state()
         token = self.lexer.parse_token()
 
         if token and token.token_type == TokenType.OPENING_SQUARE_BRACKET:
+            # todo: this is not the correct code; only identifiers are allowed
+            #   (and if is_lhs is False, also <identifier>: <type annotation>)
             self.lexer.pop_state()
             base = self.parse_slice_operator(base, token)
         else:
