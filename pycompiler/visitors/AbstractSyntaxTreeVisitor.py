@@ -35,14 +35,17 @@ def _bind_to_datatype(
     typing.Callable[[AbstractSyntaxTreeNode], None],
 ]:
     def target(bind_target: typing.Callable):
-        AbstractASTTreeVisitor.KNOWN_NAME_MAP[datatype] = bind_target.__name__
+        _KNOWN_NAME_MAP[datatype] = bind_target.__name__
         return bind_target
 
     return target
 
 
+_KNOWN_NAME_MAP: typing.Dict[typing.Type, str] = {}
+
+
 class AbstractASTTreeVisitor(ABC):
-    KNOWN_NAME_MAP: typing.Dict[typing.Type, str] = {}
+    KNOWN_NAME_MAP: typing.Dict[typing.Type, str] = _KNOWN_NAME_MAP
     BINDING_MAP: typing.Dict[typing.Type, typing.Callable] = {}
 
     @classmethod
@@ -58,7 +61,7 @@ class AbstractASTTreeVisitor(ABC):
         if type(obj) not in self.BINDING_MAP:
             raise NotImplementedError(f"failed to find visitor for type {type(obj)}!")
 
-        self.BINDING_MAP[type(obj)](obj)
+        self.BINDING_MAP[type(obj)](self, obj)
 
     def visit_any_list(self, objs: typing.List[AbstractSyntaxTreeNode]):
         for node in objs:
