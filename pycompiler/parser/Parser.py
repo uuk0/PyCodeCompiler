@@ -21,6 +21,7 @@ from pycompiler.parser.SliceExpressionNode import SliceExpressionNode
 from pycompiler.parser.ConstantValueExpressionNode import ConstantValueExpressionNode
 from pycompiler.parser.ImportStatementNode import ImportStatement
 from pycompiler.parser.TypeStatementNode import TypeStatementNode
+from pycompiler.parser.ClassDefinitionStatementNode import ClassDefinitionNode
 
 
 class Parser:
@@ -101,6 +102,9 @@ class Parser:
 
     def try_parse_code_line_obj(self) -> AbstractSyntaxTreeNode:
         if expr := FunctionDefinitionNode.decode_from_paser(self):
+            return expr
+
+        if expr := ClassDefinitionNode.decode_from_paser(self):
             return expr
 
         if expr := TypeStatementNode.parse_from_parser(self):

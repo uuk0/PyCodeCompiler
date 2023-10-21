@@ -28,6 +28,10 @@ from pycompiler.parser.ConstantValueExpressionNode import ConstantValueExpressio
 from pycompiler.parser.ImportStatementNode import ImportStatement
 from pycompiler.parser.TypeStatementNode import TypeStatementNode
 from pycompiler.parser.ScopeReferences import ParentScopeReference, ChildScopeExported
+from pycompiler.parser.ClassDefinitionStatementNode import (
+    ClassDefinitionNode,
+    ClassDefinitionGenericReference,
+)
 
 
 class TestScopeAssignment(unittest.TestCase):
@@ -153,3 +157,15 @@ class TestScopeAssignment(unittest.TestCase):
 
     def test_child_exposed_reference(self):
         self.helper(ChildScopeExported("test"))
+
+    def test_class_definition(self):
+        self.helper(
+            ClassDefinitionNode(
+                "test",
+                None,
+                [NameAccessNode("parent")],
+                [NameAccessNode("body")],
+            ),
+            lambda node: node.parent_references[0],
+            # lambda node: node.body[0],
+        )

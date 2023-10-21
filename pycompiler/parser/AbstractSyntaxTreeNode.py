@@ -29,3 +29,6 @@ class AbstractSyntaxTreeExpressionNode(AbstractSyntaxTreeNode, ABC):
     def __init__(self):
         super().__init__()
         self.result_type = None
+
+    def copy(self) -> AbstractSyntaxTreeExpressionNode:
+        raise NotImplementedError

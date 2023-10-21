@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pycompiler.parser.AbstractSyntaxTreeNode import AbstractSyntaxTreeNode
 from pycompiler.parser.AssignmentExpressionNode import AssignmentExpressionNode
+from pycompiler.parser.ClassDefinitionStatementNode import ClassDefinitionNode
 from pycompiler.parser.FunctionDefinitionStatementNode import (
     FunctionDefinitionNode,
     FunctionDefinitionArg,
@@ -22,7 +23,7 @@ class ScopeAssigner(AbstractASTTreeVisitor):
     def push_scope(self, scope: Scope = None):
         self.scope_stack.append(scope or self.scope_stack[-1].create_child())
 
-    def pop_scop(self):
+    def pop_scope(self):
         self.scope_stack.pop(-1)
 
     def visit_any(self, obj: AbstractSyntaxTreeNode):
@@ -30,7 +31,6 @@ class ScopeAssigner(AbstractASTTreeVisitor):
         super().visit_any(obj)
 
     def visit_assignment_expression(self, assignment: AssignmentExpressionNode):
-
         for lhs in assignment.targets:
             pass
             # todo: expose REFERENCE to local
@@ -45,7 +45,7 @@ class ScopeAssigner(AbstractASTTreeVisitor):
         self.push_scope()
         self.visit_any_list(definition.parameters)
         self.visit_any_list(definition.body)
-        self.pop_scop()
+        self.pop_scope()
 
     def visit_function_definition_arg(self, arg: FunctionDefinitionArg):
         self.scope_stack[-1].export_name_access(
@@ -60,4 +60,11 @@ class ScopeAssigner(AbstractASTTreeVisitor):
         self.push_scope()
         self.visit_any(statement.base_type)
         self.visit_any(statement.real_type)
-        self.pop_scop()
+        self.pop_scope()
+
+    def visit_class_definition(self, definition: ClassDefinitionNode):
+        self.visit_any_list(definition.parent_references)
+        self.push_scope()
+        self.visit_any_list(definition.generics)
+        self.visit_any_list(definition.body)
+        self.pop_scope()

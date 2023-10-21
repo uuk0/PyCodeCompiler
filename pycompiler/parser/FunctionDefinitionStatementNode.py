@@ -392,7 +392,7 @@ class FunctionDefinitionNode(AbstractSyntaxTreeNode):
         self,
         name: str,
         generics: typing.List[str] | None,
-        parameters: typing.List | None,
+        parameters: typing.List[FunctionDefinitionArg] | None,
         body: typing.List[AbstractSyntaxTreeNode],
         def_token: Token = None,
         name_token: Token = None,

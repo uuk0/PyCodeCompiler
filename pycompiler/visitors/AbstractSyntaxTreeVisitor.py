@@ -24,6 +24,10 @@ from pycompiler.parser.ConstantValueExpressionNode import ConstantValueExpressio
 from pycompiler.parser.ImportStatementNode import ImportStatement
 from pycompiler.parser.TypeStatementNode import TypeStatementNode
 from pycompiler.parser.ScopeReferences import ParentScopeReference, ChildScopeExported
+from pycompiler.parser.ClassDefinitionStatementNode import (
+    ClassDefinitionNode,
+    ClassDefinitionGenericReference,
+)
 
 from pycompiler.parser.util import ArgType
 
@@ -141,4 +145,14 @@ class AbstractASTTreeVisitor(ABC):
 
     @_bind_to_datatype(ChildScopeExported)
     def visit_child_scope_exported(self, reference: ChildScopeExported):
+        pass
+
+    @_bind_to_datatype(ClassDefinitionNode)
+    def visit_class_definition(self, definition: ClassDefinitionNode):
+        self.visit_any_list(definition.parent_references)
+        self.visit_any_list(definition.generics)
+        self.visit_any_list(definition.body)
+
+    @_bind_to_datatype(ClassDefinitionGenericReference)
+    def visit_class_generic_reference(self, reference: ClassDefinitionGenericReference):
         pass
