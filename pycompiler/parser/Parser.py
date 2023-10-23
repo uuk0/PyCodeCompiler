@@ -22,6 +22,7 @@ from pycompiler.parser.ConstantValueExpressionNode import ConstantValueExpressio
 from pycompiler.parser.ImportStatementNode import ImportStatement
 from pycompiler.parser.TypeStatementNode import TypeStatementNode
 from pycompiler.parser.ClassDefinitionStatementNode import ClassDefinitionNode
+from pycompiler.parser.WhileStatementNode import WhileStatementNode
 
 
 class Parser:
@@ -111,6 +112,9 @@ class Parser:
             return expr
 
         if expr := ImportStatement.parse_from_parser(self):
+            return expr
+
+        if expr := WhileStatementNode.parse_from_parser(self):
             return expr
 
         if expr := self.try_parse_assignment():

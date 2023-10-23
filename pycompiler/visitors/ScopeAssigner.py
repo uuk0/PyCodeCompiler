@@ -10,7 +10,6 @@ from pycompiler.parser.FunctionDefinitionStatementNode import (
 )
 from pycompiler.parser.ImportStatementNode import ImportStatement
 from pycompiler.parser.TypeStatementNode import TypeStatementNode
-from pycompiler.parser.NameAccessNode import NameAccessNode
 from pycompiler.visitors.Scope import Scope
 from pycompiler.visitors.AbstractSyntaxTreeVisitor import AbstractASTTreeVisitor
 

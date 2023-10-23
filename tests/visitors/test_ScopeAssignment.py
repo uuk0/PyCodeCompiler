@@ -32,6 +32,7 @@ from pycompiler.parser.ClassDefinitionStatementNode import (
     ClassDefinitionNode,
     ClassDefinitionGenericReference,
 )
+from pycompiler.parser.WhileStatementNode import WhileStatementNode
 
 
 class TestScopeAssignment(unittest.TestCase):
@@ -168,4 +169,19 @@ class TestScopeAssignment(unittest.TestCase):
             ),
             lambda node: node.parent_references[0],
             # lambda node: node.body[0],
+        )
+
+    def test_class_generic_reference(self):
+        self.helper(ClassDefinitionGenericReference("test", 0))
+
+    def test_while_statement(self):
+        self.helper(
+            WhileStatementNode(
+                NameAccessNode("test"),
+                [
+                    NameAccessNode("test"),
+                ],
+            ),
+            lambda node: node.condition,
+            lambda node: node.body[0],
         )
