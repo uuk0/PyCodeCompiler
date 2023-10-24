@@ -39,6 +39,9 @@ class TestAttributeAccess(TestCase):
             SyntaxError, lambda: Parser("test.ets2.").try_parse_expression()
         )
 
+    def test_invalid_continue(self):
+        self.assertRaises(SyntaxError, lambda: Parser("test.20").try_parse_expression())
+
     def test_basic(self):
         self.helper(
             "test.test2",
