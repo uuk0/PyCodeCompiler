@@ -4,7 +4,9 @@ import typing
 
 from pycompiler.Lexer import Token
 from pycompiler.parser.AbstractSyntaxTreeNode import (
+    AbstractSyntaxTreeNode,
     AbstractSyntaxTreeExpressionNode,
+    ParentAttributeSection,
 )
 
 
@@ -21,6 +23,31 @@ class SubscriptionAccessExpressionNode(AbstractSyntaxTreeExpressionNode):
         self.lhs_bracket = lhs_bracket
         self.inner = inner
         self.base = base
+
+    def replace_child_with(
+        self,
+        original: AbstractSyntaxTreeNode,
+        new: AbstractSyntaxTreeNode,
+        section: ParentAttributeSection,
+    ) -> bool:
+        if section == ParentAttributeSection.BASE:
+            self.base = new
+            return True
+
+        if section == ParentAttributeSection.RHS:
+            self.inner = new
+            return True
+
+        return False
+
+    def update_child_parent_relation(self):
+        self.base.parent = self
+        self.base.parent_section = ParentAttributeSection.BASE
+        self.base.update_child_parent_relation()
+
+        self.inner.parent = self
+        self.inner.parent_section = ParentAttributeSection.RHS
+        self.inner.update_child_parent_relation()
 
     def get_tokens(self) -> typing.List[Token]:
         return (

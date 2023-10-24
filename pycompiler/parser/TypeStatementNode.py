@@ -5,11 +5,31 @@ import typing
 from pycompiler.parser.AbstractSyntaxTreeNode import (
     AbstractSyntaxTreeExpressionNode,
     AbstractSyntaxTreeNode,
+    ParentAttributeSection,
 )
+from pycompiler.parser.SubscriptionAccessExpressionNode import (
+    SubscriptionAccessExpressionNode,
+)
+from pycompiler.parser.NameAccessNode import NameAccessNode
 from pycompiler.Lexer import Token, TokenType
 
 if typing.TYPE_CHECKING:
     from pycompiler.parser.Parser import Parser
+
+
+class StaticTypeDefinitionReference(AbstractSyntaxTreeExpressionNode):
+    def __init__(self, node: TypeStatementNode):
+        super().__init__()
+        self.node = node
+
+    def __repr__(self):
+        return f"TYPE-REF({self.node.base_type})"
+
+    def __eq__(self, other: StaticTypeDefinitionReference):
+        return type(other) is StaticTypeDefinitionReference and self.node is other.node
+
+    def copy(self) -> StaticTypeDefinitionReference:
+        return StaticTypeDefinitionReference(self.node)
 
 
 class TypeStatementNode(AbstractSyntaxTreeNode):
@@ -54,6 +74,41 @@ class TypeStatementNode(AbstractSyntaxTreeNode):
         super().__init__()
         self.base_type = base_type
         self.real_type = real_type
+
+    def get_base_name(self) -> str:
+        node = self.base_type
+
+        if isinstance(node, SubscriptionAccessExpressionNode):
+            node = node.base
+
+        assert isinstance(node, NameAccessNode)
+
+        return node.name
+
+    def replace_child_with(
+        self,
+        original: AbstractSyntaxTreeNode,
+        new: AbstractSyntaxTreeNode,
+        section: ParentAttributeSection,
+    ) -> bool:
+        if section == ParentAttributeSection.LHS:
+            self.base_type = new
+            return True
+
+        if section == ParentAttributeSection.RHS:
+            self.real_type = new
+            return True
+
+        return False
+
+    def update_child_parent_relation(self):
+        self.base_type.parent = self
+        self.base_type.parent_section = ParentAttributeSection.LHS
+        self.base_type.update_child_parent_relation()
+
+        self.real_type.parent = self
+        self.real_type.parent_section = ParentAttributeSection.RHS
+        self.real_type.update_child_parent_relation()
 
     def get_tokens(self) -> typing.List[Token]:
         return self.base_type.get_tokens() + self.real_type.get_tokens()

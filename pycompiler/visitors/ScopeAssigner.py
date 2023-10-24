@@ -13,7 +13,10 @@ from pycompiler.parser.FunctionDefinitionStatementNode import (
 )
 from pycompiler.parser.ImportStatementNode import ImportStatement
 from pycompiler.parser.NameAccessNode import NameWriteAccessNode, NameAccessNode
-from pycompiler.parser.TypeStatementNode import TypeStatementNode
+from pycompiler.parser.TypeStatementNode import (
+    TypeStatementNode,
+    StaticTypeDefinitionReference,
+)
 from pycompiler.visitors.Scope import Scope
 from pycompiler.visitors.AbstractSyntaxTreeVisitor import AbstractASTTreeVisitor
 
@@ -57,6 +60,10 @@ class ScopeAssigner(AbstractASTTreeVisitor):
         pass  # todo: export module
 
     def visit_type_statement(self, statement: TypeStatementNode):
+        self.scope_stack[-1].export_name_access(
+            statement.get_base_name(), StaticTypeDefinitionReference(statement)
+        )
+
         self.push_scope()
         self.visit_any(statement.base_type)
         self.visit_any(statement.real_type)

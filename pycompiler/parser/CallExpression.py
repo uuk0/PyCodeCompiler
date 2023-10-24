@@ -5,6 +5,7 @@ from pycompiler.Lexer import Token, TokenType
 from pycompiler.parser.AbstractSyntaxTreeNode import (
     AbstractSyntaxTreeNode,
     AbstractSyntaxTreeExpressionNode,
+    ParentAttributeSection,
 )
 from pycompiler.parser.util import ArgType
 
@@ -27,6 +28,23 @@ class CallExpressionArgument(AbstractSyntaxTreeExpressionNode):
         self.keyword = keyword
         self.keyword_token = keyword_token
         self.equal_sign = equal_sign
+
+    def replace_child_with(
+        self,
+        original: AbstractSyntaxTreeNode,
+        new: AbstractSyntaxTreeNode,
+        section: ParentAttributeSection,
+    ) -> bool:
+        if section != ParentAttributeSection.BASE:
+            return False
+
+        self.expr = new
+        return True
+
+    def update_child_parent_relation(self):
+        self.expr.parent = self
+        self.expr.parent_section = ParentAttributeSection.BASE
+        self.expr.update_child_parent_relation()
 
     def get_tokens(self) -> typing.List[Token]:
         return [self.keyword_token, self.equal_sign] + self.expr.get_tokens()
@@ -218,6 +236,36 @@ class CallExpression(AbstractSyntaxTreeExpressionNode):
         self.args = args
         self.brackets = brackets or (None, None)
         self.commas = commas or []
+
+    def replace_child_with(
+        self,
+        original: AbstractSyntaxTreeNode,
+        new: AbstractSyntaxTreeNode,
+        section: ParentAttributeSection,
+    ) -> bool:
+        if section == ParentAttributeSection.BASE:
+            self.base = new
+            return True
+
+        if section == ParentAttributeSection.PARAMETER:
+            for i, arg in enumerate(self.args):
+                if arg is original:
+                    self.args[i] = new
+                    return True
+
+            return False
+
+        return False
+
+    def update_child_parent_relation(self):
+        self.base.parent = self
+        self.base.parent_section = ParentAttributeSection.BASE
+        self.base.update_child_parent_relation()
+
+        for arg in self.args:
+            arg.parent = self
+            arg.parent_section = ParentAttributeSection.PARAMETER
+            arg.update_child_parent_relation()
 
     def get_tokens(self) -> typing.List[Token]:
         return (

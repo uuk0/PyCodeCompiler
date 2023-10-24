@@ -5,6 +5,7 @@ from pycompiler.Lexer import Token, TokenType
 from pycompiler.parser.AbstractSyntaxTreeNode import (
     AbstractSyntaxTreeNode,
     AbstractSyntaxTreeExpressionNode,
+    ParentAttributeSection,
 )
 from pycompiler.parser.util import ArgType
 
@@ -30,6 +31,27 @@ class FunctionDefinitionArg(AbstractSyntaxTreeNode):
         self.type_hint = type_hint
         self.name_token = name_token
         self.equal_sign_token = equal_sign_token
+
+    def replace_child_with(
+        self,
+        original: AbstractSyntaxTreeNode,
+        new: AbstractSyntaxTreeNode,
+        section: ParentAttributeSection,
+    ) -> bool:
+        if (
+            section != ParentAttributeSection.DEFAULT
+            or self.arg_type != ArgType.KEYWORD
+        ):
+            return False
+
+        self.default_value = new
+        return True
+
+    def update_child_parent_relation(self):
+        if self.arg_type == ArgType.KEYWORD:
+            self.default_value.parent = self
+            self.default_value.parent_section = ParentAttributeSection.DEFAULT
+            self.default_value.update_child_parent_relation()
 
     def get_tokens(self) -> typing.List[Token]:
         return [self.name_token, self.equal_sign_token] + (
@@ -428,6 +450,41 @@ class FunctionDefinitionNode(AbstractSyntaxTreeNode):
         self.generics = generics or []
         self.parameters = parameters or []
         self.body = body
+
+    def replace_child_with(
+        self,
+        original: AbstractSyntaxTreeNode,
+        new: AbstractSyntaxTreeNode,
+        section: ParentAttributeSection,
+    ) -> bool:
+        if section == ParentAttributeSection.PARAMETER:
+            for i, param in enumerate(self.parameters):
+                if param is original:
+                    self.parameters[i] = new
+                    return True
+
+            return False
+
+        if section == ParentAttributeSection.BODY:
+            for i, node in enumerate(self.body):
+                if node in original:
+                    self.body[i] = new
+                    return True
+
+            return False
+
+        return False
+
+    def update_child_parent_relation(self):
+        for param in self.parameters:
+            param.parent = self
+            param.parent_section = ParentAttributeSection.PARAMETER
+            param.update_child_parent_relation()
+
+        for node in self.body:
+            node.parent = self
+            node.parent_section = ParentAttributeSection.BODY
+            node.update_child_parent_relation()
 
     def get_tokens(self) -> typing.List[Token]:
         return (

@@ -6,6 +6,7 @@ from pycompiler.Lexer import Token
 from pycompiler.parser.AbstractSyntaxTreeNode import (
     AbstractSyntaxTreeExpressionNode,
     AbstractSyntaxTreeNode,
+    ParentAttributeSection,
 )
 
 
@@ -20,6 +21,36 @@ class AssignmentExpressionNode(AbstractSyntaxTreeNode):
         self.targets = targets
         self.base = base
         self.equal_signs = equal_signs
+
+    def replace_child_with(
+        self,
+        original: AbstractSyntaxTreeNode,
+        new: AbstractSyntaxTreeNode,
+        section: ParentAttributeSection,
+    ) -> bool:
+        if section == ParentAttributeSection.LHS:
+            for i, node in enumerate(self.targets):
+                if node is original:
+                    self.targets[i] = new
+                    return True
+
+            return False
+
+        elif section == ParentAttributeSection.BASE:
+            self.base = new
+            return True
+
+        return False
+
+    def update_child_parent_relation(self):
+        for target in self.targets:
+            target.parent = self
+            target.parent_section = ParentAttributeSection.LHS
+            target.update_child_parent_relation()
+
+        self.base.parent = self
+        self.base.parent.parent_section = ParentAttributeSection.BASE
+        self.base.update_child_parent_relation()
 
     def get_tokens(self) -> typing.List[Token]:
         return (

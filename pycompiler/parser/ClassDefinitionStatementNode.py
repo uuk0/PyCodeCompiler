@@ -5,6 +5,7 @@ from pycompiler.Lexer import Token, TokenType
 from pycompiler.parser.AbstractSyntaxTreeNode import (
     AbstractSyntaxTreeNode,
     AbstractSyntaxTreeExpressionNode,
+    ParentAttributeSection,
 )
 from pycompiler.parser.util import ArgType
 
@@ -251,6 +252,41 @@ class ClassDefinitionNode(AbstractSyntaxTreeNode):
         self.generics = generics or []
         self.parent_references = parent_references or []
         self.body = body
+
+    def replace_child_with(
+        self,
+        original: AbstractSyntaxTreeNode,
+        new: AbstractSyntaxTreeNode,
+        section: ParentAttributeSection,
+    ) -> bool:
+        if section == ParentAttributeSection.PARAMETER:
+            for i, node in enumerate(self.parent_references):
+                if node is original:
+                    self.parent_references[i] = new
+                    return True
+
+            return False
+
+        if section == ParentAttributeSection.BODY:
+            for i, node in enumerate(self.body):
+                if node is original:
+                    self.body[i] = new
+                    return True
+
+            return False
+
+        return False
+
+    def update_child_parent_relation(self):
+        for parent in self.parent_references:
+            parent.parent = self
+            parent.parent_section = ParentAttributeSection.PARAMETER
+            parent.update_child_parent_relation()
+
+        for node in self.body:
+            node.parent = self
+            node.parent_section = ParentAttributeSection.BODY
+            node.update_child_parent_relation()
 
     def get_tokens(self) -> typing.List[Token]:
         return (

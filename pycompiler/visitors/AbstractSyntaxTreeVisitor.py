@@ -23,7 +23,10 @@ from pycompiler.parser.CallExpression import CallExpression, CallExpressionArgum
 from pycompiler.parser.SliceExpressionNode import SliceExpressionNode
 from pycompiler.parser.ConstantValueExpressionNode import ConstantValueExpressionNode
 from pycompiler.parser.ImportStatementNode import ImportStatement
-from pycompiler.parser.TypeStatementNode import TypeStatementNode
+from pycompiler.parser.TypeStatementNode import (
+    TypeStatementNode,
+    StaticTypeDefinitionReference,
+)
 from pycompiler.parser.ScopeReferences import ParentScopeReference, ChildScopeExported
 from pycompiler.parser.ClassDefinitionStatementNode import (
     ClassDefinitionNode,
@@ -149,6 +152,10 @@ class AbstractASTTreeVisitor(ABC):
     def visit_type_statement(self, statement: TypeStatementNode):
         self.visit_any(statement.base_type)
         self.visit_any(statement.real_type)
+
+    @_bind_to_datatype(StaticTypeDefinitionReference)
+    def visit_static_type_reference(self, statement: StaticTypeDefinitionReference):
+        pass
 
     @_bind_to_datatype(ParentScopeReference)
     def visit_parent_scope_reference(self, reference: ParentScopeReference):

@@ -6,6 +6,7 @@ from pycompiler.Lexer import Token, TokenType
 from pycompiler.parser.AbstractSyntaxTreeNode import (
     AbstractSyntaxTreeNode,
     AbstractSyntaxTreeExpressionNode,
+    ParentAttributeSection,
 )
 
 if typing.TYPE_CHECKING:
@@ -82,6 +83,36 @@ class WhileStatementNode(AbstractSyntaxTreeNode):
         self.body = body
         self.while_token = while_token
         self.colon_token = colon_token
+
+    def replace_child_with(
+        self,
+        original: AbstractSyntaxTreeNode,
+        new: AbstractSyntaxTreeNode,
+        section: ParentAttributeSection,
+    ) -> bool:
+        if section == ParentAttributeSection.CONDITION:
+            self.condition = new
+            return True
+
+        if section == ParentAttributeSection.BODY:
+            for i, node in enumerate(self.body):
+                if node is original:
+                    self.body[i] = new
+                    return True
+
+            return False
+
+        return False
+
+    def update_child_parent_relation(self):
+        self.condition.parent = self
+        self.condition.parent_section = ParentAttributeSection.CONDITION
+        self.condition.update_child_parent_relation()
+
+        for node in self.body:
+            node.parent = self
+            node.parent_section = ParentAttributeSection.BODY
+            node.update_child_parent_relation()
 
     def get_tokens(self) -> typing.List[Token]:
         return (
