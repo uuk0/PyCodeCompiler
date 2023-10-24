@@ -97,6 +97,11 @@ class CallExpression(AbstractSyntaxTreeExpressionNode):
             parser.push_state()
             token = parser.lexer.parse_token()
 
+            if token is None:
+                parser.lexer.raise_positioned_syntax_error(
+                    "expected ')' or <expression> after '(' or ','"
+                )
+
             if token.token_type == TokenType.CLOSING_ROUND_BRACKET:
                 closing_bracket = token
                 break
@@ -144,6 +149,11 @@ class CallExpression(AbstractSyntaxTreeExpressionNode):
                 parser.pop_state()
                 parser.push_state()
                 next_token = parser.lexer.parse_token()
+
+                if next_token is None:
+                    parser.lexer.raise_positioned_syntax_error(
+                        "expected <expression> or '*' after '*' in <parameter>"
+                    )
 
                 if next_token.token_type == TokenType.STAR:
                     parser.pop_state()
