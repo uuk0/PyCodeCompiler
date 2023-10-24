@@ -20,6 +20,7 @@ from pycompiler.parser.FunctionDefinitionStatementNode import (
     FunctionDefinitionArg,
     FunctionDefinitionGenericReference,
     FunctionDefinitionArgReference,
+    StaticFunctionReferenceNode,
 )
 from pycompiler.parser.util import ArgType
 from pycompiler.parser.CallExpression import CallExpression, CallExpressionArgument
@@ -113,6 +114,9 @@ class TestScopeAssignment(unittest.TestCase):
             FunctionDefinitionArg(ArgType.KEYWORD, "test", NameAccessNode("test")),
             lambda node: node.default_value,
         )
+
+    def test_static_function_reference(self):
+        self.helper(StaticFunctionReferenceNode(None))
 
     def test_call_expression(self):
         self.helper(

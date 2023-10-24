@@ -17,6 +17,7 @@ from pycompiler.parser.FunctionDefinitionStatementNode import (
     FunctionDefinitionArg,
     FunctionDefinitionGenericReference,
     FunctionDefinitionArgReference,
+    StaticFunctionReferenceNode,
 )
 from pycompiler.parser.CallExpression import CallExpression, CallExpressionArgument
 from pycompiler.parser.SliceExpressionNode import SliceExpressionNode
@@ -110,6 +111,10 @@ class AbstractASTTreeVisitor(ABC):
     def visit_function_definition_generic_ref(
         self, ref: FunctionDefinitionGenericReference
     ):
+        pass
+
+    @_bind_to_datatype(StaticFunctionReferenceNode)
+    def visit_static_function_reference(self, ref: StaticFunctionReferenceNode):
         pass
 
     @_bind_to_datatype(CallExpression)

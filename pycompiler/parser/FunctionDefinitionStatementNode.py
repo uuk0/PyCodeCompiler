@@ -122,6 +122,21 @@ class FunctionDefinitionGenericReference(AbstractSyntaxTreeExpressionNode):
         )
 
 
+class StaticFunctionReferenceNode(AbstractSyntaxTreeExpressionNode):
+    def __init__(self, func_def: FunctionDefinitionNode):
+        super().__init__()
+        self.func_def = func_def
+
+    def __repr__(self):
+        return f"FUNC-REF({self.func_def.name})"
+
+    def __eq__(self, other: StaticFunctionReferenceNode):
+        return type(other) is FunctionDefinitionNode and self.func_def is other.func_def
+
+    def copy(self) -> StaticFunctionReferenceNode:
+        return StaticFunctionReferenceNode(self.func_def)
+
+
 class FunctionDefinitionNode(AbstractSyntaxTreeNode):
     @classmethod
     def decode_from_paser(cls, parser: Parser):
