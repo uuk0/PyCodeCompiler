@@ -131,7 +131,10 @@ class StaticFunctionReferenceNode(AbstractSyntaxTreeExpressionNode):
         return f"FUNC-REF({self.func_def.name})"
 
     def __eq__(self, other: StaticFunctionReferenceNode):
-        return type(other) is FunctionDefinitionNode and self.func_def is other.func_def
+        return (
+            type(other) is StaticFunctionReferenceNode
+            and self.func_def is other.func_def
+        )
 
     def copy(self) -> StaticFunctionReferenceNode:
         return StaticFunctionReferenceNode(self.func_def)

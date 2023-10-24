@@ -32,6 +32,7 @@ from pycompiler.parser.ScopeReferences import ParentScopeReference, ChildScopeEx
 from pycompiler.parser.ClassDefinitionStatementNode import (
     ClassDefinitionNode,
     ClassDefinitionGenericReference,
+    StaticClassReferenceNode,
 )
 from pycompiler.parser.WhileStatementNode import WhileStatementNode
 
@@ -176,8 +177,8 @@ class TestScopeAssignment(unittest.TestCase):
         self.helper(ChildScopeExported("test"))
 
     def test_class_definition(self):
-        self.helper(
-            ClassDefinitionNode(
+        scope = self.helper(
+            cls := ClassDefinitionNode(
                 "test",
                 None,
                 [NameAccessNode("parent")],
@@ -186,6 +187,17 @@ class TestScopeAssignment(unittest.TestCase):
             lambda node: node.parent_references[0],
             # lambda node: node.body[0],
         )
+        self.assertIn("test", scope.variable_name_references)
+        self.assertIsInstance(
+            scope.variable_name_references["test"], StaticClassReferenceNode
+        )
+        self.assertEqual(scope.variable_name_references["test"].class_def, cls)
+
+    def test_static_class_definition(self):
+        self.helper(
+            ref := StaticClassReferenceNode(ClassDefinitionNode("test", None, [], []))
+        )
+        self.assertIsNone(ref.class_def.scope)
 
     def test_class_generic_reference(self):
         self.helper(ClassDefinitionGenericReference("test", 0))

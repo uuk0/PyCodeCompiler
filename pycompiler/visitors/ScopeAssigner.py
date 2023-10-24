@@ -2,7 +2,10 @@ from __future__ import annotations
 
 from pycompiler.parser.AbstractSyntaxTreeNode import AbstractSyntaxTreeNode
 from pycompiler.parser.AssignmentExpressionNode import AssignmentExpressionNode
-from pycompiler.parser.ClassDefinitionStatementNode import ClassDefinitionNode
+from pycompiler.parser.ClassDefinitionStatementNode import (
+    ClassDefinitionNode,
+    StaticClassReferenceNode,
+)
 from pycompiler.parser.FunctionDefinitionStatementNode import (
     FunctionDefinitionNode,
     FunctionDefinitionArg,
@@ -64,7 +67,11 @@ class ScopeAssigner(AbstractASTTreeVisitor):
         self.pop_scope()
 
     def visit_class_definition(self, definition: ClassDefinitionNode):
+        self.scope_stack[-1].export_name_access(
+            definition.name, StaticClassReferenceNode(definition)
+        )
         self.visit_any_list(definition.parent_references)
+
         self.push_scope()
         self.visit_any_list(definition.generics)
         self.visit_any_list(definition.body)
