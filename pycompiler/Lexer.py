@@ -302,6 +302,10 @@ class Lexer:
         self.push_state()
         token = self.parse_token()
 
+        if token is None:
+            self.rollback_state()
+            return
+
         fragments = []
         has_seen_point = False
 
