@@ -205,9 +205,14 @@ class Parser:
             if token.token_type == TokenType.POINT:
                 name = self.lexer.parse_token()
 
-                if name is None or name.token_type != TokenType.IDENTIFIER:
-                    self.rollback_state()
-                    break
+                if name is None:
+                    self.lexer.raise_positioned_syntax_error(
+                        "expected <identifier> after '.'"
+                    )
+                if name.token_type != TokenType.IDENTIFIER:
+                    self.lexer.raise_positioned_syntax_error_on_token(
+                        name, "expected <identifier> after '.'"
+                    )
 
                 base = AttributeAccessExpressionNode(base, name.text, token, name)
 
