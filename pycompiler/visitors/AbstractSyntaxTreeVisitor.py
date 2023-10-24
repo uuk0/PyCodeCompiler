@@ -4,7 +4,7 @@ import typing
 from abc import ABC
 from pycompiler.parser.AbstractSyntaxTreeNode import AbstractSyntaxTreeNode
 
-from pycompiler.parser.NameAccessNode import NameAccessNode
+from pycompiler.parser.NameAccessNode import NameAccessNode, NameWriteAccessNode
 from pycompiler.parser.AssignmentExpressionNode import AssignmentExpressionNode
 from pycompiler.parser.AttributeAccessExpressionNode import (
     AttributeAccessExpressionNode,
@@ -76,6 +76,10 @@ class AbstractASTTreeVisitor(ABC):
 
     @_bind_to_datatype(NameAccessNode)
     def visit_name_access(self, access: NameAccessNode):
+        pass
+
+    @_bind_to_datatype(NameWriteAccessNode)
+    def visit_write_name_access(self, access: NameWriteAccessNode):
         pass
 
     @_bind_to_datatype(AssignmentExpressionNode)

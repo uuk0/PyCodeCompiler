@@ -1,7 +1,7 @@
 from unittest import TestCase
 
 from pycompiler.parser.Parser import Parser
-from pycompiler.parser.NameAccessNode import NameAccessNode
+from pycompiler.parser.NameAccessNode import NameAccessNode, NameWriteAccessNode
 from pycompiler.Lexer import Token, TokenType
 
 
@@ -12,7 +12,9 @@ class TestNameAccessParsing(TestCase):
 
     def test_assignment_expression(self):
         parser = Parser("test")
-        self.assertEqual(parser.try_parse_assignment_target(), NameAccessNode("test"))
+        self.assertEqual(
+            parser.try_parse_assignment_target(), NameWriteAccessNode("test")
+        )
 
     def test_code_line_expression(self):
         parser = Parser("test")

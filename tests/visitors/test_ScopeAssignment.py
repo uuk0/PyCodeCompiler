@@ -7,7 +7,7 @@ from pycompiler.visitors.ScopeAssigner import ScopeAssigner
 from pycompiler.visitors.Scope import Scope
 
 from pycompiler.parser.AbstractSyntaxTreeNode import AbstractSyntaxTreeNode
-from pycompiler.parser.NameAccessNode import NameAccessNode
+from pycompiler.parser.NameAccessNode import NameAccessNode, NameWriteAccessNode
 from pycompiler.parser.AssignmentExpressionNode import AssignmentExpressionNode
 from pycompiler.parser.AttributeAccessExpressionNode import (
     AttributeAccessExpressionNode,
@@ -58,15 +58,18 @@ class TestScopeAssignment(unittest.TestCase):
         self.helper(NameAccessNode("test"))
 
     def test_assignment(self):
-        self.helper(
+        scope = self.helper(
             AssignmentExpressionNode(
                 [
-                    NameAccessNode("target"),
+                    NameWriteAccessNode("target"),
                 ],
                 NameAccessNode("source"),
             ),
             lambda node: node.targets[0],
             lambda node: node.base,
+        )
+        self.assertEqual(
+            scope.variable_name_references, {"target": NameAccessNode("target")}
         )
 
     def test_attribute_access(self):

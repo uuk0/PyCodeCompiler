@@ -7,7 +7,7 @@ from pycompiler.parser.AbstractSyntaxTreeNode import (
     AbstractSyntaxTreeNode,
     AbstractSyntaxTreeExpressionNode,
 )
-from pycompiler.parser.NameAccessNode import NameAccessNode
+from pycompiler.parser.NameAccessNode import NameAccessNode, NameWriteAccessNode
 from pycompiler.parser.AssignmentExpressionNode import AssignmentExpressionNode
 from pycompiler.parser.AttributeAccessExpressionNode import (
     AttributeAccessExpressionNode,
@@ -264,6 +264,10 @@ class Parser:
                 break
 
             self.pop_state()
+
+        # in this case, this is a direct write
+        if isinstance(base, NameAccessNode):
+            return NameWriteAccessNode(base.name, base.token)
 
         return base
 
