@@ -148,28 +148,26 @@ class Lexer:
     def raise_positioned_syntax_error(self, message: str, span=1) -> typing.NoReturn:
         print(
             f"File \"{self.filename or '<unknown>'}\", line {self.line + 1}",
-            file=sys.stdout,
+            file=sys.stderr,
         )
-        line = self.code[self.cursor - self.column :]
-        if "\n" in line:
-            line = line[: line.index("\n")]
-        print(line)
-        print((" " * self.column) + ("^" * span))
+        line = self.code[
+            self.line_offsets[self.line] : self.line_offsets[self.line + 1] + 1
+        ]
+        print(line, file=sys.stderr)
+        print((" " * self.column) + ("^" * span), file=sys.stderr)
         # todo: throw something only propagating major levels
         raise SyntaxError(message)
 
     def raise_positioned_syntax_error_on_token(self, token: Token, message: str):
         print(
             f"File \"{self.filename or '<unknown>'}\", line {token.line + 1}",
-            file=sys.stdout,
+            file=sys.stderr,
         )
         line = self.code[
-            self.line_offsets[token.line]
-            + token.column : self.line_offsets[token.line + 1]
-            + 1
+            self.line_offsets[token.line] : self.line_offsets[token.line + 1] + 1
         ]
-        print(line)
-        print((" " * token.column) + ("^" * token.span))
+        print(line, file=sys.stderr)
+        print((" " * token.column) + ("^" * token.span), file=sys.stderr)
         # todo: throw something only propagating major levels
 
         raise SyntaxError(message)
