@@ -4,15 +4,17 @@ from pycompiler.parser.AbstractSyntaxTreeNode import AbstractSyntaxTreeNode
 from pycompiler.parser.ClassDefinitionStatementNode import (
     ClassDefinitionNode,
     StaticClassReferenceNode,
+    ClassDefinitionGenericReference,
 )
 from pycompiler.parser.FunctionDefinitionStatementNode import (
     FunctionDefinitionNode,
     FunctionDefinitionArg,
     FunctionDefinitionArgReference,
     StaticFunctionReferenceNode,
+    FunctionDefinitionGenericReference,
 )
 from pycompiler.parser.ImportStatementNode import ImportStatement
-from pycompiler.parser.NameAccessNode import NameWriteAccessNode, NameAccessNode
+from pycompiler.parser.NameAccessNode import NameWriteAccessNode, NameAccessLocalNode
 from pycompiler.parser.TypeStatementNode import (
     TypeStatementNode,
     StaticTypeDefinitionReference,
@@ -38,7 +40,7 @@ class ScopeAssigner(AbstractASTTreeVisitor):
 
     def visit_write_name_access(self, access: NameWriteAccessNode):
         self.scope_stack[-1].export_name_access(
-            access.name, NameAccessNode(access.name)
+            access.name, NameAccessLocalNode(access.name)
         )
 
     def visit_function_definition_node(self, definition: FunctionDefinitionNode):
@@ -46,6 +48,12 @@ class ScopeAssigner(AbstractASTTreeVisitor):
             definition.name, StaticFunctionReferenceNode(definition)
         )
         self.push_scope()
+
+        for i, generic_name in enumerate(definition.generics):
+            self.scope_stack[-1].export_name_access(
+                generic_name, FunctionDefinitionGenericReference(generic_name, i)
+            )
+
         self.visit_any_list(definition.parameters)
         self.visit_any_list(definition.body)
         self.pop_scope()
@@ -76,6 +84,11 @@ class ScopeAssigner(AbstractASTTreeVisitor):
         self.visit_any_list(definition.parent_references)
 
         self.push_scope()
-        self.visit_any_list(definition.generics)
+
+        for i, generic_name in enumerate(definition.generics):
+            self.scope_stack[-1].export_name_access(
+                generic_name, ClassDefinitionGenericReference(generic_name, i)
+            )
+
         self.visit_any_list(definition.body)
         self.pop_scope()

@@ -37,8 +37,8 @@ class NameWriteAccessNode(AbstractSyntaxTreeExpressionNode):
     def get_tokens(self) -> typing.List[Token]:
         return [self.token]
 
-    def copy(self) -> NameAccessNode:
-        return NameAccessNode(self.name, self.token)
+    def copy(self) -> NameWriteAccessNode:
+        return NameWriteAccessNode(self.name, self.token)
 
     def __repr__(self):
         return f"NAME_W[{self.name}]"
@@ -48,3 +48,22 @@ class NameWriteAccessNode(AbstractSyntaxTreeExpressionNode):
 
     def can_be_assignment_target(self) -> bool:
         return True
+
+
+class NameAccessLocalNode(AbstractSyntaxTreeExpressionNode):
+    def __init__(self, name: str, token: Token = None):
+        super().__init__()
+        self.name = name
+        self.token = token
+
+    def get_tokens(self) -> typing.List[Token]:
+        return [self.token]
+
+    def copy(self) -> NameAccessLocalNode:
+        return NameAccessLocalNode(self.name, self.token)
+
+    def __repr__(self):
+        return f"NAME-LOCAL[{self.name}]"
+
+    def __eq__(self, other: NameAccessLocalNode):
+        return type(other) is NameAccessLocalNode and self.name == other.name

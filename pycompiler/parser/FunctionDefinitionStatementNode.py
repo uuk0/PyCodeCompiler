@@ -467,7 +467,7 @@ class FunctionDefinitionNode(AbstractSyntaxTreeNode):
 
         if section == ParentAttributeSection.BODY:
             for i, node in enumerate(self.body):
-                if node in original:
+                if node is original:
                     self.body[i] = new
                     return True
 

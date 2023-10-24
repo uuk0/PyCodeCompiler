@@ -53,8 +53,8 @@ class StaticClassReferenceNode(AbstractSyntaxTreeExpressionNode):
     def __eq__(self, other: StaticClassReferenceNode):
         return type(other) is StaticClassReferenceNode
 
-    def copy(self) -> ClassDefinitionNode:
-        return ClassDefinitionNode(self.class_def)
+    def copy(self) -> StaticClassReferenceNode:
+        return StaticClassReferenceNode(self.class_def)
 
 
 class ClassDefinitionNode(AbstractSyntaxTreeNode):

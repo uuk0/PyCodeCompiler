@@ -49,7 +49,7 @@ class AssignmentExpressionNode(AbstractSyntaxTreeNode):
             target.update_child_parent_relation()
 
         self.base.parent = self
-        self.base.parent.parent_section = ParentAttributeSection.BASE
+        self.base.parent_section = ParentAttributeSection.BASE
         self.base.update_child_parent_relation()
 
     def get_tokens(self) -> typing.List[Token]:

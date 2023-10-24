@@ -24,7 +24,7 @@ class AbstractSyntaxTreeNode(ABC):
         self.parent_section: ParentAttributeSection | None = None
 
     def replace_with(self, node: AbstractSyntaxTreeNode) -> bool:
-        assert self.parent is not None
+        assert self.parent is not None, self
         status = self.parent.replace_child_with(self, node, self.parent_section)
 
         if status:
@@ -43,7 +43,7 @@ class AbstractSyntaxTreeNode(ABC):
         raise NotImplementedError
 
     def update_child_parent_relation(self):
-        raise NotImplementedError
+        pass
 
     def get_tokens(self) -> typing.List[Token]:
         return []
