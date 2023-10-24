@@ -7,6 +7,7 @@ from pycompiler.parser.FunctionDefinitionStatementNode import (
     FunctionDefinitionNode,
     FunctionDefinitionArg,
     FunctionDefinitionArgReference,
+    StaticFunctionReferenceNode,
 )
 from pycompiler.parser.ImportStatementNode import ImportStatement
 from pycompiler.parser.TypeStatementNode import TypeStatementNode
@@ -39,8 +40,9 @@ class ScopeAssigner(AbstractASTTreeVisitor):
         super().visit_assignment_expression(assignment)
 
     def visit_function_definition_node(self, definition: FunctionDefinitionNode):
-        # todo: expose REFERENCE
-        # self.scope_stack[-1].export_name_access(definition.name, definition)
+        self.scope_stack[-1].export_name_access(
+            definition.name, StaticFunctionReferenceNode(definition)
+        )
         self.push_scope()
         self.visit_any_list(definition.parameters)
         self.visit_any_list(definition.body)

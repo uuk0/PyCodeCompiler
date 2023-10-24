@@ -41,7 +41,7 @@ class TestScopeAssignment(unittest.TestCase):
         self,
         node: AbstractSyntaxTreeNode,
         *children: typing.Callable[[AbstractSyntaxTreeNode], AbstractSyntaxTreeNode],
-    ):
+    ) -> Scope:
         scope = Scope()
         visitor = ScopeAssigner(scope)
         visitor.visit_any(node)
@@ -50,6 +50,8 @@ class TestScopeAssignment(unittest.TestCase):
         for i, child in enumerate(children):
             with self.subTest(f"child scope {i}"):
                 self.assertEqual(child(node).scope, scope)
+
+        return scope
 
     def test_name_access(self):
         self.helper(NameAccessNode("test"))
@@ -86,8 +88,8 @@ class TestScopeAssignment(unittest.TestCase):
         )
 
     def test_function_definition(self):
-        self.helper(
-            FunctionDefinitionNode(
+        scope = self.helper(
+            func := FunctionDefinitionNode(
                 "test",
                 None,
                 [
@@ -100,6 +102,11 @@ class TestScopeAssignment(unittest.TestCase):
             # lambda node: node.parameters[0], # subscope
             # lambda node: node.body[0],  # subscope
         )
+        self.assertIn("test", scope.variable_name_references)
+        self.assertIsInstance(
+            scope.variable_name_references["test"], StaticFunctionReferenceNode
+        )
+        self.assertEqual(scope.variable_name_references["test"].func_def, func)
 
     def test_generic_reference(self):
         self.helper(FunctionDefinitionGenericReference("test", 0))
@@ -116,7 +123,12 @@ class TestScopeAssignment(unittest.TestCase):
         )
 
     def test_static_function_reference(self):
-        self.helper(StaticFunctionReferenceNode(None))
+        self.helper(
+            ref := StaticFunctionReferenceNode(
+                FunctionDefinitionNode("test", [], [], [])
+            )
+        )
+        self.assertIsNone(ref.func_def.scope)
 
     def test_call_expression(self):
         self.helper(
