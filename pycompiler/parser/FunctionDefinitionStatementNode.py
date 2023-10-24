@@ -198,9 +198,8 @@ class FunctionDefinitionNode(AbstractSyntaxTreeNode):
             opening = parser.lexer.parse_token()
 
         if opening.token_type != TokenType.OPENING_ROUND_BRACKET:
-            parser.rollback_state()
-            parser.lexer.raise_positioned_syntax_error(
-                f"expected '(' after {'<name>' if generic_pair[0] else ']'}"
+            parser.lexer.raise_positioned_syntax_error_on_token(
+                opening, f"expected '(' after {'<name>' if generic_pair[0] else ']'}"
             )
 
         parser.pop_state()
@@ -210,9 +209,8 @@ class FunctionDefinitionNode(AbstractSyntaxTreeNode):
         parser.push_state()
         colon = parser.lexer.parse_token()
         if colon.token_type != TokenType.COLON:
-            parser.rollback_state()
-            parser.lexer.raise_positioned_syntax_error(
-                "expected ':' after ')' in <function definition>"
+            parser.lexer.raise_positioned_syntax_error_on_token(
+                colon, "expected ':' after ')' in <function definition>"
             )
         parser.pop_state()
         parser.push_state()
@@ -269,9 +267,8 @@ class FunctionDefinitionNode(AbstractSyntaxTreeNode):
                 parser.pop_state()
                 continue
             elif comma.token_type != TokenType.CLOSING_ROUND_BRACKET:
-                parser.rollback_state()
-                parser.lexer.raise_positioned_syntax_error(
-                    "expected ',' or ')' after <parameter>"
+                parser.lexer.raise_positioned_syntax_error_on_token(
+                    comma, "expected ',' or ')' after <parameter>"
                 )
 
             parser.pop_state()
@@ -348,7 +345,7 @@ class FunctionDefinitionNode(AbstractSyntaxTreeNode):
             )
 
     @classmethod
-    def parse_parameter_star(cls, parameters, parser, token):
+    def parse_parameter_star(cls, parameters, parser: Parser, token):
         parser.push_state()
         next_token = parser.lexer.parse_token()
         if next_token.token_type == TokenType.STAR:
@@ -357,9 +354,8 @@ class FunctionDefinitionNode(AbstractSyntaxTreeNode):
             param_name = parser.lexer.parse_token()
 
             if param_name.token_type != TokenType.IDENTIFIER:
-                parser.rollback_state()
-                parser.lexer.raise_positioned_syntax_error(
-                    "expected <expression> or '*' after '*'"
+                parser.lexer.raise_positioned_syntax_error_on_token(
+                    param_name, "expected <identifier> or '*' after '*'"
                 )
 
             parser.pop_state()
@@ -395,9 +391,8 @@ class FunctionDefinitionNode(AbstractSyntaxTreeNode):
             param_name = parser.lexer.parse_token()
 
             if param_name.token_type != TokenType.IDENTIFIER:
-                parser.rollback_state()
-                parser.lexer.raise_positioned_syntax_error(
-                    "expected <expression> or '*' after '*'"
+                parser.lexer.raise_positioned_syntax_error_on_token(
+                    param_name, "expected <expression> or '*' after '*'"
                 )
 
             parser.pop_state()
@@ -428,7 +423,9 @@ class FunctionDefinitionNode(AbstractSyntaxTreeNode):
             )
 
     @classmethod
-    def parse_generics(cls, generic_commas, generic_pair, generics, opening, parser):
+    def parse_generics(
+        cls, generic_commas, generic_pair, generics, opening, parser: Parser
+    ):
         parser.push_state()
         generic_name = parser.lexer.parse_token()
         if generic_name.token_type == TokenType.CLOSING_SQUARE_BRACKET:
@@ -437,9 +434,9 @@ class FunctionDefinitionNode(AbstractSyntaxTreeNode):
             parser.pop_state()
 
         elif generic_name.token_type != TokenType.IDENTIFIER:
-            parser.rollback_state()
-            parser.lexer.raise_positioned_syntax_error(
-                "expected <name> after '[' in <function definition> - <generics>"
+            parser.lexer.raise_positioned_syntax_error_on_token(
+                generic_name,
+                "expected <name> after '[' in <function definition> - <generics>",
             )
 
         else:
@@ -458,9 +455,9 @@ class FunctionDefinitionNode(AbstractSyntaxTreeNode):
                     break
 
                 elif comma.token_type != TokenType.COMMA:
-                    parser.rollback_state()
-                    parser.lexer.raise_positioned_syntax_error(
-                        "expected ',' or ']' after <name> in <function definition> - <generics>"
+                    parser.lexer.raise_positioned_syntax_error_on_token(
+                        comma,
+                        "expected ',' or ']' after <name> in <function definition> - <generics>",
                     )
 
                 generic_commas.append(comma)
@@ -474,8 +471,9 @@ class FunctionDefinitionNode(AbstractSyntaxTreeNode):
                     break
 
                 elif generic_name.token_type != TokenType.IDENTIFIER:
-                    parser.lexer.raise_positioned_syntax_error(
-                        "expected <name> or ']' after ','  in <function definition> - <generics>"
+                    parser.lexer.raise_positioned_syntax_error_on_token(
+                        generic_name,
+                        "expected <name> or ']' after ','  in <function definition> - <generics>",
                     )
 
                 parser.pop_state()

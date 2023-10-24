@@ -126,6 +126,13 @@ class Lexer:
         self.cursor = 0
 
         self.info_stack = []
+        self.line_offsets = []
+
+        offset = 0
+        for line in code.split("\n"):
+            self.line_offsets.append(offset)
+            offset += len(line) + 1
+        self.line_offsets.append(offset)
 
         self.filename = filename
 
@@ -149,6 +156,22 @@ class Lexer:
         print(line)
         print((" " * self.column) + ("^" * span))
         # todo: throw something only propagating major levels
+        raise SyntaxError(message)
+
+    def raise_positioned_syntax_error_on_token(self, token: Token, message: str):
+        print(
+            f"File \"{self.filename or '<unknown>'}\", line {token.line + 1}",
+            file=sys.stdout,
+        )
+        line = self.code[
+            self.line_offsets[token.line]
+            + token.column : self.line_offsets[token.line + 1]
+            + 1
+        ]
+        print(line)
+        print((" " * token.column) + ("^" * token.span))
+        # todo: throw something only propagating major levels
+
         raise SyntaxError(message)
 
     def push_state(self):

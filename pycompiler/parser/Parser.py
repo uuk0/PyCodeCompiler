@@ -359,8 +359,9 @@ class Parser:
         closing = self.lexer.parse_token()
 
         if closing.token_type != TokenType.CLOSING_SQUARE_BRACKET:
-            self.rollback_state()
-            self.lexer.raise_positioned_syntax_error("expected ']' after <expression>")
+            self.lexer.raise_positioned_syntax_error_on_token(
+                closing, "expected ']' after <expression>"
+            )
 
         return SubscriptionAccessExpressionNode(
             base,

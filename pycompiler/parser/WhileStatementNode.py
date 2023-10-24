@@ -39,9 +39,8 @@ class WhileStatementNode(AbstractSyntaxTreeNode):
         colon = parser.lexer.parse_token()
 
         if colon.token_type != TokenType.COLON:
-            parser.rollback_state()
-            parser.lexer.raise_positioned_syntax_error(
-                "expected ':' after <condition> in 'while'"
+            parser.lexer.raise_positioned_syntax_error_on_token(
+                colon, "expected ':' after <condition> in 'while'"
             )
 
         parser.pop_state()

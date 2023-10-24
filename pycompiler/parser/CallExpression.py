@@ -132,9 +132,8 @@ class CallExpression(AbstractSyntaxTreeExpressionNode):
                         continue
 
                     elif token.token_type != TokenType.CLOSING_ROUND_BRACKET:
-                        parser.rollback_state()
-                        parser.lexer.raise_positioned_syntax_error(
-                            "expected ',' or ')' after <keyword parameter>"
+                        parser.lexer.raise_positioned_syntax_error_on_token(
+                            token, "expected ',' or ')' after <keyword parameter>"
                         )
 
                     closing_bracket = token
@@ -208,9 +207,8 @@ class CallExpression(AbstractSyntaxTreeExpressionNode):
                 continue
 
             elif token.token_type != TokenType.CLOSING_ROUND_BRACKET:
-                parser.rollback_state()
-                parser.lexer.raise_positioned_syntax_error(
-                    "expected ',' or ')' after <keyword parameter>"
+                parser.lexer.raise_positioned_syntax_error_on_token(
+                    token, "expected ',' or ')' after <keyword parameter>"
                 )
 
             closing_bracket = token

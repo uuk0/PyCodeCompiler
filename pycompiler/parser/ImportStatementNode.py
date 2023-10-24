@@ -51,7 +51,7 @@ class ImportStatement(AbstractSyntaxTreeNode):
             token = parser.lexer.parse_token()
             
             if token.token_type != TokenType.IDENTIFIER or token.text != "import":
-                parser.lexer.raise_positioned_syntax_error("expected 'import' after 'from' <module>")
+                parser.lexer.raise_positioned_syntax_error_on_token(token, "expected 'import' after 'from' <module>")
                 
             tokens.append(token)
                 
@@ -65,7 +65,7 @@ class ImportStatement(AbstractSyntaxTreeNode):
             as_token = parser.lexer.parse_token()
             
             if as_token.token_type != TokenType.IDENTIFIER:
-                parser.lexer.raise_positioned_syntax_error("expected <name> after 'as'")
+                parser.lexer.raise_positioned_syntax_error_on_token(as_token, "expected <name> after 'as'")
         else:
             as_token = None
             parser.rollback_state()
@@ -84,7 +84,7 @@ class ImportStatement(AbstractSyntaxTreeNode):
         token = parser.lexer.parse_token()
 
         if token.token_type != TokenType.IDENTIFIER:
-            parser.lexer.raise_positioned_syntax_error(f"expected <identifier> after {context}")
+            parser.lexer.raise_positioned_syntax_error_on_token(token, f"expected <identifier> after {context}")
 
         module = [token]
         while True:
@@ -98,7 +98,7 @@ class ImportStatement(AbstractSyntaxTreeNode):
             token = parser.lexer.parse_token()
 
             if token.token_type != TokenType.IDENTIFIER:
-                parser.lexer.raise_positioned_syntax_error(f"expected <identifier> after {context} ... '.'")
+                parser.lexer.raise_positioned_syntax_error_on_token(token, f"expected <identifier> after {context} ... '.'")
 
             module.append(token)
 
