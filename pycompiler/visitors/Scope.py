@@ -17,6 +17,7 @@ class Scope:
             str, AbstractSyntaxTreeExpressionNode
         ] = {}
         self.expose_names_to_children: typing.Set[str] = set()
+        self.expected_static_locals: typing.Set[str] = set()
 
     def create_child(self, scope_across_boundaries=False):
         return Scope(self, scope_across_boundaries=scope_across_boundaries)

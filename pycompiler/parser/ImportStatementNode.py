@@ -13,6 +13,23 @@ if typing.TYPE_CHECKING:
     from pycompiler.parser.Parser import Parser
 
 
+class ModuleReferenceNode(AbstractSyntaxTreeExpressionNode):
+    def __init__(self, name: str, part: str = None):
+        super().__init__()
+        self.name = name
+        self.part = part
+        self.module_object = None
+
+    def __repr__(self):
+        return f"MODULE-REF({self.name} : {self.part})"
+
+    def __eq__(self, other: ModuleReferenceNode):
+        return type(other) is ModuleReferenceNode and self.name == other.name and self.part == other.part
+
+    def copy(self) -> ModuleReferenceNode:
+        return ModuleReferenceNode(self.name, self.part)
+
+
 class ImportStatement(AbstractSyntaxTreeNode):
     @classmethod
     def parse_from_parser(cls, parser: Parser) -> ImportStatement | None:

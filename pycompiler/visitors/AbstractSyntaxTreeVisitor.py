@@ -26,7 +26,7 @@ from pycompiler.parser.FunctionDefinitionStatementNode import (
 from pycompiler.parser.CallExpression import CallExpression, CallExpressionArgument
 from pycompiler.parser.SliceExpressionNode import SliceExpressionNode
 from pycompiler.parser.ConstantValueExpressionNode import ConstantValueExpressionNode
-from pycompiler.parser.ImportStatementNode import ImportStatement
+from pycompiler.parser.ImportStatementNode import ImportStatement, ModuleReferenceNode
 from pycompiler.parser.TypeStatementNode import (
     TypeStatementNode,
     StaticTypeDefinitionReference,
@@ -154,6 +154,10 @@ class AbstractASTTreeVisitor(ABC):
 
     @_bind_to_datatype(ImportStatement)
     def visit_import_statement(self, statement: ImportStatement):
+        pass
+
+    @_bind_to_datatype(ModuleReferenceNode)
+    def visit_module_reference(self, reference: ModuleReferenceNode):
         pass
 
     @_bind_to_datatype(TypeStatementNode)

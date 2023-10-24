@@ -13,7 +13,7 @@ from pycompiler.parser.FunctionDefinitionStatementNode import (
     StaticFunctionReferenceNode,
     FunctionDefinitionGenericReference,
 )
-from pycompiler.parser.ImportStatementNode import ImportStatement
+from pycompiler.parser.ImportStatementNode import ImportStatement, ModuleReferenceNode
 from pycompiler.parser.NameAccessNode import NameWriteAccessNode, NameAccessLocalNode
 from pycompiler.parser.TypeStatementNode import (
     TypeStatementNode,
@@ -65,7 +65,13 @@ class ScopeAssigner(AbstractASTTreeVisitor):
         super().visit_function_definition_arg(arg)
 
     def visit_import_statement(self, statement: ImportStatement):
-        pass  # todo: export module
+        self.scope_stack[-1].export_name_access(
+            statement.module.split(".")[0],
+            ModuleReferenceNode(
+                statement.from_module or statement.module,
+                statement.module if statement.from_module else None,
+            ),
+        )
 
     def visit_type_statement(self, statement: TypeStatementNode):
         self.scope_stack[-1].export_name_access(

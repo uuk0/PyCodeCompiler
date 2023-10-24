@@ -25,6 +25,7 @@ from pycompiler.parser.ClassDefinitionStatementNode import (
     StaticClassReferenceNode,
     ClassDefinitionGenericReference,
 )
+from pycompiler.parser.ImportStatementNode import ImportStatement, ModuleReferenceNode
 
 from pycompiler.visitors.NameResolver import NameResolver
 from pycompiler.visitors.ScopeAssigner import ScopeAssigner
@@ -98,3 +99,14 @@ class TestNameResolver(unittest.TestCase):
         ScopeAssigner(scope).visit_any(node)
         NameResolver().visit_any(node)
         self.assertEqual(node.body[0], ClassDefinitionGenericReference("gen", 0))
+
+    def test_importstatement(self):
+        scope = Scope()
+        node = ImportStatement("testmodule")
+        node.update_child_parent_relation()
+        ScopeAssigner(scope).visit_any(node)
+        NameResolver().visit_any(node)
+        self.assertEqual(
+            scope.variable_name_references,
+            {"testmodule": ModuleReferenceNode("testmodule")},
+        )
