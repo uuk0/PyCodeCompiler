@@ -279,10 +279,29 @@ class FunctionDefinitionNode(AbstractSyntaxTreeNode):
         return parameters
 
     @classmethod
-    def parse_parameter_no_star(cls, parameters, parser, token):
+    def parse_parameter_no_star(
+        cls,
+        parameters: typing.List[FunctionDefinitionArg],
+        parser: Parser,
+        identifier: Token,
+    ):
         is_keyword = False
-        if token.token_type == TokenType.IDENTIFIER:
+        type_hint = None
+
+        if identifier.token_type == TokenType.IDENTIFIER:
             next_token = parser.lexer.parse_token()
+
+            if next_token.token_type == TokenType.COLON:
+                type_hint = parser.try_parse_type_annotation()
+
+                if type_hint is None:
+                    parser.lexer.raise_positioned_syntax_error(
+                        "expected <type hint> after ':'"
+                    )
+
+                parser.pop_state()
+                parser.push_state()
+                next_token = parser.lexer.parse_token()
 
             if next_token.token_type == TokenType.EQUAL_SIGN:
                 is_keyword = True
@@ -298,9 +317,9 @@ class FunctionDefinitionNode(AbstractSyntaxTreeNode):
                 parameters.append(
                     FunctionDefinitionArg(
                         ArgType.KEYWORD,
-                        token.text,
+                        identifier.text,
                         expr,
-                        name_token=token,
+                        name_token=identifier,
                         equal_sign_token=next_token,
                     )
                 )
@@ -309,6 +328,8 @@ class FunctionDefinitionNode(AbstractSyntaxTreeNode):
 
         else:
             parser.rollback_state()
+            return
+
         if not is_keyword:
             expr = parser.try_parse_expression()
 
@@ -320,8 +341,9 @@ class FunctionDefinitionNode(AbstractSyntaxTreeNode):
             parameters.append(
                 FunctionDefinitionArg(
                     ArgType.NORMAL,
-                    token.text,
-                    name_token=token,
+                    identifier.text,
+                    name_token=identifier,
+                    type_hint=type_hint,
                 )
             )
 
@@ -343,11 +365,27 @@ class FunctionDefinitionNode(AbstractSyntaxTreeNode):
             parser.pop_state()
             parser.pop_state()
 
+            parser.push_state()
+            type_hint = None
+            next_token = parser.lexer.parse_token()
+            if next_token.token_type == TokenType.COLON:
+                type_hint = parser.try_parse_type_annotation()
+
+                if type_hint is None:
+                    parser.lexer.raise_positioned_syntax_error(
+                        "expected <type hint> after ':'"
+                    )
+
+                parser.pop_state()
+            else:
+                parser.rollback_state()
+
             parameters.append(
                 FunctionDefinitionArg(
                     ArgType.STAR_STAR,
                     param_name.text,
                     name_token=token,
+                    type_hint=type_hint,
                 )
             )
 
@@ -365,11 +403,27 @@ class FunctionDefinitionNode(AbstractSyntaxTreeNode):
             parser.pop_state()
             parser.pop_state()
 
+            parser.push_state()
+            type_hint = None
+            next_token = parser.lexer.parse_token()
+            if next_token.token_type == TokenType.COLON:
+                type_hint = parser.try_parse_type_annotation()
+
+                if type_hint is None:
+                    parser.lexer.raise_positioned_syntax_error(
+                        "expected <type hint> after ':'"
+                    )
+
+                parser.pop_state()
+            else:
+                parser.rollback_state()
+
             parameters.append(
                 FunctionDefinitionArg(
                     ArgType.STAR,
                     param_name.text,
                     name_token=token,
+                    type_hint=type_hint,
                 )
             )
 
