@@ -33,6 +33,11 @@ class TestAssignmentParsing(TestCase):
             SyntaxError, lambda: Parser("test = test2 =").try_parse_assignment()
         )
 
+    def test_error_invalid_continue(self):
+        self.assertRaises(
+            SyntaxError, lambda: Parser("test = .").try_parse_assignment()
+        )
+
     def test_basic(self):
         self.helper(
             "test = test2",
