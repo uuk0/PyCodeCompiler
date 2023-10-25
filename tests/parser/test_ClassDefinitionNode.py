@@ -8,10 +8,62 @@ from pycompiler.parser.NameAccessNode import NameAccessNode
 
 class TestClassDefinition(unittest.TestCase):
     def helper(self, code: str, expected: ClassDefinitionNode):
-        parser = Parser(code)
-        self.assertEqual(parser.try_parse_code_line_obj(), expected)
-        parser = Parser(code)
-        self.assertEqual(parser.parse_code_block(), [expected])
+        with self.subTest("direct"):
+            self.assertEqual(
+                expected, ClassDefinitionNode.decode_from_paser(Parser(code))
+            )
+
+        with self.subTest("line"):
+            parser = Parser(code)
+            self.assertEqual(expected, parser.try_parse_code_line_obj())
+
+        with self.subTest("block"):
+            parser = Parser(code)
+            self.assertEqual([expected], parser.parse_code_block())
+
+        with self.subTest("copy eq"):
+            self.assertEqual(expected, expected.copy())
+            self.assertIsNot(expected, expected.copy())
+
+    def test_error_on_missing_name(self):
+        self.assertRaises(
+            SyntaxError, lambda: Parser("class :").try_parse_code_line_obj()
+        )
+
+    def test_missing_closing_generic_bracket(self):
+        self.assertRaises(
+            SyntaxError, lambda: Parser("class x[t:").try_parse_code_line_obj()
+        )
+
+    def test_missing_closing_generic_bracket_eof(self):
+        self.assertRaises(
+            SyntaxError, lambda: Parser("class x[t").try_parse_code_line_obj()
+        )
+
+    def test_missing_closing_round_bracket(self):
+        self.assertRaises(
+            SyntaxError, lambda: Parser("class x(t:").try_parse_code_line_obj()
+        )
+
+    def test_missing_closing_round_bracket_eof(self):
+        self.assertRaises(
+            SyntaxError, lambda: Parser("class x(t").try_parse_code_line_obj()
+        )
+
+    def test_missing_colon(self):
+        self.assertRaises(
+            SyntaxError, lambda: Parser("class x test").try_parse_code_line_obj()
+        )
+
+    def test_missing_colon_eof(self):
+        self.assertRaises(
+            SyntaxError, lambda: Parser("class x").try_parse_code_line_obj()
+        )
+
+    def test_missing_code(self):
+        self.assertRaises(
+            SyntaxError, lambda: Parser("class x:\ntest").try_parse_code_line_obj()
+        )
 
     def test_basic(self):
         self.helper(

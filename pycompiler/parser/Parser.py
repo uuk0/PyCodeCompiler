@@ -41,11 +41,35 @@ class Parser:
         self.lexer.rollback_state()
 
     def parse_code_block(
-        self, expected_indent=0
+        self, expected_indent=0, first_needs_indent=True
     ) -> typing.List[AbstractSyntaxTreeNode]:
         old_indent = self.indent
         self.indent = expected_indent
         result = []
+
+        if first_needs_indent:
+            exit_block = False
+            while True:
+                self.push_state()
+
+                if not all(
+                    self.lexer.parse_indent_block() for _ in range(expected_indent)
+                ):
+                    next_token = self.lexer.parse_token()
+
+                    if next_token.token_type == TokenType.NEWLINE:
+                        self.pop_state()
+                        continue
+
+                    self.rollback_state()
+                    self.lexer.increment_cursor(-1)  # \n unrolling
+                    exit_block = True
+                else:
+                    self.pop_state()
+                break
+
+            if exit_block:
+                return []
 
         while True:
             expr = self.try_parse_code_line_obj()
