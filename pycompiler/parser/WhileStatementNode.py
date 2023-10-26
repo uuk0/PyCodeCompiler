@@ -15,7 +15,7 @@ if typing.TYPE_CHECKING:
 
 class WhileStatementNode(AbstractSyntaxTreeNode):
     @classmethod
-    def parse_from_parser(cls, parser: Parser) -> WhileStatementNode | None:
+    def try_parse_from_parser(cls, parser: Parser) -> WhileStatementNode | None:
         parser.push_state()
         while_token = parser.lexer.parse_token()
 

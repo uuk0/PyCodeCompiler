@@ -62,7 +62,7 @@ class ModuleReferenceNode(AbstractSyntaxTreeExpressionNode):
 
 class ImportStatement(AbstractSyntaxTreeNode):
     @classmethod
-    def parse_from_parser(cls, parser: Parser) -> ImportStatement | None:
+    def try_parse_from_parser(cls, parser: Parser) -> ImportStatement | None:
         parser.push_state()
 
         token = parser.lexer.parse_token()

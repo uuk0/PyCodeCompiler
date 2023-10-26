@@ -6,6 +6,10 @@ from abc import ABC
 from pycompiler.Lexer import Token
 
 
+if typing.TYPE_CHECKING:
+    from pycompiler.parser.Parser import Parser
+
+
 class ParentAttributeSection(enum.Enum):
     LHS = enum.auto()
     RHS = enum.auto()
@@ -18,6 +22,12 @@ class ParentAttributeSection(enum.Enum):
 
 
 class AbstractSyntaxTreeNode(ABC):
+    CONTINUE_FLOW_AFTER_EXPRESSION = True
+
+    @classmethod
+    def try_parse_from_parser(cls, parser: Parser) -> AbstractSyntaxTreeNode:
+        pass
+
     def __init__(self):
         self.scope = None
         self.parent: AbstractSyntaxTreeNode | None = None

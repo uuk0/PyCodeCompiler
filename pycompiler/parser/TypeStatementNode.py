@@ -34,7 +34,7 @@ class StaticTypeDefinitionReference(AbstractSyntaxTreeExpressionNode):
 
 class TypeStatementNode(AbstractSyntaxTreeNode):
     @classmethod
-    def parse_from_parser(cls, parser: Parser) -> TypeStatementNode | None:
+    def try_parse_from_parser(cls, parser: Parser) -> TypeStatementNode | None:
         parser.push_state()
         token = parser.lexer.parse_token()
 

@@ -106,7 +106,7 @@ class StaticClassReferenceNodeWithGeneric(AbstractSyntaxTreeExpressionNode):
 
 class ClassDefinitionNode(AbstractSyntaxTreeNode):
     @classmethod
-    def decode_from_paser(cls, parser: Parser):
+    def try_parse_from_parser(cls, parser: Parser) -> ClassDefinitionNode | None:
         # 'class' <name> ['[' <generics> ']'] '(' <parent_classes> ')' ':' <code block>
         parser.push_state()
         class_token = parser.lexer.parse_token()

@@ -7,11 +7,16 @@ from pycompiler.parser.AbstractSyntaxTreeNode import (
     AbstractSyntaxTreeNode,
     AbstractSyntaxTreeExpressionNode,
 )
+from pycompiler.parser.BreakStatementNode import BreakStatement
+from pycompiler.parser.ContinueStatementNode import ContinueStatement
 from pycompiler.parser.NameAccessNode import NameAccessNode, NameWriteAccessNode
 from pycompiler.parser.AssignmentExpressionNode import AssignmentExpressionNode
 from pycompiler.parser.AttributeAccessExpressionNode import (
     AttributeAccessExpressionNode,
 )
+from pycompiler.parser.PassStatementNode import PassStatement
+from pycompiler.parser.RaiseStatementNode import RaiseStatement
+from pycompiler.parser.ReturnStatementNode import ReturnStatement
 from pycompiler.parser.SubscriptionAccessExpressionNode import (
     SubscriptionAccessExpressionNode,
 )
@@ -23,9 +28,24 @@ from pycompiler.parser.ImportStatementNode import ImportStatement
 from pycompiler.parser.TypeStatementNode import TypeStatementNode
 from pycompiler.parser.ClassDefinitionStatementNode import ClassDefinitionNode
 from pycompiler.parser.WhileStatementNode import WhileStatementNode
+from pycompiler.parser.YieldStatementNode import YieldStatement
 
 
 class Parser:
+    KNOWN_EXACT_STATEMENTS = [
+        FunctionDefinitionNode,
+        ClassDefinitionNode,
+        TypeStatementNode,
+        ImportStatement,
+        WhileStatementNode,
+        ReturnStatement,
+        RaiseStatement,
+        YieldStatement,
+        PassStatement,
+        BreakStatement,
+        ContinueStatement,
+    ]
+
     def __init__(self, code: str, filename: str = None):
         self.code = code
         self.lexer = Lexer(code, filename=filename)
@@ -126,20 +146,16 @@ class Parser:
         return result
 
     def try_parse_code_line_obj(self) -> AbstractSyntaxTreeNode:
-        if expr := FunctionDefinitionNode.decode_from_paser(self):
-            return expr
+        for t in self.KNOWN_EXACT_STATEMENTS:
+            self.push_state()
+            pos = self.lexer.get_position_info()
 
-        if expr := ClassDefinitionNode.decode_from_paser(self):
-            return expr
+            if expr := t.try_parse_from_parser(self):
+                self.pop_state()
+                return expr
 
-        if expr := TypeStatementNode.parse_from_parser(self):
-            return expr
-
-        if expr := ImportStatement.parse_from_parser(self):
-            return expr
-
-        if expr := WhileStatementNode.parse_from_parser(self):
-            return expr
+            self.rollback_state()
+            assert pos == self.lexer.get_position_info(), f"stack issue in {t}"
 
         if expr := self.try_parse_assignment():
             return expr

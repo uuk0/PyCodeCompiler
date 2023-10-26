@@ -166,7 +166,7 @@ class StaticFunctionReferenceNode(AbstractSyntaxTreeExpressionNode):
 
 class FunctionDefinitionNode(AbstractSyntaxTreeNode):
     @classmethod
-    def decode_from_paser(cls, parser: Parser):
+    def try_parse_from_parser(cls, parser: Parser) -> FunctionDefinitionNode | None:
         # 'def' <name> ['[' <generics> ']'] '(' <parameters> ')' ':' <code block>
         parser.push_state()
         def_token = parser.lexer.parse_token()

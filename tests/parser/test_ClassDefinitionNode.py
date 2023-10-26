@@ -10,7 +10,7 @@ class TestClassDefinition(unittest.TestCase):
     def helper(self, code: str, expected: ClassDefinitionNode):
         with self.subTest("direct"):
             self.assertEqual(
-                expected, ClassDefinitionNode.decode_from_paser(Parser(code))
+                expected, ClassDefinitionNode.try_parse_from_parser(Parser(code))
             )
 
         with self.subTest("line"):
