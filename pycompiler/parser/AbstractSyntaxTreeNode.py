@@ -60,6 +60,42 @@ class AbstractSyntaxTreeNode(ABC):
     def can_be_assignment_target(self) -> bool:
         return False
 
+    def get_constant_on_attribute_access(
+        self,
+        name: str,
+        context: AbstractSyntaxTreeNode = None,
+    ) -> (
+        typing.Tuple[AbstractSyntaxTreeExpressionNode, AbstractSyntaxTreeNode | None]
+        | None
+    ):
+        """
+        Optimisation method for getting an attribute of the node
+
+        Should return None when not possible.
+        Otherwise, should return tuple of the value, and optional a side effect
+
+        :param name: the attribute name
+        :param context: A node describing the attribute access
+        """
+
+    def get_constant_on_subscription_access(
+        self,
+        expr: AbstractSyntaxTreeExpressionNode,
+        context: AbstractSyntaxTreeNode = None,
+    ) -> (
+        typing.Tuple[AbstractSyntaxTreeExpressionNode, AbstractSyntaxTreeNode | None]
+        | None
+    ):
+        """
+        Optimisation method for getting a subscription
+
+        Should return None when not possible.
+        Otherwise, should return tuple of the value, and optional a side effect
+
+        :param expr: the index expr
+        :param context: A node describing the attribute access
+        """
+
 
 class AbstractSyntaxTreeExpressionNode(AbstractSyntaxTreeNode, ABC):
     def __init__(self):

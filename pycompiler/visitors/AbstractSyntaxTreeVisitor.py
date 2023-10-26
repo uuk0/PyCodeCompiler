@@ -39,6 +39,8 @@ from pycompiler.parser.ClassDefinitionStatementNode import (
 )
 from pycompiler.parser.WhileStatementNode import WhileStatementNode
 
+from pycompiler.specification.Spec import SpecifiedClass, SpecifiedFunction
+
 from pycompiler.parser.util import ArgType
 
 
@@ -194,3 +196,11 @@ class AbstractASTTreeVisitor(ABC):
     def visit_while_statement(self, while_statement: WhileStatementNode):
         self.visit_any(while_statement.condition)
         self.visit_any_list(while_statement.body)
+
+    @_bind_to_datatype(SpecifiedClass)
+    def visit_specified_class(self, cls: SpecifiedClass):
+        pass
+
+    @_bind_to_datatype(SpecifiedFunction)
+    def visit_specified_function(self, function: SpecifiedFunction):
+        pass

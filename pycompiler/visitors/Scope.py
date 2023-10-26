@@ -7,9 +7,19 @@ from pycompiler.parser.AbstractSyntaxTreeNode import (
     AbstractSyntaxTreeExpressionNode,
 )
 from pycompiler.parser.ScopeReferences import ParentScopeReference
+from pycompiler.ModuleDeclaration import ModuleDeclaration
 
 
 class Scope:
+    # builtin functions
+    BASE_SCOPE_VALUES: typing.Dict[str, AbstractSyntaxTreeExpressionNode] = {}
+
+    # any modules
+    GLOBAL_MODULES: typing.Dict[str, ModuleDeclaration] = {}
+
+    # for the compiler: what modules where discovered and need to be loaded
+    PENDING_MODULE_LOOKUPS: typing.Set[str] = set()
+
     def __init__(self, parent: Scope = None, scope_across_boundaries=False):
         self.parent = parent
         self.scope_across_boundaries = scope_across_boundaries
@@ -31,6 +41,9 @@ class Scope:
             return ParentScopeReference(name)
 
         if self.parent is None:
+            if name in self.BASE_SCOPE_VALUES:
+                return self.BASE_SCOPE_VALUES[name]
+
             raise NameError("name not arrival; not found at root!")
 
         return self.parent.get_access_node_to_name(name)

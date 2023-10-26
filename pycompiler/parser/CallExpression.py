@@ -1,4 +1,6 @@
 from __future__ import annotations
+
+import inspect
 import typing
 
 from pycompiler.Lexer import Token, TokenType
@@ -300,3 +302,6 @@ class CallExpression(AbstractSyntaxTreeExpressionNode):
             self.brackets,
             self.commas.copy(),
         )
+
+    def get_signature(self) -> inspect.Signature:
+        raise NotImplementedError

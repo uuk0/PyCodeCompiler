@@ -11,6 +11,8 @@ from pycompiler.Lexer import Token, TokenType
 
 if typing.TYPE_CHECKING:
     from pycompiler.parser.Parser import Parser
+    from pycompiler.ModuleDeclaration import ModuleDeclaration
+    from pycompiler.visitors.Scope import Scope
 
 
 class ModuleReferenceNode(AbstractSyntaxTreeExpressionNode):
@@ -18,7 +20,35 @@ class ModuleReferenceNode(AbstractSyntaxTreeExpressionNode):
         super().__init__()
         self.name = name
         self.part = part
-        self.module_object = None
+        self.module_object: ModuleDeclaration | None = None
+
+    def get_constant_on_attribute_access(
+        self,
+        name: str,
+        context: AbstractSyntaxTreeNode = None,
+    ) -> (
+        typing.Tuple[AbstractSyntaxTreeExpressionNode, AbstractSyntaxTreeNode | None]
+        | None
+    ):
+        return self.module_object.get_constant_on_attribute_access(name, context)
+
+    def get_constant_on_subscription_access(
+        self,
+        expr: AbstractSyntaxTreeExpressionNode,
+        context: AbstractSyntaxTreeNode = None,
+    ) -> (
+        typing.Tuple[AbstractSyntaxTreeExpressionNode, AbstractSyntaxTreeNode | None]
+        | None
+    ):
+        return self.module_object.get_constant_on_subscription_access(expr, context)
+
+    def lookup(self, scope: Scope):
+        if self.name in scope.GLOBAL_MODULES:
+            self.module_object = scope.GLOBAL_MODULES[self.name]
+            return
+
+        # todo: try loading it!
+        raise ModuleNotFoundError(f"module {self.name}")
 
     def __repr__(self):
         return f"MODULE-REF({self.name} : {self.part})"
