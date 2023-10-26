@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import inspect
 import types
+import typing
 
 
 def check_signature_compatible(
@@ -9,6 +10,7 @@ def check_signature_compatible(
 ) -> bool:
     provided_keywords = set()
     used_keywords = set()
+    arg_types: typing.Dict[str, type] = {}
     provided_arg_count = 0
 
     for arg in possible.parameters.values():
@@ -21,6 +23,9 @@ def check_signature_compatible(
                 if provided_keywords:
                     provided_keywords.add(arg.name)
 
+                if arg.annotation != inspect.Parameter.empty:
+                    arg_types[arg.name] = arg.annotation
+
         elif arg.kind == inspect.Parameter.VAR_KEYWORD:
             provided_keywords = None
 
@@ -28,6 +33,8 @@ def check_signature_compatible(
             provided_arg_count = -1
 
     for i, arg in enumerate(expected.parameters.values()):
+        arg: inspect.Parameter
+
         if arg.kind == inspect.Parameter.POSITIONAL_OR_KEYWORD:
             # is it a non-keyword?
             if arg.default == inspect._empty:
@@ -45,7 +52,13 @@ def check_signature_compatible(
                     )
 
             else:
-                # todo: check for keyword arg type
+                if (
+                    arg.name in arg_types
+                    and arg.annotation != inspect.Parameter.empty
+                    and not check_type_matching(arg.annotation, arg_types[arg.name])
+                ):
+                    return False
+
                 used_keywords.add(arg.name)
 
     if provided_keywords and provided_keywords - used_keywords:
