@@ -27,13 +27,25 @@ def check_signature_compatible(
         elif arg.kind == inspect.Parameter.VAR_POSITIONAL:
             provided_arg_count = -1
 
-    for i, arg in enumerate(expected.parameters):
+    for i, arg in enumerate(expected.parameters.values()):
         if arg.kind == inspect.Parameter.POSITIONAL_OR_KEYWORD:
             # is it a non-keyword?
             if arg.default == inspect._empty:
-                if 0 <= provided_arg_count <= i:
-                    return False
+                if 0 <= provided_arg_count:
+                    if provided_arg_count <= i:
+                        return False
+
+                    earg = list(expected.parameters.values())[i]
+                    parg = list(possible.parameters.values())[i]
+
+                    return (
+                        earg.annotation == inspect.Parameter.empty
+                        or parg.annotation == inspect.Parameter.empty
+                        or check_type_matching(earg.annotation, parg.annotation)
+                    )
+
             else:
+                # todo: check for keyword arg type
                 used_keywords.add(arg.name)
 
     if provided_keywords and provided_keywords - used_keywords:

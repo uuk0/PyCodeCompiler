@@ -34,3 +34,42 @@ class TestTypeMatching(unittest.TestCase):
         self.assertTrue(check_type_matching(str | int, str | int))
         self.assertTrue(check_type_matching(str | int, int | str))
         self.assertFalse(check_type_matching(str, str | int))
+
+
+class TestSignatureMatching(unittest.TestCase):
+    def test_simple(self):
+        self.assertTrue(
+            check_signature_compatible(inspect.Signature(), inspect.Signature())
+        )
+        self.assertTrue(
+            check_signature_compatible(
+                inspect.Signature(
+                    [inspect.Parameter("a", inspect.Parameter.POSITIONAL_OR_KEYWORD)]
+                ),
+                inspect.Signature(
+                    [inspect.Parameter("a", inspect.Parameter.POSITIONAL_OR_KEYWORD)]
+                ),
+            )
+        )
+        self.assertTrue(
+            check_signature_compatible(
+                inspect.Signature(
+                    [
+                        inspect.Parameter(
+                            "a",
+                            inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                            annotation=list,
+                        )
+                    ]
+                ),
+                inspect.Signature(
+                    [
+                        inspect.Parameter(
+                            "a",
+                            inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                            annotation=list,
+                        )
+                    ]
+                ),
+            )
+        )
