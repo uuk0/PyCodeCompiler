@@ -83,6 +83,9 @@ class CallExpressionArgument(AbstractSyntaxTreeExpressionNode):
     def can_be_assignment_target(self) -> bool:
         return True
 
+    def get_type_annotation(self):
+        return self.expr.get_data_type()
+
 
 class CallExpression(AbstractSyntaxTreeExpressionNode):
     @classmethod
@@ -304,4 +307,22 @@ class CallExpression(AbstractSyntaxTreeExpressionNode):
         )
 
     def get_signature(self) -> inspect.Signature:
-        raise NotImplementedError
+        args = []
+
+        for i, param in enumerate(self.args):
+            param: CallExpressionArgument
+
+            args.append(
+                inspect.Parameter(
+                    f":param_{i}",
+                    param.arg_type.inspect_name,
+                    annotation=param.get_type_annotation(),
+                )
+                if param.arg_type != ArgType.KEYWORD
+                else inspect.Parameter(
+                    param.keyword,
+                    inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                    default=param.expr,
+                    annotation=param.get_type_annotation(),
+                )
+            )

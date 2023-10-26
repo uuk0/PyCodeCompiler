@@ -9,10 +9,13 @@ from pycompiler.parser.AbstractSyntaxTreeNode import (
 
 
 class ConstantValueExpressionNode(AbstractSyntaxTreeExpressionNode):
-    def __init__(self, value, tokens: typing.List[Token] = None):
+    def __init__(
+        self, value, tokens: typing.List[Token] = None, exact_type: type = None
+    ):
         super().__init__()
         self.value = value
         self.tokens = tokens or []
+        self.result_type = exact_type or type(value)
 
     def get_tokens(self) -> typing.List[Token]:
         return self.tokens
