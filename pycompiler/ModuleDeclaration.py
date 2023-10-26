@@ -3,6 +3,7 @@ from __future__ import annotations
 import typing
 import inspect
 
+from pycompiler.TypeChecking import check_signature_compatible
 from pycompiler.parser.AbstractSyntaxTreeNode import (
     AbstractSyntaxTreeExpressionNode,
     AbstractSyntaxTreeNode,
@@ -41,13 +42,8 @@ class ModuleDeclaration:
                 return methods[signature], None
 
             for sig, method in methods.items():
-                if self.match_signature(sig, signature):
+                if check_signature_compatible(sig, signature):
                     return method, None
-
-    def match_signature(
-        self, expected: inspect.Signature, arrival: inspect.Signature
-    ) -> bool:
-        pass
 
     def get_constant_on_subscription_access(
         self,
