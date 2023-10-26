@@ -77,3 +77,12 @@ class SubscriptionAccessExpressionNode(AbstractSyntaxTreeExpressionNode):
 
     def can_be_assignment_target(self) -> bool:
         return True
+
+    def as_data_type(self):
+        base = self.base.as_data_type()
+        args = self.inner.as_data_type()
+        return (
+            base[args]
+            if base != NotImplemented and args != NotImplemented
+            else NotImplemented
+        )

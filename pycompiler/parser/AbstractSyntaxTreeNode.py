@@ -107,3 +107,6 @@ class AbstractSyntaxTreeExpressionNode(AbstractSyntaxTreeNode, ABC):
 
     def get_data_type(self):
         return self.result_type or typing.Any
+
+    def as_data_type(self):
+        return NotImplemented

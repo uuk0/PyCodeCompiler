@@ -8,7 +8,7 @@ class ArgType(enum.Enum):
     STAR = inspect.Parameter.VAR_POSITIONAL, 2
     STAR_STAR = inspect.Parameter.VAR_KEYWORD, 3
 
-    def __init__(self, inspect_name: str, id: int):
+    def __init__(self, inspect_name, id: int):
         self.inspect_name = inspect_name
         self.id = id
 

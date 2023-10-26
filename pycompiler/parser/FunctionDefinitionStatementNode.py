@@ -1,4 +1,6 @@
 from __future__ import annotations
+
+import inspect
 import typing
 
 from pycompiler.Lexer import Token, TokenType
@@ -19,7 +21,7 @@ class FunctionDefinitionArg(AbstractSyntaxTreeNode):
         arg_type: ArgType,
         name: str,
         default_value: AbstractSyntaxTreeNode = None,
-        type_hint: AbstractSyntaxTreeNode = None,
+        type_hint: AbstractSyntaxTreeExpressionNode = None,
         name_token: Token = None,
         equal_sign_token: Token = None,
     ):
@@ -491,6 +493,7 @@ class FunctionDefinitionNode(AbstractSyntaxTreeNode):
         generic_bracket_tokens: typing.Tuple[Token, Token] = None,
         generic_name_tokens: typing.List[Token] = None,
         parameter_bracket: typing.Tuple[Token, Token] = None,
+        return_type: AbstractSyntaxTreeExpressionNode = None,
     ):
         super().__init__()
         self.name_token = name_token
@@ -502,6 +505,7 @@ class FunctionDefinitionNode(AbstractSyntaxTreeNode):
         self.generics = generics or []
         self.parameters = parameters or []
         self.body = body
+        self.return_type = return_type
 
     def replace_child_with(
         self,
@@ -572,4 +576,35 @@ class FunctionDefinitionNode(AbstractSyntaxTreeNode):
             self.generic_bracket_tokens,
             self.generic_name_tokens.copy(),
             self.parameter_bracket,
+        )
+
+    def get_signature(self) -> inspect.Signature:
+        args = []
+
+        for param in self.parameters:
+            if param.arg_type == ArgType.KEYWORD:
+                args.append(
+                    inspect.Parameter(
+                        param.name,
+                        inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                        default=param.default_value,
+                        annotation=param.type_hint.as_data_type()
+                        if param.type_hint
+                        else typing.Any,
+                    )
+                )
+            else:
+                args.append(
+                    inspect.Parameter(
+                        param.name,
+                        param.arg_type.inspect_name,
+                        annotation=param.type_hint.as_data_type()
+                        if param.type_hint
+                        else typing.Any,
+                    )
+                )
+
+        return inspect.Signature(
+            args,
+            return_annotation=self.return_type or typing.Any,
         )
