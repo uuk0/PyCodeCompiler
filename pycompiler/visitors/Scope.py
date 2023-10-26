@@ -12,22 +12,20 @@ from pycompiler.ModuleDeclaration import ModuleDeclaration
 
 class Scope:
     # builtin functions
-    BASE_SCOPE_VALUES: typing.Dict[str, AbstractSyntaxTreeExpressionNode] = {}
+    BASE_SCOPE_VALUES: dict[str, AbstractSyntaxTreeExpressionNode] = {}
 
     # any modules
-    GLOBAL_MODULES: typing.Dict[str, ModuleDeclaration] = {}
+    GLOBAL_MODULES: dict[str, ModuleDeclaration] = {}
 
     # for the compiler: what modules where discovered and need to be loaded
-    PENDING_MODULE_LOOKUPS: typing.Set[str] = set()
+    PENDING_MODULE_LOOKUPS: set[str] = set()
 
     def __init__(self, parent: Scope = None, scope_across_boundaries=False):
         self.parent = parent
         self.scope_across_boundaries = scope_across_boundaries
-        self.variable_name_references: typing.Dict[
-            str, AbstractSyntaxTreeExpressionNode
-        ] = {}
-        self.expose_names_to_children: typing.Set[str] = set()
-        self.expected_static_locals: typing.Set[str] = set()
+        self.variable_name_references: dict[str, AbstractSyntaxTreeExpressionNode] = {}
+        self.expose_names_to_children: set[str] = set()
+        self.expected_static_locals: set[str] = set()
 
     def create_child(self, scope_across_boundaries=False):
         return Scope(self, scope_across_boundaries=scope_across_boundaries)

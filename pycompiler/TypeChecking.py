@@ -10,7 +10,7 @@ def check_signature_compatible(
 ) -> bool:
     provided_keywords = set()
     used_keywords = set()
-    arg_types: typing.Dict[str, type] = {}
+    arg_types: dict[str, type] = {}
     provided_arg_count = 0
 
     for arg in possible.parameters.values():

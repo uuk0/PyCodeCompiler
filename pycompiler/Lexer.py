@@ -181,7 +181,7 @@ class Lexer:
     def rollback_state(self):
         self.cursor, self.line, self.column = self.info_stack.pop(-1)
 
-    def get_position_info(self) -> typing.Tuple[int, int]:
+    def get_position_info(self) -> tuple[int, int]:
         return self.line, self.column
 
     def get_chars(self, count: int) -> str | None:

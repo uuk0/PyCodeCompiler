@@ -20,7 +20,7 @@ class ClassDefinitionGenericReference(AbstractSyntaxTreeExpressionNode):
         self.index = index
         self.name_token = name_token
 
-    def get_tokens(self) -> typing.List[Token]:
+    def get_tokens(self) -> list[Token]:
         return [self.name_token]
 
     def __repr__(self):
@@ -61,7 +61,7 @@ class StaticClassReferenceNodeWithGeneric(AbstractSyntaxTreeExpressionNode):
     def __init__(
         self,
         class_def: ClassDefinitionNode,
-        generic_annotations: typing.List[AbstractSyntaxTreeExpressionNode],
+        generic_annotations: list[AbstractSyntaxTreeExpressionNode],
     ):
         super().__init__()
         self.class_def = class_def
@@ -300,14 +300,14 @@ class ClassDefinitionNode(AbstractSyntaxTreeNode):
     def __init__(
         self,
         name: str,
-        generics: typing.List[str] | None,
-        parent_references: typing.List[AbstractSyntaxTreeExpressionNode] | None,
-        body: typing.List[AbstractSyntaxTreeNode],
+        generics: list[str] | None,
+        parent_references: list[AbstractSyntaxTreeExpressionNode] | None,
+        body: list[AbstractSyntaxTreeNode],
         class_token: Token = None,
         name_token: Token = None,
-        generic_bracket_tokens: typing.Tuple[Token, Token] = None,
-        generic_name_tokens: typing.List[Token] = None,
-        parameter_bracket: typing.Tuple[Token, Token] = None,
+        generic_bracket_tokens: tuple[Token, Token] = None,
+        generic_name_tokens: list[Token] = None,
+        parameter_bracket: tuple[Token, Token] = None,
     ):
         super().__init__()
         self.name_token = name_token
@@ -355,7 +355,7 @@ class ClassDefinitionNode(AbstractSyntaxTreeNode):
             node.parent_section = ParentAttributeSection.BODY
             node.update_child_parent_relation()
 
-    def get_tokens(self) -> typing.List[Token]:
+    def get_tokens(self) -> list[Token]:
         return (
             list(self.generic_bracket_tokens)
             + self.generic_name_tokens

@@ -45,7 +45,7 @@ class AbstractSyntaxTreeNode(ABC):
     def update_child_parent_relation(self):
         pass
 
-    def get_tokens(self) -> typing.List[Token]:
+    def get_tokens(self) -> list[Token]:
         return []
 
     def __repr__(self):
@@ -64,10 +64,7 @@ class AbstractSyntaxTreeNode(ABC):
         self,
         name: str,
         context: AbstractSyntaxTreeNode = None,
-    ) -> (
-        typing.Tuple[AbstractSyntaxTreeExpressionNode, AbstractSyntaxTreeNode | None]
-        | None
-    ):
+    ) -> tuple[AbstractSyntaxTreeExpressionNode, AbstractSyntaxTreeNode | None] | None:
         """
         Optimisation method for getting an attribute of the node
 
@@ -82,10 +79,7 @@ class AbstractSyntaxTreeNode(ABC):
         self,
         expr: AbstractSyntaxTreeExpressionNode,
         context: AbstractSyntaxTreeNode = None,
-    ) -> (
-        typing.Tuple[AbstractSyntaxTreeExpressionNode, AbstractSyntaxTreeNode | None]
-        | None
-    ):
+    ) -> tuple[AbstractSyntaxTreeExpressionNode, AbstractSyntaxTreeNode | None] | None:
         """
         Optimisation method for getting a subscription
 

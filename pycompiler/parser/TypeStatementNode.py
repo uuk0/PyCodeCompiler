@@ -110,7 +110,7 @@ class TypeStatementNode(AbstractSyntaxTreeNode):
         self.real_type.parent_section = ParentAttributeSection.RHS
         self.real_type.update_child_parent_relation()
 
-    def get_tokens(self) -> typing.List[Token]:
+    def get_tokens(self) -> list[Token]:
         return self.base_type.get_tokens() + self.real_type.get_tokens()
 
     def __repr__(self):

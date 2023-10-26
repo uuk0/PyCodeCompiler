@@ -49,7 +49,7 @@ class SubscriptionAccessExpressionNode(AbstractSyntaxTreeExpressionNode):
         self.inner.parent_section = ParentAttributeSection.RHS
         self.inner.update_child_parent_relation()
 
-    def get_tokens(self) -> typing.List[Token]:
+    def get_tokens(self) -> list[Token]:
         return (
             self.base.get_tokens()
             + [self.lhs_bracket]

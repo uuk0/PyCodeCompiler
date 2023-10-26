@@ -55,7 +55,7 @@ class FunctionDefinitionArg(AbstractSyntaxTreeNode):
             self.default_value.parent_section = ParentAttributeSection.DEFAULT
             self.default_value.update_child_parent_relation()
 
-    def get_tokens(self) -> typing.List[Token]:
+    def get_tokens(self) -> list[Token]:
         return [self.name_token, self.equal_sign_token] + (
             self.default_value.get_tokens() if self.default_value else []
         )
@@ -88,13 +88,13 @@ class FunctionDefinitionArg(AbstractSyntaxTreeNode):
 
 class FunctionDefinitionArgReference(AbstractSyntaxTreeExpressionNode):
     def __init__(
-        self, arg_ref: FunctionDefinitionArg, access_tokens: typing.List[Token] = None
+        self, arg_ref: FunctionDefinitionArg, access_tokens: list[Token] = None
     ):
         super().__init__()
         self.arg_ref = arg_ref
         self.access_tokens = access_tokens
 
-    def get_tokens(self) -> typing.List[Token]:
+    def get_tokens(self) -> list[Token]:
         return self.access_tokens
 
     def __repr__(self):
@@ -124,7 +124,7 @@ class FunctionDefinitionGenericReference(AbstractSyntaxTreeExpressionNode):
         self.index = index
         self.name_token = name_token
 
-    def get_tokens(self) -> typing.List[Token]:
+    def get_tokens(self) -> list[Token]:
         return [self.name_token]
 
     def __repr__(self):
@@ -280,7 +280,7 @@ class FunctionDefinitionNode(AbstractSyntaxTreeNode):
     @classmethod
     def parse_parameter_no_star(
         cls,
-        parameters: typing.List[FunctionDefinitionArg],
+        parameters: list[FunctionDefinitionArg],
         parser: Parser,
         identifier: Token,
     ):
@@ -485,14 +485,14 @@ class FunctionDefinitionNode(AbstractSyntaxTreeNode):
     def __init__(
         self,
         name: str,
-        generics: typing.List[str] | None,
-        parameters: typing.List[FunctionDefinitionArg] | None,
-        body: typing.List[AbstractSyntaxTreeNode],
+        generics: list[str] | None,
+        parameters: list[FunctionDefinitionArg] | None,
+        body: list[AbstractSyntaxTreeNode],
         def_token: Token = None,
         name_token: Token = None,
-        generic_bracket_tokens: typing.Tuple[Token, Token] = None,
-        generic_name_tokens: typing.List[Token] = None,
-        parameter_bracket: typing.Tuple[Token, Token] = None,
+        generic_bracket_tokens: tuple[Token, Token] = None,
+        generic_name_tokens: list[Token] = None,
+        parameter_bracket: tuple[Token, Token] = None,
         return_type: AbstractSyntaxTreeExpressionNode = None,
     ):
         super().__init__()
@@ -542,7 +542,7 @@ class FunctionDefinitionNode(AbstractSyntaxTreeNode):
             node.parent_section = ParentAttributeSection.BODY
             node.update_child_parent_relation()
 
-    def get_tokens(self) -> typing.List[Token]:
+    def get_tokens(self) -> list[Token]:
         return (
             list(self.generic_bracket_tokens)
             + self.generic_name_tokens

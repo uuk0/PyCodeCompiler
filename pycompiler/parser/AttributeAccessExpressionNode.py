@@ -41,7 +41,7 @@ class AttributeAccessExpressionNode(AbstractSyntaxTreeExpressionNode):
         self.base.parent_section = ParentAttributeSection.BASE
         self.base.update_child_parent_relation()
 
-    def get_tokens(self) -> typing.List[Token]:
+    def get_tokens(self) -> list[Token]:
         return self.base.get_tokens() + [self.dot_token, self.name_token]
 
     def __repr__(self):

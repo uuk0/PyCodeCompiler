@@ -42,7 +42,7 @@ class Parser:
 
     def parse_code_block(
         self, expected_indent=0, first_needs_indent=True
-    ) -> typing.List[AbstractSyntaxTreeNode]:
+    ) -> list[AbstractSyntaxTreeNode]:
         old_indent = self.indent
         self.indent = expected_indent
         result = []

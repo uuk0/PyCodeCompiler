@@ -58,12 +58,12 @@ def _bind_to_datatype(
     return target
 
 
-_KNOWN_NAME_MAP: typing.Dict[typing.Type, str] = {}
+_KNOWN_NAME_MAP: dict[typing.Type, str] = {}
 
 
 class AbstractASTTreeVisitor(ABC):
-    KNOWN_NAME_MAP: typing.Dict[typing.Type, str] = _KNOWN_NAME_MAP
-    BINDING_MAP: typing.Dict[typing.Type, typing.Callable] = {}
+    KNOWN_NAME_MAP: dict[typing.Type, str] = _KNOWN_NAME_MAP
+    BINDING_MAP: dict[typing.Type, typing.Callable] = {}
 
     @classmethod
     def __init_subclass__(cls, **kwargs):
@@ -80,7 +80,7 @@ class AbstractASTTreeVisitor(ABC):
 
         self.BINDING_MAP[type(obj)](self, obj)
 
-    def visit_any_list(self, objs: typing.List[AbstractSyntaxTreeNode]):
+    def visit_any_list(self, objs: list[AbstractSyntaxTreeNode]):
         for node in objs:
             self.visit_any(node)
 

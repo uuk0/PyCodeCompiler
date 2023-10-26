@@ -14,7 +14,7 @@ class ParentScopeReference(AbstractSyntaxTreeExpressionNode):
         self.name = name
         self.token = token
 
-    def get_tokens(self) -> typing.List[Token]:
+    def get_tokens(self) -> list[Token]:
         return [self.token]
 
     def copy(self) -> ParentScopeReference:
@@ -36,7 +36,7 @@ class ChildScopeExported(AbstractSyntaxTreeExpressionNode):
         self.name = name
         self.token = token
 
-    def get_tokens(self) -> typing.List[Token]:
+    def get_tokens(self) -> list[Token]:
         return [self.token]
 
     def copy(self) -> ParentScopeReference:

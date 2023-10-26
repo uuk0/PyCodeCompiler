@@ -27,7 +27,7 @@ class ModuleReferenceNode(AbstractSyntaxTreeExpressionNode):
         name: str,
         context: AbstractSyntaxTreeNode = None,
     ) -> (
-        typing.Tuple[AbstractSyntaxTreeExpressionNode, AbstractSyntaxTreeNode | None]
+        tuple[AbstractSyntaxTreeExpressionNode, AbstractSyntaxTreeNode | None]
         | None
     ):
         return self.module_object.get_constant_on_attribute_access(name, context)
@@ -37,7 +37,7 @@ class ModuleReferenceNode(AbstractSyntaxTreeExpressionNode):
         expr: AbstractSyntaxTreeExpressionNode,
         context: AbstractSyntaxTreeNode = None,
     ) -> (
-        typing.Tuple[AbstractSyntaxTreeExpressionNode, AbstractSyntaxTreeNode | None]
+        tuple[AbstractSyntaxTreeExpressionNode, AbstractSyntaxTreeNode | None]
         | None
     ):
         return self.module_object.get_constant_on_subscription_access(expr, context)
@@ -108,7 +108,7 @@ class ImportStatement(AbstractSyntaxTreeNode):
         )
         
     @classmethod
-    def parse_module_fragment(cls, parser: Parser, context: str) -> typing.List[Token]:
+    def parse_module_fragment(cls, parser: Parser, context: str) -> list[Token]:
         # todo: modules which start with a '.' !
 
         token = parser.lexer.parse_token()
@@ -137,7 +137,7 @@ class ImportStatement(AbstractSyntaxTreeNode):
         module: str,
         from_module: str = None,
         as_name: str = None,
-        tokens: typing.List[Token] = None,
+        tokens: list[Token] = None,
     ):
         super().__init__()
         self.tokens = tokens or []
@@ -145,7 +145,7 @@ class ImportStatement(AbstractSyntaxTreeNode):
         self.from_module = from_module
         self.module = module
 
-    def get_tokens(self) -> typing.List[Token]:
+    def get_tokens(self) -> list[Token]:
         return self.tokens
 
     def __repr__(self):

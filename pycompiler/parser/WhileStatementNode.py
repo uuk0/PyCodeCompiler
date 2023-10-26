@@ -73,7 +73,7 @@ class WhileStatementNode(AbstractSyntaxTreeNode):
     def __init__(
         self,
         condition: AbstractSyntaxTreeExpressionNode,
-        body: typing.List[AbstractSyntaxTreeNode],
+        body: list[AbstractSyntaxTreeNode],
         while_token: Token = None,
         colon_token: Token = None,
     ):
@@ -113,7 +113,7 @@ class WhileStatementNode(AbstractSyntaxTreeNode):
             node.parent_section = ParentAttributeSection.BODY
             node.update_child_parent_relation()
 
-    def get_tokens(self) -> typing.List[Token]:
+    def get_tokens(self) -> list[Token]:
         return (
             [self.while_token]
             + self.condition.get_tokens()

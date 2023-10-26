@@ -71,7 +71,7 @@ class SliceExpressionNode(AbstractSyntaxTreeExpressionNode):
             self.step.parent_section = ParentAttributeSection.BASE
             self.step.update_child_parent_relation()
 
-    def get_tokens(self) -> typing.List[Token]:
+    def get_tokens(self) -> list[Token]:
         return (
             (self.start.get_tokens() if self.start else [])
             + (self.stop.get_tokens() if self.stop else [])

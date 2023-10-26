@@ -13,9 +13,9 @@ from pycompiler.parser.AbstractSyntaxTreeNode import (
 class AssignmentExpressionNode(AbstractSyntaxTreeNode):
     def __init__(
         self,
-        targets: typing.List[AbstractSyntaxTreeExpressionNode],
+        targets: list[AbstractSyntaxTreeExpressionNode],
         base: AbstractSyntaxTreeExpressionNode,
-        equal_signs: typing.List[Token] = None,
+        equal_signs: list[Token] = None,
     ):
         super().__init__()
         self.targets = targets
@@ -52,7 +52,7 @@ class AssignmentExpressionNode(AbstractSyntaxTreeNode):
         self.base.parent_section = ParentAttributeSection.BASE
         self.base.update_child_parent_relation()
 
-    def get_tokens(self) -> typing.List[Token]:
+    def get_tokens(self) -> list[Token]:
         return (
             sum((target.get_tokens() for target in self.targets), [])
             + self.equal_signs

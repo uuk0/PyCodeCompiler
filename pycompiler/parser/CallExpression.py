@@ -48,7 +48,7 @@ class CallExpressionArgument(AbstractSyntaxTreeExpressionNode):
         self.expr.parent_section = ParentAttributeSection.BASE
         self.expr.update_child_parent_relation()
 
-    def get_tokens(self) -> typing.List[Token]:
+    def get_tokens(self) -> list[Token]:
         return [self.keyword_token, self.equal_sign] + self.expr.get_tokens()
 
     def __repr__(self):
@@ -240,9 +240,9 @@ class CallExpression(AbstractSyntaxTreeExpressionNode):
     def __init__(
         self,
         base: AbstractSyntaxTreeExpressionNode,
-        args: typing.List[CallExpressionArgument],
-        brackets: typing.Tuple[Token, Token] = None,
-        commas: typing.List[Token] = None,
+        args: list[CallExpressionArgument],
+        brackets: tuple[Token, Token] = None,
+        commas: list[Token] = None,
     ):
         super().__init__()
         self.base = base
@@ -280,7 +280,7 @@ class CallExpression(AbstractSyntaxTreeExpressionNode):
             arg.parent_section = ParentAttributeSection.PARAMETER
             arg.update_child_parent_relation()
 
-    def get_tokens(self) -> typing.List[Token]:
+    def get_tokens(self) -> list[Token]:
         return (
             self.base.get_tokens()
             + list(self.brackets)

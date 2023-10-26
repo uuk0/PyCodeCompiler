@@ -14,9 +14,9 @@ from pycompiler.parser.CallExpression import CallExpression
 class ModuleDeclaration:
     def __init__(self, name: str):
         self.name = name
-        self.static_attributes: typing.Dict[str, AbstractSyntaxTreeExpressionNode] = {}
-        self.static_methods: typing.Dict[
-            str, typing.Dict[inspect.Signature, AbstractSyntaxTreeExpressionNode]
+        self.static_attributes: dict[str, AbstractSyntaxTreeExpressionNode] = {}
+        self.static_methods: dict[
+            str, dict[inspect.Signature, AbstractSyntaxTreeExpressionNode]
         ] = {}
         self.module_object_location: str = None
 
@@ -24,10 +24,7 @@ class ModuleDeclaration:
         self,
         name: str,
         context: AbstractSyntaxTreeNode = None,
-    ) -> (
-        typing.Tuple[AbstractSyntaxTreeExpressionNode, AbstractSyntaxTreeNode | None]
-        | None
-    ):
+    ) -> tuple[AbstractSyntaxTreeExpressionNode, AbstractSyntaxTreeNode | None] | None:
         if name in self.static_attributes:
             return self.static_attributes[name], None
 
@@ -49,8 +46,5 @@ class ModuleDeclaration:
         self,
         expr: AbstractSyntaxTreeExpressionNode,
         context: AbstractSyntaxTreeNode = None,
-    ) -> (
-        typing.Tuple[AbstractSyntaxTreeExpressionNode, AbstractSyntaxTreeNode | None]
-        | None
-    ):
+    ) -> tuple[AbstractSyntaxTreeExpressionNode, AbstractSyntaxTreeNode | None] | None:
         pass
