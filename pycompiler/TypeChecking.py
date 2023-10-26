@@ -70,6 +70,9 @@ def check_signature_compatible(
 def check_type_matching(
     expected: type | types.UnionType, possible: type | types.UnionType
 ) -> bool:
+    if expected == typing.Any:
+        return True
+
     if isinstance(expected, types.UnionType):
         if not isinstance(possible, types.UnionType):
             return any(check_type_matching(t, possible) for t in expected.__args__)
