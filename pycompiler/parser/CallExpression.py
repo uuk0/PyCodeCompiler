@@ -326,3 +326,7 @@ class CallExpression(AbstractSyntaxTreeExpressionNode):
                     annotation=param.get_type_annotation(),
                 )
             )
+
+        return inspect.Signature(
+            args,
+        )
