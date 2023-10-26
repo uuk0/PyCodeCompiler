@@ -57,6 +57,53 @@ class StaticClassReferenceNode(AbstractSyntaxTreeExpressionNode):
         return StaticClassReferenceNode(self.class_def)
 
 
+class StaticClassReferenceNodeWithGeneric(AbstractSyntaxTreeExpressionNode):
+    def __init__(
+        self,
+        class_def: ClassDefinitionNode,
+        generic_annotations: typing.List[AbstractSyntaxTreeExpressionNode],
+    ):
+        super().__init__()
+        self.class_def = class_def
+        self.generic_annotations = generic_annotations
+
+    def replace_child_with(
+        self,
+        original: AbstractSyntaxTreeExpressionNode,
+        new: AbstractSyntaxTreeExpressionNode,
+        section: ParentAttributeSection,
+    ) -> bool:
+        if section != ParentAttributeSection.PARAMETER:
+            return False
+
+        for i, gen in enumerate(self.generic_annotations):
+            if gen is original:
+                self.generic_annotations[i] = new
+                return True
+
+        return False
+
+    def update_child_parent_relation(self):
+        for gen in self.generic_annotations:
+            gen.parent = self
+            gen.parent_section = ParentAttributeSection.PARAMETER
+            gen.update_child_parent_relation()
+
+    def __repr__(self):
+        return f"FUNC-REF({self.class_def.name}[{', '.join(map(repr, self.generic_annotations))}])"
+
+    def __eq__(self, other: StaticClassReferenceNodeWithGeneric):
+        return (
+            type(other) is StaticClassReferenceNode
+            and self.generic_annotations == other.generic_annotations
+        )
+
+    def copy(self) -> StaticClassReferenceNodeWithGeneric:
+        return StaticClassReferenceNodeWithGeneric(
+            self.class_def, [gen.copy() for gen in self.generic_annotations]
+        )
+
+
 class ClassDefinitionNode(AbstractSyntaxTreeNode):
     @classmethod
     def decode_from_paser(cls, parser: Parser):

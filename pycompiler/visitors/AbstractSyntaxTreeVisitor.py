@@ -36,6 +36,7 @@ from pycompiler.parser.ClassDefinitionStatementNode import (
     ClassDefinitionNode,
     ClassDefinitionGenericReference,
     StaticClassReferenceNode,
+    StaticClassReferenceNodeWithGeneric,
 )
 from pycompiler.parser.WhileStatementNode import WhileStatementNode
 
@@ -191,6 +192,12 @@ class AbstractASTTreeVisitor(ABC):
     @_bind_to_datatype(StaticClassReferenceNode)
     def visit_static_class_reference(self, reference: StaticClassReferenceNode):
         pass
+
+    @_bind_to_datatype(StaticClassReferenceNodeWithGeneric)
+    def visit_static_class_reference_with_generic(
+        self, reference: StaticClassReferenceNodeWithGeneric
+    ):
+        self.visit_any_list(reference.generic_annotations)
 
     @_bind_to_datatype(WhileStatementNode)
     def visit_while_statement(self, while_statement: WhileStatementNode):
