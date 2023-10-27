@@ -8,6 +8,7 @@ from pycompiler.parser.AbstractSyntaxTreeNode import (
     AbstractSyntaxTreeExpressionNode,
     ParentAttributeSection,
 )
+from pycompiler.TypeChecking import SliceWrapper
 
 
 class SliceExpressionNode(AbstractSyntaxTreeExpressionNode):
@@ -25,6 +26,11 @@ class SliceExpressionNode(AbstractSyntaxTreeExpressionNode):
         self.step = step
         self.lhs_colon_token = lhs_colon_token
         self.rhs_colon_token = rhs_colon_token
+        self.result_type = SliceWrapper[
+            start.result_type if start else None,
+            stop.result_type if stop else None,
+            step.result_type if step else None,
+        ]
 
     def replace_child_with(
         self,

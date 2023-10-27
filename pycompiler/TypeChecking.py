@@ -5,6 +5,34 @@ import types
 import typing
 
 
+class SliceWrapper[A, B, C]:
+    """
+    Wrapper around the 'slice' class, where the attribute cannot be generics, so
+    think of this like a slice
+    """
+
+    @classmethod
+    def __class_getitem__(cls, item: tuple | type) -> types.GenericAlias:
+        if isinstance(item, tuple):
+            if len(item) == 0:
+                return types.GenericAlias(cls, (None, None, None))
+            elif len(item) == 1:
+                return types.GenericAlias(cls, (item[0], None, None))
+            elif len(item) == 2:
+                return types.GenericAlias(cls, (item[0], item[1], None))
+            elif len(item) == 3:
+                return types.GenericAlias(cls, item)
+            else:
+                raise ValueError(f"expected 0 to 3 generic parameters, got {len(item)}")
+
+        return types.GenericAlias(cls, (item, None, None))
+
+    def __init__(self, start: A = None, stop: B = None, step: C = None):
+        self.start = start
+        self.stop = stop
+        self.step = step
+
+
 def check_signature_compatible(
     expected: inspect.Signature, possible: inspect.Signature
 ) -> bool:
