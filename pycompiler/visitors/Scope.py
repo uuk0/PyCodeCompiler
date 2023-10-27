@@ -8,11 +8,16 @@ from pycompiler.parser.AbstractSyntaxTreeNode import (
 )
 from pycompiler.parser.ScopeReferences import ParentScopeReference
 from pycompiler.ModuleDeclaration import ModuleDeclaration
+from pycompiler.parser.ConstantValueExpressionNode import ConstantValueExpressionNode
 
 
 class Scope:
     # builtin functions
-    BASE_SCOPE_VALUES: dict[str, AbstractSyntaxTreeExpressionNode] = {}
+    BASE_SCOPE_VALUES: dict[str, AbstractSyntaxTreeExpressionNode] = {
+        "None": ConstantValueExpressionNode(None),
+        "True": ConstantValueExpressionNode(True),
+        "False": ConstantValueExpressionNode(False),
+    }
 
     # any modules
     GLOBAL_MODULES: dict[str, ModuleDeclaration] = {}

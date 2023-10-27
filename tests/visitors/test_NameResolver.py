@@ -8,6 +8,7 @@ from pycompiler.parser.NameAccessNode import (
     NameAccessLocalNode,
 )
 from pycompiler.parser.AssignmentExpressionNode import AssignmentExpressionNode
+from pycompiler.parser.Parser import Parser
 from pycompiler.parser.TypeStatementNode import (
     TypeStatementNode,
     StaticTypeDefinitionReference,
@@ -26,6 +27,7 @@ from pycompiler.parser.ClassDefinitionStatementNode import (
     ClassDefinitionGenericReference,
 )
 from pycompiler.parser.ImportStatementNode import ImportStatement, ModuleReferenceNode
+from pycompiler.parser.ConstantValueExpressionNode import ConstantValueExpressionNode
 
 from pycompiler.visitors.NameResolver import NameResolver
 from pycompiler.visitors.ScopeAssigner import ScopeAssigner
@@ -110,3 +112,33 @@ class TestNameResolver(unittest.TestCase):
             scope.variable_name_references,
             {"testmodule": ModuleReferenceNode("testmodule")},
         )
+
+    def test_constant_access_none(self):
+        scope = Scope()
+        node: AssignmentExpressionNode = Parser("x = None").try_parse_code_line_obj()
+        self.assertIsInstance(node, AssignmentExpressionNode)
+        self.assertIsInstance(node.base, NameAccessNode)
+        node.update_child_parent_relation()
+        ScopeAssigner(scope).visit_any(node)
+        NameResolver().visit_any(node)
+        self.assertEqual(node.base, ConstantValueExpressionNode(None))
+
+    def test_constant_access_false(self):
+        scope = Scope()
+        node: AssignmentExpressionNode = Parser("x = False").try_parse_code_line_obj()
+        self.assertIsInstance(node, AssignmentExpressionNode)
+        self.assertIsInstance(node.base, NameAccessNode)
+        node.update_child_parent_relation()
+        ScopeAssigner(scope).visit_any(node)
+        NameResolver().visit_any(node)
+        self.assertEqual(node.base, ConstantValueExpressionNode(False))
+
+    def test_constant_access_true(self):
+        scope = Scope()
+        node: AssignmentExpressionNode = Parser("x = True").try_parse_code_line_obj()
+        self.assertIsInstance(node, AssignmentExpressionNode)
+        self.assertIsInstance(node.base, NameAccessNode)
+        node.update_child_parent_relation()
+        ScopeAssigner(scope).visit_any(node)
+        NameResolver().visit_any(node)
+        self.assertEqual(node.base, ConstantValueExpressionNode(True))
