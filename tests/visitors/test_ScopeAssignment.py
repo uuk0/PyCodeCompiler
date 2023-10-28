@@ -39,6 +39,10 @@ from pycompiler.parser.ClassDefinitionStatementNode import (
     StaticClassReferenceNode,
 )
 from pycompiler.parser.WhileStatementNode import WhileStatementNode
+from pycompiler.parser.ListConstruction import (
+    ListConstructorNode,
+    ListComprehensionNode,
+)
 
 
 class TestScopeAssignment(unittest.TestCase):
@@ -219,4 +223,23 @@ class TestScopeAssignment(unittest.TestCase):
             ),
             lambda node: node.condition,
             lambda node: node.body[0],
+        )
+
+    def test_list_creation(self):
+        self.helper(
+            ListConstructorNode(
+                [
+                    NameAccessNode("test"),
+                ],
+            ),
+            lambda node: node.items[0],
+        )
+
+    def test_list_comprehension(self):
+        self.helper(
+            ListComprehensionNode(
+                NameAccessNode("test"),
+                NameWriteAccessNode("test"),
+                NameAccessNode("source"),
+            ),
         )

@@ -36,7 +36,8 @@ class ScopeAssigner(AbstractASTTreeVisitor):
         self.scope_stack.pop(-1)
 
     def visit_any(self, obj: AbstractSyntaxTreeNode):
-        obj.scope = self.scope_stack[-1]
+        if obj is not None:
+            obj.scope = self.scope_stack[-1]
         super().visit_any(obj)
 
     def visit_write_name_access(self, access: NameWriteAccessNode):
