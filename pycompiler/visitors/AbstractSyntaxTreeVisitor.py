@@ -39,6 +39,10 @@ from pycompiler.parser.ClassDefinitionStatementNode import (
     StaticClassReferenceNodeWithGeneric,
 )
 from pycompiler.parser.WhileStatementNode import WhileStatementNode
+from pycompiler.parser.ListConstruction import (
+    ListConstructorNode,
+    ListComprehensionNode,
+)
 
 from pycompiler.specification.Spec import SpecifiedClass, SpecifiedFunction
 
@@ -211,3 +215,14 @@ class AbstractASTTreeVisitor(ABC):
     @_bind_to_datatype(SpecifiedFunction)
     def visit_specified_function(self, function: SpecifiedFunction):
         pass
+
+    @_bind_to_datatype(ListConstructorNode)
+    def visit_list_constructor(self, constructor: ListConstructorNode):
+        self.visit_any_list(constructor.items)
+
+    @_bind_to_datatype(ListComprehensionNode)
+    def visit_list_comprehension(self, comprehension: ListComprehensionNode):
+        self.visit_any(comprehension.source_expr)
+        self.visit_any(comprehension.assignment_target)
+        self.visit_any(comprehension.if_cond)
+        self.visit_any(comprehension.base_expr)

@@ -14,6 +14,7 @@ from pycompiler.parser.FunctionDefinitionStatementNode import (
     FunctionDefinitionGenericReference,
 )
 from pycompiler.parser.ImportStatementNode import ImportStatement, ModuleReferenceNode
+from pycompiler.parser.ListConstruction import ListComprehensionNode
 from pycompiler.parser.NameAccessNode import NameWriteAccessNode, NameAccessLocalNode
 from pycompiler.parser.TypeStatementNode import (
     TypeStatementNode,
@@ -97,4 +98,12 @@ class ScopeAssigner(AbstractASTTreeVisitor):
             )
 
         self.visit_any_list(definition.body)
+        self.pop_scope()
+
+    def visit_list_comprehension(self, comprehension: ListComprehensionNode):
+        self.push_scope()
+        self.visit_any(comprehension.source_expr)
+        self.visit_any(comprehension.assignment_target)
+        self.visit_any(comprehension.if_cond)
+        self.visit_any(comprehension.base_expr)
         self.pop_scope()
