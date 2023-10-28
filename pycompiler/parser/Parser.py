@@ -29,6 +29,10 @@ from pycompiler.parser.TypeStatementNode import TypeStatementNode
 from pycompiler.parser.ClassDefinitionStatementNode import ClassDefinitionNode
 from pycompiler.parser.WhileStatementNode import WhileStatementNode
 from pycompiler.parser.YieldStatementNode import YieldStatement
+from pycompiler.parser.ListConstruction import (
+    ListConstructorNode,
+    ListComprehensionNode,
+)
 
 
 class Parser:
@@ -230,6 +234,16 @@ class Parser:
             if token.token_type == TokenType.IDENTIFIER:
                 base = NameAccessNode(token.text, token)
                 self.lexer.pop_state()
+
+            elif token.token_type == TokenType.OPENING_SQUARE_BRACKET:
+                base = self.parse_list_comprehension()
+
+                if base is None:
+                    self.lexer.rollback_state()
+                    return
+
+                self.lexer.pop_state()
+
             else:
                 self.lexer.rollback_state()
                 return
@@ -269,6 +283,91 @@ class Parser:
             self.pop_state()
 
         return base
+
+    def parse_list_comprehension(
+        self,
+    ) -> ListComprehensionNode | ListConstructorNode | None:
+        self.lexer.push_state()
+        next_token = self.lexer.parse_token()
+        if next_token.token_type == TokenType.CLOSING_SQUARE_BRACKET:
+            self.lexer.pop_state()
+            return ListConstructorNode([])
+        self.lexer.rollback_state()
+
+        expr = self.try_parse_expression()
+
+        if expr is None:
+            self.lexer.raise_positioned_syntax_error(
+                "expected <expression> or ']' after '['"
+            )
+
+        self.lexer.push_state()
+        token = self.lexer.parse_token()
+
+        if token.token_type == TokenType.IDENTIFIER and token.text == "for":
+            self.lexer.pop_state()
+            target = self.try_parse_assignment_target()
+            if target is None:
+                self.lexer.raise_positioned_syntax_error(
+                    "expected <assignment target> after 'for'"
+                )
+
+            token = self.lexer.parse_token()
+            if token != TokenType.IDENTIFIER or token.text != "in":
+                self.lexer.raise_positioned_syntax_error_on_token(
+                    token, "expected 'in' after 'for' <assignment target>"
+                )
+
+            source = self.try_parse_expression()
+            if source is None:
+                self.lexer.raise_positioned_syntax_error(
+                    "expected <expression> after 'in'"
+                )
+
+            self.lexer.push_state()
+            if_cond = None
+            token = self.lexer.parse_token()
+            if token.token_type == TokenType.IDENTIFIER and token.text == "if":
+                self.lexer.pop_state()
+                if_cond = self.try_parse_expression()
+
+                if if_cond is None:
+                    self.lexer.raise_positioned_syntax_error(
+                        "expected <expression> after 'if'"
+                    )
+            else:
+                self.lexer.rollback_state()
+
+            return ListComprehensionNode(
+                expr,
+                target,
+                source,
+                if_cond,
+            )
+
+        self.lexer.rollback_state()
+        items = [expr]
+
+        while True:
+            self.push_state()
+            token = self.lexer.parse_token()
+            if token.token_type != TokenType.COMMA:
+                self.rollback_state()
+                break
+            self.pop_state()
+
+            expr = self.try_parse_expression()
+
+            if expr is None:
+                break
+
+            items.append(expr)
+
+        token = self.lexer.parse_token()
+        if token.token_type != TokenType.CLOSING_SQUARE_BRACKET:
+            self.lexer.raise_positioned_syntax_error_on_token(token, "expected ']'")
+
+        return ListConstructorNode(items)
 
     def try_parse_assignment_target(self) -> AbstractSyntaxTreeExpressionNode | None:
         self.lexer.push_state()
