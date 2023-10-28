@@ -26,10 +26,20 @@ class SliceExpressionNode(AbstractSyntaxTreeExpressionNode):
         self.step = step
         self.lhs_colon_token = lhs_colon_token
         self.rhs_colon_token = rhs_colon_token
+        self.update_result_type()
+
+    def update_result_type(self):
+        if self.start is not None:
+            self.start.update_result_type()
+        if self.stop is not None:
+            self.stop.update_result_type()
+        if self.step is not None:
+            self.step.update_result_type()
+
         self.result_type = SliceWrapper[
-            start.result_type if start else None,
-            stop.result_type if stop else None,
-            step.result_type if step else None,
+            self.start.result_type if self.start else None,
+            self.stop.result_type if self.stop else None,
+            self.step.result_type if self.step else None,
         ]
 
     def replace_child_with(

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import types
 import typing
 
 from pycompiler.Lexer import Token
@@ -21,6 +22,9 @@ class ModuleReferenceNode(AbstractSyntaxTreeExpressionNode):
         self.name = name
         self.part = part
         self.module_object: ModuleDeclaration | None = None
+
+    def update_result_type(self):
+        return types.ModuleType
 
     def get_constant_on_attribute_access(
         self,

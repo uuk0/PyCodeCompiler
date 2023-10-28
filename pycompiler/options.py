@@ -76,3 +76,22 @@ to be moved permanently onto the stack.
 todo: implement
 """
 ENABLE_STACK_INFORMATION = False
+
+"""
+This option toggles if type information should be seen strict (like Java types) or only 'hints'
+(can be broken without consequence).
+
+Disabling this will lead to high performance penalties, as this disables a lot of code optimisation.
+
+WARNING: Disabling this and ENABLE_RUNTIME_LOOKUP_TABLES will lead to major issues, as most of the
+lookup is no longer possible!
+"""
+ENABLE_STRICT_TYPE_ANNOTATIONS = True
+
+"""
+Enabling this will add guards for the correct annotated type.
+This has a performance penalty, but is useful for debugging.
+
+WARNING: only affective when ENABLE_STRICT_TYPE_ANNOTATIONS is enabled, as otherwise this option is never considered.
+"""
+ENABLE_DEBUG_TYPE_CHECKS_FOR_ANNOTATIONS = False

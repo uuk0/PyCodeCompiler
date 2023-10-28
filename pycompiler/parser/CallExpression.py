@@ -250,6 +250,16 @@ class CallExpression(AbstractSyntaxTreeExpressionNode):
         self.brackets = brackets or (None, None)
         self.commas = commas or []
 
+    def update_result_type(self):
+        # todo: generic reference!
+        from pycompiler.parser.FunctionDefinitionStatementNode import (
+            StaticFunctionReferenceNode,
+        )
+
+        if isinstance(self.base, StaticFunctionReferenceNode):
+            self.base.func_def.update_result_type()
+            self.result_type = self.base.func_def.return_type
+
     def replace_child_with(
         self,
         original: AbstractSyntaxTreeNode,

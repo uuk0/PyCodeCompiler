@@ -8,6 +8,7 @@ from pycompiler.parser.AbstractSyntaxTreeNode import (
     AbstractSyntaxTreeExpressionNode,
     ParentAttributeSection,
 )
+from pycompiler.TypeChecking import get_type_info
 
 
 class SubscriptionAccessExpressionNode(AbstractSyntaxTreeExpressionNode):
@@ -23,6 +24,12 @@ class SubscriptionAccessExpressionNode(AbstractSyntaxTreeExpressionNode):
         self.lhs_bracket = lhs_bracket
         self.inner = inner
         self.base = base
+
+    def update_result_type(self):
+        self.base.update_result_type()
+        t = self.base.get_data_type()
+        info = get_type_info(t)
+        self.result_type = info.get_subscription_type(self.inner)
 
     def replace_child_with(
         self,

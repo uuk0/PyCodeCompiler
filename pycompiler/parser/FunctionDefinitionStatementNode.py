@@ -94,6 +94,9 @@ class FunctionDefinitionArgReference(AbstractSyntaxTreeExpressionNode):
         self.arg_ref = arg_ref
         self.access_tokens = access_tokens
 
+    def update_result_type(self):
+        self.result_type = self.arg_ref.type_hint
+
     def get_tokens(self) -> list[Token]:
         return self.access_tokens
 
@@ -123,6 +126,9 @@ class FunctionDefinitionGenericReference(AbstractSyntaxTreeExpressionNode):
         self.name = name
         self.index = index
         self.name_token = name_token
+
+    def update_result_type(self):
+        pass  # todo: generic limitation expression
 
     def get_tokens(self) -> list[Token]:
         return [self.name_token]
@@ -506,6 +512,9 @@ class FunctionDefinitionNode(AbstractSyntaxTreeNode):
         self.parameters = parameters or []
         self.body = body
         self.return_type = return_type
+
+    def update_result_type(self):
+        pass  # todo: collect info from return statements & type hint!
 
     def replace_child_with(
         self,

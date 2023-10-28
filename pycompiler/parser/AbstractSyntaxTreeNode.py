@@ -106,10 +106,13 @@ class AbstractSyntaxTreeExpressionNode(AbstractSyntaxTreeNode, ABC):
         super().__init__()
         self.result_type = None
 
+    def update_result_type(self):
+        pass
+
     def copy(self) -> AbstractSyntaxTreeExpressionNode:
         raise NotImplementedError
 
-    def get_data_type(self):
+    def get_data_type(self) -> type:
         return self.result_type or typing.Any
 
     def as_data_type(self):

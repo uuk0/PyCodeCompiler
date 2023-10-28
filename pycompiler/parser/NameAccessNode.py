@@ -34,6 +34,9 @@ class NameWriteAccessNode(AbstractSyntaxTreeExpressionNode):
         self.name = name
         self.token = token
 
+    def update_result_type(self):
+        pass  # todo: validate type compatibility with scope type!
+
     def get_tokens(self) -> list[Token]:
         return [self.token]
 
@@ -55,6 +58,9 @@ class NameAccessLocalNode(AbstractSyntaxTreeExpressionNode):
         super().__init__()
         self.name = name
         self.token = token
+
+    def update_result_type(self):
+        pass  # todo: poll type from scope
 
     def get_tokens(self) -> list[Token]:
         return [self.token]

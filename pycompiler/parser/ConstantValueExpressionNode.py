@@ -3,6 +3,7 @@ from __future__ import annotations
 import typing
 
 from pycompiler.Lexer import Token
+from pycompiler.TypeChecking import typeof
 from pycompiler.parser.AbstractSyntaxTreeNode import (
     AbstractSyntaxTreeExpressionNode,
 )
@@ -13,7 +14,7 @@ class ConstantValueExpressionNode(AbstractSyntaxTreeExpressionNode):
         super().__init__()
         self.value = value
         self.tokens = tokens or []
-        self.result_type = exact_type or type(value)
+        self.result_type = exact_type or typeof(value)
 
     def get_tokens(self) -> list[Token]:
         return self.tokens

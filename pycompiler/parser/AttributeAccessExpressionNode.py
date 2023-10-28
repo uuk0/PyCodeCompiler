@@ -8,6 +8,7 @@ from pycompiler.parser.AbstractSyntaxTreeNode import (
     AbstractSyntaxTreeExpressionNode,
     ParentAttributeSection,
 )
+from pycompiler.TypeChecking import get_type_info
 
 
 class AttributeAccessExpressionNode(AbstractSyntaxTreeExpressionNode):
@@ -23,6 +24,14 @@ class AttributeAccessExpressionNode(AbstractSyntaxTreeExpressionNode):
         self.name = name
         self.dot_token = dot_token
         self.name_token = name_token
+
+    def update_result_type(self):
+        self.base.update_result_type()
+
+        base_type = self.base.get_data_type()
+        info = get_type_info(base_type)
+
+        self.result_type = info.get_attribute_type(self.name)
 
     def replace_child_with(
         self,
