@@ -114,6 +114,8 @@ class Parser:
                 continue
 
             elif next_token.token_type != TokenType.NEWLINE:
+                print(result)
+                print(next_token)
                 self.lexer.raise_positioned_syntax_error(
                     "expected ';' or NEWLINE after <expression>"
                 )
@@ -304,6 +306,9 @@ class Parser:
         self.lexer.push_state()
         token = self.lexer.parse_token()
 
+        if token is None:
+            self.lexer.raise_positioned_syntax_error("expected ']' or ','")
+
         if token.token_type == TokenType.IDENTIFIER and token.text == "for":
             self.lexer.pop_state()
             target = self.try_parse_assignment_target()
@@ -313,7 +318,7 @@ class Parser:
                 )
 
             token = self.lexer.parse_token()
-            if token != TokenType.IDENTIFIER or token.text != "in":
+            if token.token_type != TokenType.IDENTIFIER or token.text != "in":
                 self.lexer.raise_positioned_syntax_error_on_token(
                     token, "expected 'in' after 'for' <assignment target>"
                 )
@@ -337,6 +342,10 @@ class Parser:
                     )
             else:
                 self.lexer.rollback_state()
+
+            token = self.lexer.parse_token()
+            if token.token_type != TokenType.CLOSING_SQUARE_BRACKET:
+                self.lexer.raise_positioned_syntax_error("expected ']'")
 
             return ListComprehensionNode(
                 expr,
