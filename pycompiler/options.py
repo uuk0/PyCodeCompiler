@@ -17,9 +17,11 @@ This enables the return value of type(...) to use types.GenericAlias when the ty
 WARNING: this is non-cpython behaviour, and could lead to issues with libraries expecting type(...) to return
 a <type> object instead of a types.GenericAlias
 
+This also enables isinstance() checks with types.GenericAlias as type parameter.
+
 todo: implement
 """
-ENABLE_TYPE_ANNOTATIONS_ON_TYPE_CALL = False
+ENABLE_GENERIC_ANNOTATIONS_ON_TYPE_CALL = False
 
 """
 When enabled, will allow dynamic access of attributes on objects.

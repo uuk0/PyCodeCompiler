@@ -56,8 +56,8 @@ class TypeInformationHolder:
         def __init__(
             self,
             attribute_types: typing.Dict[str, type | types.GenericAlias | TypeInformationHolder.GenericReference] = None,
-            subscription_type: type | types.GenericAlias | typing.Callable[[AbstractSyntaxTreeExpressionNode | None], type | types.GenericAlias | TypeInformationHolder.GenericReference] = typing.Any,
-            call_result_type: type | types.GenericAlias | typing.Callable[[typing.List[AbstractSyntaxTreeExpressionNode] | None], type | types.GenericAlias | TypeInformationHolder.GenericReference] = typing.Any,
+            subscription_type: type | types.GenericAlias | TypeInformationHolder.GenericReference | typing.Callable[[AbstractSyntaxTreeExpressionNode | None], type | types.GenericAlias | TypeInformationHolder.GenericReference] = typing.Any,
+            call_result_type: type | types.GenericAlias | TypeInformationHolder.GenericReference | typing.Callable[[typing.List[AbstractSyntaxTreeExpressionNode] | None], type | types.GenericAlias | TypeInformationHolder.GenericReference] = typing.Any,
         ):
             self.attribute_types = attribute_types or {}
             self.subscription_type = subscription_type
@@ -85,6 +85,14 @@ class TypeInformationHolder:
             self.attribute_types[name] = t
             return self
 
+        def add_subscription_type(self, t: type | types.GenericAlias | TypeInformationHolder.GenericReference | typing.Callable[[AbstractSyntaxTreeExpressionNode | None], type | types.GenericAlias | TypeInformationHolder.GenericReference]) -> typing.Self:
+            self.subscription_type = t
+            return self
+
+        def add_call_result_type(self, t: type | types.GenericAlias | TypeInformationHolder.GenericReference | typing.Callable[[typing.List[AbstractSyntaxTreeExpressionNode] | None], type | types.GenericAlias | TypeInformationHolder.GenericReference]) -> typing.Self:
+            self.call_result_type = t
+            return self
+
     class GenericReference:
         def __init__(self, index: int):
             self.index = index
@@ -95,6 +103,17 @@ class TypeInformationHolder:
         .add_attribute_type("start", GenericReference(0))
         .add_attribute_type("stop", GenericReference(1))
         .add_attribute_type("step", GenericReference(2)),
+        list: TypeDescriptor()
+        .add_subscription_type(GenericReference(0)),  # todo: slices -> list[T]
+        tuple: TypeDescriptor()
+        .add_subscription_type(GenericReference(0)),  # todo: slices -> tuple[T]
+        dict: TypeDescriptor()
+        .add_subscription_type(GenericReference(1))
+        .add_attribute_type("get", typing.Callable[[GenericReference(0)], GenericReference(1)])
+        .add_attribute_type("set", typing.Callable[[GenericReference(0), GenericReference(1)], None])
+        .add_attribute_type("setdefault", typing.Callable[[GenericReference(0), GenericReference(1)], GenericReference(1)]),
+        str: TypeDescriptor()
+        .add_subscription_type(str),
     }
 
     def __init__(self, base_type: type | types.GenericAlias):
@@ -241,3 +260,20 @@ def check_type_matching(
         check_type_matching(ex, po)
         for ex, po in zip(expected.__args__, possible.__args__)
     )
+
+
+def merge_type_declarations(a: type | types.GenericAlias, b: type | types.GenericAlias):
+    if isinstance(a, types.UnionType):
+        if isinstance(b, types.UnionType):
+            entries = list(a.__args__)
+            for e in b.__args__:
+                if e not in entries:
+                    entries.append(e)
+            return typing.Union[entries]
+
+        return a | b if b not in a.__args__ else a
+
+    elif isinstance(b, types.UnionType):
+        return a | b if a not in b.__args__ else b
+
+    return a | b if a != b else a
