@@ -190,6 +190,17 @@ class Lexer:
 
         return self.code[self.cursor : self.cursor + count]
 
+    def get_chars_or_pad(self, count: int, pad=" "):
+        if len(self.code) > self.cursor:
+            return self.code[self.cursor : self.cursor + count]
+
+        delta = count - (len(self.code) - self.cursor - 1)
+        return self.code[self.cursor : self.cursor + count - delta] + (pad * delta)
+
+    def parse_whitespace(self):
+        while (c := self.get_chars(1)) and c in " \t":
+            self.increment_cursor(1)
+
     def increment_cursor(self, count: int | str):
         count = count if isinstance(count, int) else len(count)
         text = self.get_chars(count)

@@ -1,12 +1,22 @@
 from __future__ import annotations
 
+import typing
+
 from pycompiler.Lexer import Token
 from pycompiler.parser.AbstractSyntaxTreeNode import (
     AbstractSyntaxTreeExpressionNode,
     AbstractSyntaxTreeNode,
     ParentAttributeSection,
 )
-from pycompiler.parser.util import OperatorType, OperatorTypeType
+from pycompiler.parser.util import (
+    OperatorType,
+    OperatorTypeType,
+    LONGEST_OPERATOR_STRING,
+    OPERATOR_STRING_TO_TYPE,
+)
+
+if typing.TYPE_CHECKING:
+    from pycompiler.parser.Parser import Parser
 
 
 class SingletonOperator(AbstractSyntaxTreeExpressionNode):
@@ -102,6 +112,39 @@ class BinaryOperator(AbstractSyntaxTreeExpressionNode):
 
 
 class BinaryInplaceOperator(AbstractSyntaxTreeNode):
+    @classmethod
+    def try_parse_from_parser(cls, parser: Parser) -> BinaryInplaceOperator | None:
+        parser.push_state()
+
+        base = parser.try_parse_expression()
+
+        if base is None:
+            parser.rollback_state()
+            return
+
+        parser.lexer.parse_whitespace()
+        c = parser.lexer.get_chars_or_pad(LONGEST_OPERATOR_STRING)
+        for i in range(LONGEST_OPERATOR_STRING, 0, -1):
+            if c[:i] in OPERATOR_STRING_TO_TYPE:
+                op = OPERATOR_STRING_TO_TYPE[c[:i]]
+
+                if op.optype != OperatorTypeType.INPLACE:
+                    continue
+
+                parser.lexer.increment_cursor(i)
+
+                expr = parser.try_parse_expression()
+
+                if expr is None:
+                    parser.lexer.raise_positioned_syntax_error(
+                        f"expected <expression> after '{op.operator}'-operator"
+                    )
+
+                parser.pop_state()
+                return cls(op, base, expr)
+
+        parser.rollback_state()
+
     def __init__(
         self,
         operator: OperatorType,

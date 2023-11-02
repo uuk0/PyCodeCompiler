@@ -33,7 +33,16 @@ from pycompiler.parser.ListConstruction import (
     ListConstructorNode,
     ListComprehensionNode,
 )
-from pycompiler.parser.OperatorExpressionNode import *
+from pycompiler.parser.OperatorExpressionNode import (
+    SingletonOperator,
+    BinaryOperator,
+    BinaryInplaceOperator,
+)
+from pycompiler.parser.util import (
+    OperatorTypeType,
+    LONGEST_OPERATOR_STRING,
+    OPERATOR_STRING_TO_TYPE,
+)
 
 
 class Parser:
@@ -49,6 +58,7 @@ class Parser:
         PassStatement,
         BreakStatement,
         ContinueStatement,
+        BinaryInplaceOperator,
     ]
 
     def __init__(self, code: str, filename: str = None):
@@ -134,7 +144,7 @@ class Parser:
                 ):
                     next_token = self.lexer.parse_token()
 
-                    if next_token.token_type == TokenType.NEWLINE:
+                    if next_token and next_token.token_type == TokenType.NEWLINE:
                         self.pop_state()
                         continue
 
@@ -228,6 +238,26 @@ class Parser:
             base.result_type = str
 
         else:
+            self.push_state()
+            c = self.lexer.get_chars_or_pad(LONGEST_OPERATOR_STRING)
+
+            for i in range(len(c), 0, -1):
+                if c[:i] in OPERATOR_STRING_TO_TYPE:
+                    op = OPERATOR_STRING_TO_TYPE[c[:i]]
+
+                    if op.optype != OperatorTypeType.SINGLETON:
+                        continue
+
+                    self.lexer.pop_state()
+                    rhs = self.try_parse_expression()
+                    if rhs is None:
+                        raise SyntaxError(
+                            f"expected <expression> after '{op.operator}'-operator"
+                        )
+
+                    return SingletonOperator(op, rhs)
+
+            self.lexer.rollback_state()
             self.lexer.push_state()
             token = self.lexer.parse_token()
 
@@ -281,7 +311,29 @@ class Parser:
 
             else:
                 self.rollback_state()
-                break
+                self.push_state()
+                self.lexer.parse_whitespace()
+
+                c = self.lexer.get_chars_or_pad(LONGEST_OPERATOR_STRING)
+
+                for i in range(len(c), 0, -1):
+                    if c[:i] in OPERATOR_STRING_TO_TYPE:
+                        op = OPERATOR_STRING_TO_TYPE[c[:i]]
+
+                        if op.optype != OperatorTypeType.BINARY:
+                            continue
+
+                        self.lexer.pop_state()
+                        rhs = self.try_parse_expression()
+                        if rhs is None:
+                            self.lexer.raise_positioned_syntax_error(
+                                f"expected <expression> after '{op.operator}'-operator"
+                            )
+                        base = BinaryOperator(op, base, rhs)
+                        break
+                else:
+                    self.lexer.rollback_state()
+                    break
 
             self.pop_state()
 
@@ -333,7 +385,11 @@ class Parser:
             self.lexer.push_state()
             if_cond = None
             token = self.lexer.parse_token()
-            if token.token_type == TokenType.IDENTIFIER and token.text == "if":
+
+            if token is None:
+                self.lexer.pop_state()
+
+            elif token.token_type == TokenType.IDENTIFIER and token.text == "if":
                 self.lexer.pop_state()
                 if_cond = self.try_parse_expression()
 
@@ -374,7 +430,7 @@ class Parser:
             items.append(expr)
 
         token = self.lexer.parse_token()
-        if token.token_type != TokenType.CLOSING_SQUARE_BRACKET:
+        if token is None or token.token_type != TokenType.CLOSING_SQUARE_BRACKET:
             self.lexer.raise_positioned_syntax_error_on_token(token, "expected ']'")
 
         return ListConstructorNode(items)

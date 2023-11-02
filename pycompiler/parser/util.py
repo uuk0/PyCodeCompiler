@@ -61,6 +61,8 @@ class OperatorType(enum.Enum):
     BINARY_GE = ">=", "__ge__", "__lt__"
     BINARY_LT = "<", "__lt__", "__ge__"
     BINARY_LE = "<=", "__le__", "__gt__"
+    LOGIC_OR = "or", None
+    LOGIC_AND = "and", None
 
     _OPERATOR_TYPE = OperatorTypeType.INPLACE
     BINARY_INPLACE_PLUS = "+=", "__iadd__"
