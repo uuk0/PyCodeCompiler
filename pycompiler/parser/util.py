@@ -22,15 +22,26 @@ class ArgType(enum.Enum):
         return self.id
 
 
+class OperatorTypeType(enum.Enum):
+    SINGLETON = enum.auto()
+    BINARY = enum.auto()
+    INPLACE = enum.auto()
+
+
 OPERATOR_STRING_TO_TYPE: typing.Dict[str, OperatorType] = {}
 LONGEST_OPERATOR_STRING = -1
+_OPERATOR_TYPE: OperatorTypeType | None = None
 
 
 class OperatorType(enum.Enum):
+    global _OPERATOR_TYPE
+
+    _OPERATOR_TYPE = OperatorTypeType.SINGLETON
     SINGLE_PLUS = "+", "__pos__"
     SINGLE_MINUS = "-", "__neg__"
     SINGLE_INVERSE = "~", "__inv__"
 
+    _OPERATOR_TYPE = OperatorTypeType.BINARY
     BINARY_PLUS = "+", "__add__", "__radd__"
     BINARY_MINUS = "-", "__sub__", "__rsub__"
     BINARY_STAR = "*", "__mul__", "__rmul__"
@@ -51,6 +62,7 @@ class OperatorType(enum.Enum):
     BINARY_LT = "<", "__lt__", "__ge__"
     BINARY_LE = "<=", "__le__", "__gt__"
 
+    _OPERATOR_TYPE = OperatorTypeType.INPLACE
     BINARY_INPLACE_PLUS = "+=", "__iadd__"
     BINARY_INPLACE_MINUS = "-=", "__isub__"
     BINARY_INPLACE_STAR = "*=", "__imul__"
@@ -64,11 +76,17 @@ class OperatorType(enum.Enum):
     BINARY_INPLACE_AT = "@=", "__imatmul__"
 
     def __init__(
-        self, operator: str, opattr: str, opinvattr: str = None, reverse_operator=False
+        self,
+        operator: str,
+        opattr: str,
+        opinvattr: str = None,
+        reverse_operator=False,
+        optype: OperatorTypeType = None,
     ):
         self.operator = operator
         self.opattr = opattr
         self.opinvattr = opinvattr
+        self.optype = optype or _OPERATOR_TYPE
         self.reverse_operator = reverse_operator
 
         global OPERATOR_STRING_TO_TYPE, LONGEST_OPERATOR_STRING
@@ -80,3 +98,6 @@ class OperatorType(enum.Enum):
 
     def __hash__(self):
         return hash(self.operator)
+
+
+_OPERATOR_TYPE = None

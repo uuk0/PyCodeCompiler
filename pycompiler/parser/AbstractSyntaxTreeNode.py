@@ -8,6 +8,7 @@ from pycompiler.Lexer import Token
 
 if typing.TYPE_CHECKING:
     from pycompiler.parser.Parser import Parser
+    from pycompiler.TypeChecking import TypeInformationHolder
 
 
 class ParentAttributeSection(enum.Enum):
@@ -67,6 +68,13 @@ class AbstractSyntaxTreeNode(ABC):
     def copy(self) -> AbstractSyntaxTreeNode:
         raise NotImplementedError
 
+
+class AbstractSyntaxTreeExpressionNode(AbstractSyntaxTreeNode, ABC):
+    def __init__(self):
+        super().__init__()
+        self.result_type = None
+        self.type_annotation: TypeInformationHolder | None = None
+
     def can_be_assignment_target(self) -> bool:
         return False
 
@@ -99,12 +107,6 @@ class AbstractSyntaxTreeNode(ABC):
         :param expr: the index expr
         :param context: A node describing the attribute access
         """
-
-
-class AbstractSyntaxTreeExpressionNode(AbstractSyntaxTreeNode, ABC):
-    def __init__(self):
-        super().__init__()
-        self.result_type = None
 
     def update_result_type(self):
         pass
