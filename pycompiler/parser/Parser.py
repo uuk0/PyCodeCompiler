@@ -41,7 +41,8 @@ from pycompiler.parser.OperatorExpressionNode import (
 from pycompiler.parser.util import (
     OperatorTypeType,
     LONGEST_OPERATOR_STRING,
-    OPERATOR_STRING_TO_TYPE,
+    SINGLETON_OPERATOR_STRING_TO_TYPE,
+    BINARY_OPERATOR_STRING_TO_TYPE,
 )
 
 
@@ -242,12 +243,10 @@ class Parser:
             c = self.lexer.get_chars_or_pad(LONGEST_OPERATOR_STRING)
 
             for i in range(len(c), 0, -1):
-                if c[:i] in OPERATOR_STRING_TO_TYPE:
-                    op = OPERATOR_STRING_TO_TYPE[c[:i]]
+                if c[:i] in SINGLETON_OPERATOR_STRING_TO_TYPE:
+                    op = SINGLETON_OPERATOR_STRING_TO_TYPE[c[:i]]
 
-                    if op.optype != OperatorTypeType.SINGLETON:
-                        continue
-
+                    self.lexer.increment_cursor(i)
                     self.lexer.pop_state()
                     rhs = self.try_parse_expression()
                     if rhs is None:
@@ -255,31 +254,32 @@ class Parser:
                             f"expected <expression> after '{op.operator}'-operator"
                         )
 
-                    return SingletonOperator(op, rhs)
-
-            self.lexer.rollback_state()
-            self.lexer.push_state()
-            token = self.lexer.parse_token()
-
-            if token is None:
-                return
-
-            if token.token_type == TokenType.IDENTIFIER:
-                base = NameAccessNode(token.text, token)
-                self.lexer.pop_state()
-
-            elif token.token_type == TokenType.OPENING_SQUARE_BRACKET:
-                base = self.parse_list_comprehension()
-
-                if base is None:
-                    self.lexer.rollback_state()
-                    return
-
-                self.lexer.pop_state()
-
+                    base = SingletonOperator(op, rhs)
+                    break
             else:
                 self.lexer.rollback_state()
-                return
+                self.lexer.push_state()
+                token = self.lexer.parse_token()
+
+                if token is None:
+                    return
+
+                if token.token_type == TokenType.IDENTIFIER:
+                    base = NameAccessNode(token.text, token)
+                    self.lexer.pop_state()
+
+                elif token.token_type == TokenType.OPENING_SQUARE_BRACKET:
+                    base = self.parse_list_comprehension()
+
+                    if base is None:
+                        self.lexer.rollback_state()
+                        return
+
+                    self.lexer.pop_state()
+
+                else:
+                    self.lexer.rollback_state()
+                    return
 
         while True:
             self.lexer.push_state()
@@ -317,11 +317,8 @@ class Parser:
                 c = self.lexer.get_chars_or_pad(LONGEST_OPERATOR_STRING)
 
                 for i in range(len(c), 0, -1):
-                    if c[:i] in OPERATOR_STRING_TO_TYPE:
-                        op = OPERATOR_STRING_TO_TYPE[c[:i]]
-
-                        if op.optype != OperatorTypeType.BINARY:
-                            continue
+                    if c[:i] in BINARY_OPERATOR_STRING_TO_TYPE:
+                        op = BINARY_OPERATOR_STRING_TO_TYPE[c[:i]]
 
                         self.lexer.pop_state()
                         rhs = self.try_parse_expression()

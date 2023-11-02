@@ -7,7 +7,7 @@ import traceback
 import types
 import typing
 
-from pycompiler.parser.util import OperatorType, OPERATOR_STRING_TO_TYPE
+from pycompiler.parser.util import OperatorType, SINGLETON_OPERATOR_STRING_TO_TYPE, BINARY_OPERATOR_STRING_TO_TYPE, INPLACE_BINARY_OPERATOR_STRING_TO_TYPE
 
 
 if typing.TYPE_CHECKING:
@@ -153,6 +153,8 @@ class Callable(typing.Protocol):
                     obj.add_subscription_type(data_type)
 
                 elif entry["type"] == "operator":
+                    OPERATOR_STRING_TO_TYPE = SINGLETON_OPERATOR_STRING_TO_TYPE | BINARY_OPERATOR_STRING_TO_TYPE | INPLACE_BINARY_OPERATOR_STRING_TO_TYPE
+
                     if entry.get("operator", None) not in OPERATOR_STRING_TO_TYPE:
                         raise KeyError(f"invalid operator: '{entry.get("operator", "<not specified>")}'")
 

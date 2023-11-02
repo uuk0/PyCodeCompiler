@@ -12,7 +12,9 @@ from pycompiler.parser.util import (
     OperatorType,
     OperatorTypeType,
     LONGEST_OPERATOR_STRING,
-    OPERATOR_STRING_TO_TYPE,
+    SINGLETON_OPERATOR_STRING_TO_TYPE,
+    BINARY_OPERATOR_STRING_TO_TYPE,
+    INPLACE_BINARY_OPERATOR_STRING_TO_TYPE,
 )
 
 if typing.TYPE_CHECKING:
@@ -116,20 +118,19 @@ class BinaryInplaceOperator(AbstractSyntaxTreeNode):
     def try_parse_from_parser(cls, parser: Parser) -> BinaryInplaceOperator | None:
         parser.push_state()
 
-        base = parser.try_parse_expression()
+        base = parser.try_parse_assignment_target()
 
         if base is None:
             parser.rollback_state()
             return
 
+        # todo: need a second pass or something to ensure that everything is fine here!
+
         parser.lexer.parse_whitespace()
         c = parser.lexer.get_chars_or_pad(LONGEST_OPERATOR_STRING)
         for i in range(LONGEST_OPERATOR_STRING, 0, -1):
-            if c[:i] in OPERATOR_STRING_TO_TYPE:
-                op = OPERATOR_STRING_TO_TYPE[c[:i]]
-
-                if op.optype != OperatorTypeType.INPLACE:
-                    continue
+            if c[:i] in INPLACE_BINARY_OPERATOR_STRING_TO_TYPE:
+                op = INPLACE_BINARY_OPERATOR_STRING_TO_TYPE[c[:i]]
 
                 parser.lexer.increment_cursor(i)
 

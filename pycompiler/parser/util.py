@@ -28,78 +28,72 @@ class OperatorTypeType(enum.Enum):
     INPLACE = enum.auto()
 
 
-OPERATOR_STRING_TO_TYPE: typing.Dict[str, OperatorType] = {}
+SINGLETON_OPERATOR_STRING_TO_TYPE: typing.Dict[str, OperatorType] = {}
+BINARY_OPERATOR_STRING_TO_TYPE: typing.Dict[str, OperatorType] = {}
+INPLACE_BINARY_OPERATOR_STRING_TO_TYPE: typing.Dict[str, OperatorType] = {}
 LONGEST_OPERATOR_STRING = -1
-_OPERATOR_TYPE: OperatorTypeType | None = None
 
 
 class OperatorType(enum.Enum):
-    global _OPERATOR_TYPE
+    SINGLE_PLUS = OperatorTypeType.SINGLETON, "+", "__pos__"
+    SINGLE_MINUS = OperatorTypeType.SINGLETON, "-", "__neg__"
+    SINGLE_INVERSE = OperatorTypeType.SINGLETON, "~", "__inv__"
+    LOGIC_NOT = OperatorTypeType.SINGLETON, "not", None
 
-    _OPERATOR_TYPE = OperatorTypeType.SINGLETON
-    SINGLE_PLUS = "+", "__pos__"
-    SINGLE_MINUS = "-", "__neg__"
-    SINGLE_INVERSE = "~", "__inv__"
+    BINARY_PLUS = OperatorTypeType.BINARY, "+", "__add__", "__radd__"
+    BINARY_MINUS = OperatorTypeType.BINARY, "-", "__sub__", "__rsub__"
+    BINARY_STAR = OperatorTypeType.BINARY, "*", "__mul__", "__rmul__"
+    BINARY_STAR_STAR = OperatorTypeType.BINARY, "**", "__pow__", "__rpow__"
+    BINARY_SLASH = OperatorTypeType.BINARY, "/", "__truediv__", "__rtruediv__"
+    BINARY_SLASH_SLASH = OperatorTypeType.BINARY, "//", "__floordiv__", "__rfloordiv__"
+    BINARY_PERCENT = OperatorTypeType.BINARY, "%", "__mod__", "__rmod__"
+    BINARY_LOGIC_OR = OperatorTypeType.BINARY, "|", "__or__", "__ror__"
+    BINARY_LOGIC_AND = OperatorTypeType.BINARY, "&", "__and__", "__rand__"
+    BINARY_LOGIC_XOR = OperatorTypeType.BINARY, "^", "__xor__", "__rxor__"
+    BINARY_AT = OperatorTypeType.BINARY, "@", "__matmul__", "__rmatmul__"
+    BINARY_IN = OperatorTypeType.BINARY, "in", "__contains__", None, True
+    BINARY_IS = OperatorTypeType.BINARY, "is", "__is__"
+    BINARY_EQ = OperatorTypeType.BINARY, "==", "__eq__", "__eq__"
+    BINARY_NOT_EQ = OperatorTypeType.BINARY, "!=", "__ne__", "__ne__"
+    BINARY_GT = OperatorTypeType.BINARY, ">", "__gt__", "__le__"
+    BINARY_GE = OperatorTypeType.BINARY, ">=", "__ge__", "__lt__"
+    BINARY_LT = OperatorTypeType.BINARY, "<", "__lt__", "__ge__"
+    BINARY_LE = OperatorTypeType.BINARY, "<=", "__le__", "__gt__"
+    LOGIC_OR = OperatorTypeType.BINARY, "or", None
+    LOGIC_AND = OperatorTypeType.BINARY, "and", None
 
-    _OPERATOR_TYPE = OperatorTypeType.BINARY
-    BINARY_PLUS = "+", "__add__", "__radd__"
-    BINARY_MINUS = "-", "__sub__", "__rsub__"
-    BINARY_STAR = "*", "__mul__", "__rmul__"
-    BINARY_STAR_STAR = "**", "__pow__", "__rpow__"
-    BINARY_SLASH = "/", "__truediv__", "__rtruediv__"
-    BINARY_SLASH_SLASH = "//", "__floordiv__", "__rfloordiv__"
-    BINARY_PERCENT = "%", "__mod__", "__rmod__"
-    BINARY_LOGIC_OR = "|", "__or__", "__ror__"
-    BINARY_LOGIC_AND = "&", "__and__", "__rand__"
-    BINARY_LOGIC_XOR = "^", "__xor__", "__rxor__"
-    BINARY_AT = "@", "__matmul__", "__rmatmul__"
-    BINARY_IN = "in", "__contains__", None, True
-    BINARY_IS = "is", "__is__"
-    BINARY_EQ = "==", "__eq__", "__eq__"
-    BINARY_NOT_EQ = "!=", "__ne__", "__ne__"
-    BINARY_GT = ">", "__gt__", "__le__"
-    BINARY_GE = ">=", "__ge__", "__lt__"
-    BINARY_LT = "<", "__lt__", "__ge__"
-    BINARY_LE = "<=", "__le__", "__gt__"
-    LOGIC_OR = "or", None
-    LOGIC_AND = "and", None
-
-    _OPERATOR_TYPE = OperatorTypeType.INPLACE
-    BINARY_INPLACE_PLUS = "+=", "__iadd__"
-    BINARY_INPLACE_MINUS = "-=", "__isub__"
-    BINARY_INPLACE_STAR = "*=", "__imul__"
-    BINARY_INPLACE_STAR_STAR = "**=", "__ipow__"
-    BINARY_INPLACE_SLASH = "/=", "__itruediv__"
-    BINARY_INPLACE_SLASH_SLASH = "//=", "__ifloordiv__"
-    BINARY_INPLACE_PERCENT = "%=", "__imod__"
-    BINARY_INPLACE_LOGIC_OR = "|=", "__ior__"
-    BINARY_INPLACE_LOGIC_AND = "&=", "__iand__"
-    BINARY_INPLACE_LOGIC_XOR = "^=", "__ixor__"
-    BINARY_INPLACE_AT = "@=", "__imatmul__"
+    BINARY_INPLACE_PLUS = OperatorTypeType.INPLACE, "+=", "__iadd__"
+    BINARY_INPLACE_MINUS = OperatorTypeType.INPLACE, "-=", "__isub__"
+    BINARY_INPLACE_STAR = OperatorTypeType.INPLACE, "*=", "__imul__"
+    BINARY_INPLACE_STAR_STAR = OperatorTypeType.INPLACE, "**=", "__ipow__"
+    BINARY_INPLACE_SLASH = OperatorTypeType.INPLACE, "/=", "__itruediv__"
+    BINARY_INPLACE_SLASH_SLASH = OperatorTypeType.INPLACE, "//=", "__ifloordiv__"
+    BINARY_INPLACE_PERCENT = OperatorTypeType.INPLACE, "%=", "__imod__"
+    BINARY_INPLACE_LOGIC_OR = OperatorTypeType.INPLACE, "|=", "__ior__"
+    BINARY_INPLACE_LOGIC_AND = OperatorTypeType.INPLACE, "&=", "__iand__"
+    BINARY_INPLACE_LOGIC_XOR = OperatorTypeType.INPLACE, "^=", "__ixor__"
+    BINARY_INPLACE_AT = OperatorTypeType.INPLACE, "@=", "__imatmul__"
 
     def __init__(
         self,
+        optype: OperatorTypeType,
         operator: str,
         opattr: str,
         opinvattr: str = None,
         reverse_operator=False,
-        optype: OperatorTypeType = None,
     ):
         self.operator = operator
         self.opattr = opattr
         self.opinvattr = opinvattr
-        self.optype = optype or _OPERATOR_TYPE
+        self.optype = optype
         self.reverse_operator = reverse_operator
 
-        global OPERATOR_STRING_TO_TYPE, LONGEST_OPERATOR_STRING
-        OPERATOR_STRING_TO_TYPE[operator] = self
+        if optype == OperatorTypeType.SINGLETON:
+            SINGLETON_OPERATOR_STRING_TO_TYPE[operator] = self
+        elif optype == OperatorTypeType.BINARY:
+            BINARY_OPERATOR_STRING_TO_TYPE[operator] = self
+        elif optype == OperatorTypeType.INPLACE:
+            INPLACE_BINARY_OPERATOR_STRING_TO_TYPE[operator] = self
+
+        global LONGEST_OPERATOR_STRING
         LONGEST_OPERATOR_STRING = max(LONGEST_OPERATOR_STRING, len(operator))
-
-    def __eq__(self, other: OperatorType):
-        return type(other) is OperatorType and self.operator == other.operator
-
-    def __hash__(self):
-        return hash(self.operator)
-
-
-_OPERATOR_TYPE = None
