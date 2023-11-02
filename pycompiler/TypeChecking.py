@@ -1,8 +1,13 @@
 from __future__ import annotations
 
 import inspect
+import json
+import os
+import traceback
 import types
 import typing
+
+from pycompiler.parser.util import OperatorType, OPERATOR_STRING_TO_TYPE
 
 
 if typing.TYPE_CHECKING:
@@ -51,19 +56,117 @@ class SliceWrapper[A, B, C](metaclass=SliceWrapperMeta):
         self.step = step
 
 
+type TypeContainer = type | types.GenericAlias | TypeInformationHolder.GenericReference
+type ResolvedTypeContainer = type | types.GenericAlias
+
+
 class TypeInformationHolder:
     class TypeDescriptor:
         def __init__(
             self,
-            attribute_types: typing.Dict[str, type | types.GenericAlias | TypeInformationHolder.GenericReference] = None,
-            subscription_type: type | types.GenericAlias | TypeInformationHolder.GenericReference | typing.Callable[[AbstractSyntaxTreeExpressionNode | None], type | types.GenericAlias | TypeInformationHolder.GenericReference] = typing.Any,
-            call_result_type: type | types.GenericAlias | TypeInformationHolder.GenericReference | typing.Callable[[typing.List[AbstractSyntaxTreeExpressionNode] | None], type | types.GenericAlias | TypeInformationHolder.GenericReference] = typing.Any,
+            attribute_types: typing.Dict[str, TypeContainer] = None,
+            subscription_type: TypeContainer | typing.Callable[[AbstractSyntaxTreeExpressionNode | None], TypeContainer] = typing.Any,
+            call_result_type: TypeContainer | typing.Callable[[typing.List[AbstractSyntaxTreeExpressionNode] | None], TypeContainer] = typing.Any,
         ):
             self.attribute_types = attribute_types or {}
             self.subscription_type = subscription_type
             self.call_result_type = call_result_type
+            self.operator_map: typing.Dict[OperatorType, TypeContainer | typing.Callable[[AbstractSyntaxTreeExpressionNode, bool], TypeContainer]] = {
+                OperatorType.BINARY_EQ: bool,
+                OperatorType.BINARY_NOT_EQ: bool,
 
-        def resolve_generic_reference(self, t: type | types.GenericAlias | TypeInformationHolder.GenericReference, context: TypeInformationHolder) -> type | types.GenericAlias:
+                # only when declared
+                # OperatorType.BINARY_LT: bool,
+                # OperatorType.BINARY_LE: bool,
+                # OperatorType.BINARY_GT: bool,
+                # OperatorType.BINARY_GE: bool,
+            }
+
+        @classmethod
+        def as_repr(cls, t: TypeContainer) -> str:
+            if t is typing.Any:
+                return "typing.Any"
+            elif t is None:
+                return "None"
+
+            if isinstance(t, TypeInformationHolder.GenericReference):
+                return f"TypeInformationHolder.GenericReference({t.index})"
+            elif isinstance(t, types.GenericAlias):
+                return f"{cls.as_repr(t.__origin__)}[{", ".join(cls.as_repr(e) for e in t.__args__)}]"
+            elif isinstance(t, types.UnionType):
+                return "".join(cls.as_repr(arg) for arg in t.__args__)
+
+            elif type(t) is typing._CallableGenericAlias:
+                return f"typing.Callable[[{", ".join(cls.as_repr(e) for e in t.__args__[:-1])}], {cls.as_repr(t.__args__[-1])}]"
+
+            else:
+                if not hasattr(t, "__name__"):
+                    raise ValueError(t)
+
+                return t.__name__
+
+        @classmethod
+        def construct_callable(cls, parameters: typing.List[TypeContainer], result: TypeContainer, keywords: typing.List[typing.Tuple[str, TypeContainer]] = None):
+            parameter_string = ""
+            for i, param in enumerate(parameters):
+                parameter_string += f"p{i}: {cls.as_repr(param)}, "
+
+            for t, annot in keywords or []:
+                parameter_string += f"{t.removesuffix("=")}: {cls.as_repr(annot)}" + ("" if t is None else " = None") + ", "
+
+            code = f"""
+class Callable(typing.Protocol):
+    def __call__(self, {parameter_string}) -> {cls.as_repr(result)}:
+        pass
+            """
+            Callable = None
+            exec(code, globals(), locals())
+            return Callable
+
+        @classmethod
+        def parse_from_json(cls, definition: dict) -> TypeInformationHolder.TypeDescriptor:
+            obj = cls()
+
+            generics = {"Callable": cls.construct_callable}
+            for i, generic in enumerate(definition.get("generics")):
+                if generic.startswith("["):
+                    generics[generic.removeprefix("[").split("=")[0].strip().removesuffix("]").strip()] = TypeInformationHolder.GenericReference(i)
+                else:
+                    generics[generic] = TypeInformationHolder.GenericReference(i)
+
+            for entry in definition.get("attributes", []):
+                try:
+                    data_type = eval(entry["data type"], globals(), generics) if "data type" in entry else typing.Any
+                except:
+                    print(f"issue while evaluating data type '{entry.get("data type", None)}'")
+                    traceback.print_exc()
+                    data_type = typing.Any
+                    raise
+
+                if entry["type"] == "attribute":
+                    if "name" not in entry:
+                        raise KeyError("'name' required in 'attribute' entry")
+
+                    obj.add_attribute_type(entry["name"], data_type)
+
+                elif entry["type"] == "subscription":
+                    obj.add_subscription_type(data_type)
+
+                elif entry["type"] == "operator":
+                    if entry.get("operator", None) not in OPERATOR_STRING_TO_TYPE:
+                        raise KeyError(f"invalid operator: '{entry.get("operator", "<not specified>")}'")
+
+                    obj.add_operator_result_type(
+                        OPERATOR_STRING_TO_TYPE[entry["operator"]],
+                        data_type,
+                    )
+
+                else:
+                    raise ValueError(f"invalid entry type: '{entry["type"]}'")
+
+            return obj
+
+        def resolve_generic_reference(self, t: TypeContainer, context: TypeInformationHolder) -> ResolvedTypeContainer:
             if isinstance(t, type):
                 return t
 
@@ -81,39 +184,49 @@ class TypeInformationHolder:
 
             raise ValueError("invalid type")
 
-        def add_attribute_type(self, name: str, t: type | types.GenericAlias | TypeInformationHolder.GenericReference) -> typing.Self:
+        def add_attribute_type(self, name: str, t: TypeContainer) -> typing.Self:
             self.attribute_types[name] = t
             return self
 
-        def add_subscription_type(self, t: type | types.GenericAlias | TypeInformationHolder.GenericReference | typing.Callable[[AbstractSyntaxTreeExpressionNode | None], type | types.GenericAlias | TypeInformationHolder.GenericReference]) -> typing.Self:
+        def add_subscription_type(self, t:TypeContainer | typing.Callable[[AbstractSyntaxTreeExpressionNode | None], TypeContainer]) -> typing.Self:
             self.subscription_type = t
             return self
 
-        def add_call_result_type(self, t: type | types.GenericAlias | TypeInformationHolder.GenericReference | typing.Callable[[typing.List[AbstractSyntaxTreeExpressionNode] | None], type | types.GenericAlias | TypeInformationHolder.GenericReference]) -> typing.Self:
+        def add_call_result_type(self, t: TypeContainer | typing.Callable[[typing.List[AbstractSyntaxTreeExpressionNode] | None], TypeContainer]) -> typing.Self:
             self.call_result_type = t
             return self
 
-    class GenericReference:
-        def __init__(self, index: int):
+        def add_operator_result_type(self, operator: OperatorType, t: TypeContainer | typing.Callable[[AbstractSyntaxTreeExpressionNode, bool], TypeContainer]):
+            self.operator_map[operator] = t
+            return self
+
+    class GenericReference(type):
+        @classmethod
+        def __new__(cls, index: int, x):
+            return super().__new__(cls, str(index), (object,), dict())
+
+        def __init__(self, index, *args):
+            super().__init__(str(index), (object,), dict())
             self.index = index
 
+    # todo: export this code to a separate file!
     TYPE_INFORMATION_DATA: typing.Dict[type, TypeDescriptor] = {
         typing.Any: TypeDescriptor(),
-        SliceWrapper: TypeDescriptor()
-        .add_attribute_type("start", GenericReference(0))
-        .add_attribute_type("stop", GenericReference(1))
-        .add_attribute_type("step", GenericReference(2)),
-        list: TypeDescriptor()
-        .add_subscription_type(GenericReference(0)),  # todo: slices -> list[T]
         tuple: TypeDescriptor()
-        .add_subscription_type(GenericReference(0)),  # todo: slices -> tuple[T]
+        .add_subscription_type(GenericReference(0))  # todo: slices -> tuple[T]
+        .add_operator_result_type(OperatorType.BINARY_PLUS, tuple[GenericReference(0)])
+        .add_operator_result_type(OperatorType.BINARY_INPLACE_PLUS, tuple[GenericReference(0)])
+        .add_operator_result_type(OperatorType.BINARY_STAR, tuple[GenericReference(0)])
+        .add_operator_result_type(OperatorType.BINARY_INPLACE_STAR, tuple[GenericReference(0)]),
         dict: TypeDescriptor()
         .add_subscription_type(GenericReference(1))
         .add_attribute_type("get", typing.Callable[[GenericReference(0)], GenericReference(1)])
         .add_attribute_type("set", typing.Callable[[GenericReference(0), GenericReference(1)], None])
         .add_attribute_type("setdefault", typing.Callable[[GenericReference(0), GenericReference(1)], GenericReference(1)]),
         str: TypeDescriptor()
-        .add_subscription_type(str),
+        .add_subscription_type(str)
+        .add_attribute_type("startswith", bool)
+        .add_attribute_type("endswith", bool),
     }
 
     def __init__(self, base_type: type | types.GenericAlias):
@@ -134,14 +247,26 @@ class TypeInformationHolder:
 
         return self.base_type.__args__[index]
 
-    def get_attribute_type(self, name: str) -> type | types.GenericAlias:
+    def get_attribute_type(self, name: str) -> ResolvedTypeContainer:
         return self.descriptor.resolve_generic_reference(self.descriptor.attribute_types.get(name, typing.Any), self)
 
-    def get_subscription_type(self, argument: AbstractSyntaxTreeExpressionNode = None) -> type | types.GenericAlias:
-        return self.descriptor.resolve_generic_reference(self.descriptor.subscription_type if isinstance(self.descriptor.subscription_type, (type, types.GenericAlias)) else self.descriptor.subscription_type(argument), self)
+    def get_subscription_type(self, argument: AbstractSyntaxTreeExpressionNode = None) -> ResolvedTypeContainer:
+        return self.descriptor.resolve_generic_reference(self.descriptor.subscription_type if isinstance(self.descriptor.subscription_type, (type, types.GenericAlias, TypeInformationHolder.GenericReference)) else self.descriptor.subscription_type(argument), self)
 
-    def get_call_result_type(self, parameters: typing.List[AbstractSyntaxTreeExpressionNode] = None) -> type | types.GenericAlias:
-        return self.descriptor.resolve_generic_reference(self.descriptor.call_result_type if isinstance(self.descriptor.call_result_type, (type, types.GenericAlias)) else self.descriptor.call_result_type(parameters), self)
+    def get_call_result_type(self, parameters: typing.List[AbstractSyntaxTreeExpressionNode] = None) -> ResolvedTypeContainer:
+        return self.descriptor.resolve_generic_reference(self.descriptor.call_result_type if isinstance(self.descriptor.call_result_type, (type, types.GenericAlias, TypeInformationHolder.GenericReference)) else self.descriptor.call_result_type(parameters), self)
+
+    def get_operator_result_type(self, operator: OperatorType, other_side: AbstractSyntaxTreeExpressionNode = None, is_self_rhs=False) -> ResolvedTypeContainer:
+        op = self.descriptor.operator_map.get(operator, typing.Any)
+        return self.descriptor.resolve_generic_reference(op if isinstance(op, (type, types.GenericAlias, TypeInformationHolder.GenericReference)) else op(other_side, is_self_rhs), self)
+
+
+for root, dirs, files in os.walk(os.path.dirname(__file__)+"/typeinfo/standard_library"):
+    for file in files:
+        with open(root+"/"+file) as f:
+            data = json.load(f)
+
+        TypeInformationHolder.TYPE_INFORMATION_DATA[eval(data["name"])] = TypeInformationHolder.TypeDescriptor.parse_from_json(data)
 
 
 def get_type_info(t: type | types.GenericAlias) -> TypeInformationHolder:

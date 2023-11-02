@@ -33,6 +33,7 @@ from pycompiler.parser.ListConstruction import (
     ListConstructorNode,
     ListComprehensionNode,
 )
+from pycompiler.parser.OperatorExpressionNode import *
 
 
 class Parser:

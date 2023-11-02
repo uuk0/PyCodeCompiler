@@ -1,0 +1,24 @@
+{
+  "type": "type",
+  "name": "slice",
+  "generics": ["A", "[B=typing.Any]", "[C=typing.Any]"],
+  "wrapped name": "SliceWrapper",
+  "type variable": null,
+  "attributes": [
+    {
+      "type": "attribute",
+      "name": "start",
+      "data type": "A"
+    },
+    {
+      "type": "attribute",
+      "name": "stop",
+      "data type": "B"
+    },
+    {
+      "type": "attribute",
+      "name": "step",
+      "data type": "C"
+    }
+  ]
+}
