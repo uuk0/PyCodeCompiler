@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import enum
 import inspect
+import string
 import typing
 
 
@@ -97,3 +98,13 @@ class OperatorType(enum.Enum):
 
         global LONGEST_OPERATOR_STRING
         LONGEST_OPERATOR_STRING = max(LONGEST_OPERATOR_STRING, len(operator))
+
+
+def not_same_group(a: str, b: str) -> bool:
+    if b == " ":
+        return True
+
+    if a in string.ascii_letters:
+        return b not in string.ascii_letters
+
+    return b in string.ascii_letters

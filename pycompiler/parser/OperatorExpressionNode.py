@@ -15,6 +15,7 @@ from pycompiler.parser.util import (
     SINGLETON_OPERATOR_STRING_TO_TYPE,
     BINARY_OPERATOR_STRING_TO_TYPE,
     INPLACE_BINARY_OPERATOR_STRING_TO_TYPE,
+    not_same_group,
 )
 
 if typing.TYPE_CHECKING:
@@ -127,9 +128,12 @@ class BinaryInplaceOperator(AbstractSyntaxTreeNode):
         # todo: need a second pass or something to ensure that everything is fine here!
 
         parser.lexer.parse_whitespace()
-        c = parser.lexer.get_chars_or_pad(LONGEST_OPERATOR_STRING)
-        for i in range(LONGEST_OPERATOR_STRING, 0, -1):
-            if c[:i] in INPLACE_BINARY_OPERATOR_STRING_TO_TYPE:
+        c = parser.lexer.get_chars_or_pad(LONGEST_OPERATOR_STRING + 1)
+
+        for i in range(len(c), 0, -1):
+            if c[:i] in INPLACE_BINARY_OPERATOR_STRING_TO_TYPE and not_same_group(
+                c[i - 1], c[i]
+            ):
                 op = INPLACE_BINARY_OPERATOR_STRING_TO_TYPE[c[:i]]
 
                 parser.lexer.increment_cursor(i)

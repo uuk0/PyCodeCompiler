@@ -43,6 +43,7 @@ from pycompiler.parser.util import (
     LONGEST_OPERATOR_STRING,
     SINGLETON_OPERATOR_STRING_TO_TYPE,
     BINARY_OPERATOR_STRING_TO_TYPE,
+    not_same_group,
 )
 
 
@@ -240,10 +241,12 @@ class Parser:
 
         else:
             self.push_state()
-            c = self.lexer.get_chars_or_pad(LONGEST_OPERATOR_STRING)
+            c = self.lexer.get_chars_or_pad(LONGEST_OPERATOR_STRING + 1)
 
             for i in range(len(c), 0, -1):
-                if c[:i] in SINGLETON_OPERATOR_STRING_TO_TYPE:
+                if c[:i] in SINGLETON_OPERATOR_STRING_TO_TYPE and not_same_group(
+                    c[i - 1], c[i]
+                ):
                     op = SINGLETON_OPERATOR_STRING_TO_TYPE[c[:i]]
 
                     self.lexer.increment_cursor(i)
@@ -314,10 +317,12 @@ class Parser:
                 self.push_state()
                 self.lexer.parse_whitespace()
 
-                c = self.lexer.get_chars_or_pad(LONGEST_OPERATOR_STRING)
+                c = self.lexer.get_chars_or_pad(LONGEST_OPERATOR_STRING + 1)
 
                 for i in range(len(c), 0, -1):
-                    if c[:i] in BINARY_OPERATOR_STRING_TO_TYPE:
+                    if c[:i] in BINARY_OPERATOR_STRING_TO_TYPE and not_same_group(
+                        c[i - 1], c[i]
+                    ):
                         op = BINARY_OPERATOR_STRING_TO_TYPE[c[:i]]
 
                         self.lexer.pop_state()
