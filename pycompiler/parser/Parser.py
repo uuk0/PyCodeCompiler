@@ -324,6 +324,7 @@ class Parser:
                         c[i - 1], c[i]
                     ):
                         op = BINARY_OPERATOR_STRING_TO_TYPE[c[:i]]
+                        self.lexer.increment_cursor(i)
 
                         self.lexer.pop_state()
                         rhs = self.try_parse_expression()
@@ -336,6 +337,8 @@ class Parser:
                 else:
                     self.lexer.rollback_state()
                     break
+
+                self.lexer.push_state()
 
             self.pop_state()
 

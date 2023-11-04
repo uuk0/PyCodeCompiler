@@ -43,6 +43,7 @@ class TokenType(enum.Enum):
     LESS_THAN = enum.auto()
     BIGGER_THAN = enum.auto()
     VBAR = enum.auto()
+    XOR = enum.auto()
 
     STRING_LITERAL = enum.auto()
 
@@ -77,6 +78,7 @@ SPECIAL_TYPE_MAP = {
     TokenType.LESS_THAN: "<",
     TokenType.BIGGER_THAN: ">",
     TokenType.VBAR: "|",
+    TokenType.XOR: "^",
 }
 
 REVERSE_SPECIAL_TYPE_MAP = {
