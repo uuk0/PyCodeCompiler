@@ -27,6 +27,9 @@ class NameAccessNode(AbstractSyntaxTreeExpressionNode):
     def __eq__(self, other: NameAccessNode):
         return type(other) is NameAccessNode and self.name == other.name
 
+    def can_be_assignment_target(self) -> bool:
+        return True
+
 
 class NameWriteAccessNode(AbstractSyntaxTreeExpressionNode):
     def __init__(self, name: str, token: Token = None):

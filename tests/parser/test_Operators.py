@@ -10,7 +10,7 @@ from pycompiler.parser.OperatorExpressionNode import (
     BinaryOperator,
     BinaryInplaceOperator,
 )
-from pycompiler.parser.NameAccessNode import NameAccessNode
+from pycompiler.parser.NameAccessNode import NameAccessNode, NameWriteAccessNode
 
 
 class TestSingletonOperator(unittest.TestCase):
@@ -162,5 +162,123 @@ class TestBinaryOperator(unittest.TestCase):
             "a ^ b",
             BinaryOperator(
                 OperatorType.BINARY_LOGIC_XOR, NameAccessNode("a"), NameAccessNode("b")
+            ),
+        )
+
+
+class TestInplaceBinaryOperator(unittest.TestCase):
+    def helper(self, code: str, node: BinaryInplaceOperator):
+        with self.subTest("basic"):
+            self.assertEqual(
+                node, BinaryInplaceOperator.try_parse_from_parser(Parser(code))
+            )
+
+        with self.subTest("line"):
+            self.assertEqual(node, Parser(code).try_parse_code_line_obj())
+
+        with self.subTest("block"):
+            self.assertEqual([node], Parser(code).parse_code_block())
+
+        with self.subTest("copy"):
+            self.assertEqual(node, node.copy())
+            self.assertIsNot(node, node.copy())
+
+    def test_add(self):
+        self.helper(
+            "a += b",
+            BinaryInplaceOperator(
+                OperatorType.BINARY_INPLACE_PLUS,
+                NameWriteAccessNode("a"),
+                NameAccessNode("b"),
+            ),
+        )
+
+    def test_sub(self):
+        self.helper(
+            "a -= b",
+            BinaryInplaceOperator(
+                OperatorType.BINARY_INPLACE_MINUS,
+                NameWriteAccessNode("a"),
+                NameAccessNode("b"),
+            ),
+        )
+
+    def test_times(self):
+        self.helper(
+            "a *= b",
+            BinaryInplaceOperator(
+                OperatorType.BINARY_INPLACE_STAR,
+                NameWriteAccessNode("a"),
+                NameAccessNode("b"),
+            ),
+        )
+
+    def test_pow(self):
+        self.helper(
+            "a **= b",
+            BinaryInplaceOperator(
+                OperatorType.BINARY_INPLACE_STAR_STAR,
+                NameWriteAccessNode("a"),
+                NameAccessNode("b"),
+            ),
+        )
+
+    def test_truediv(self):
+        self.helper(
+            "a /= b",
+            BinaryInplaceOperator(
+                OperatorType.BINARY_INPLACE_SLASH,
+                NameWriteAccessNode("a"),
+                NameAccessNode("b"),
+            ),
+        )
+
+    def test_floordiv(self):
+        self.helper(
+            "a //= b",
+            BinaryInplaceOperator(
+                OperatorType.BINARY_INPLACE_SLASH_SLASH,
+                NameWriteAccessNode("a"),
+                NameAccessNode("b"),
+            ),
+        )
+
+    def test_mod(self):
+        self.helper(
+            "a %= b",
+            BinaryInplaceOperator(
+                OperatorType.BINARY_INPLACE_PERCENT,
+                NameWriteAccessNode("a"),
+                NameAccessNode("b"),
+            ),
+        )
+
+    def test_bitwise_and(self):
+        self.helper(
+            "a &= b",
+            BinaryInplaceOperator(
+                OperatorType.BINARY_INPLACE_LOGIC_AND,
+                NameWriteAccessNode("a"),
+                NameAccessNode("b"),
+            ),
+        )
+
+    def test_bitwise_or(self):
+        self.helper(
+            "a |= b",
+            BinaryInplaceOperator(
+                OperatorType.BINARY_INPLACE_LOGIC_OR,
+                NameWriteAccessNode("a"),
+                NameAccessNode("b"),
+            ),
+        )
+
+    def test_bitwise_xor(self):
+        self.helper(
+            "a ^= b",
+            BinaryInplaceOperator(
+                OperatorType.BINARY_INPLACE_LOGIC_XOR,
+                NameWriteAccessNode("a"),
+                NameAccessNode("b"),
             ),
         )
