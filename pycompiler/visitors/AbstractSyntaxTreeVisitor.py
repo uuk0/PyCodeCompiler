@@ -43,6 +43,11 @@ from pycompiler.parser.ListConstruction import (
     ListConstructorNode,
     ListComprehensionNode,
 )
+from pycompiler.parser.OperatorExpressionNode import (
+    SingletonOperator,
+    BinaryOperator,
+    BinaryInplaceOperator,
+)
 
 from pycompiler.specification.Spec import SpecifiedClass, SpecifiedFunction
 
@@ -226,3 +231,17 @@ class AbstractASTTreeVisitor(ABC):
         self.visit_any(comprehension.assignment_target)
         self.visit_any(comprehension.if_cond)
         self.visit_any(comprehension.base_expr)
+
+    @_bind_to_datatype(SingletonOperator)
+    def visit_singleton_operator(self, operator: SingletonOperator):
+        self.visit_any(operator.arg)
+
+    @_bind_to_datatype(BinaryOperator)
+    def visit_binary_operator(self, operator: BinaryOperator):
+        self.visit_any(operator.lhs)
+        self.visit_any(operator.rhs)
+
+    @_bind_to_datatype(BinaryInplaceOperator)
+    def visit_binary_inplace_operator(self, operator: BinaryInplaceOperator):
+        self.visit_any(operator.lhs)
+        self.visit_any(operator.rhs)
