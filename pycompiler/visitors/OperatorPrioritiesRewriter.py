@@ -17,7 +17,7 @@ PRIORITIES_GROUPS = [
         OperatorType.SINGLE_PLUS,
     ],
     [
-        OperatorType.BINARY_INPLACE_STAR_STAR,
+        OperatorType.BINARY_STAR_STAR,
     ],
     [
         OperatorType.BINARY_STAR,
@@ -56,7 +56,7 @@ PRIORITIES_GROUPS = [
 ]
 
 PRIORITY_INDEX_MAP: typing.Dict[OperatorType, int] = {}
-for i, t in PRIORITIES_GROUPS:
+for i, t in enumerate(PRIORITIES_GROUPS):
     PRIORITY_INDEX_MAP |= {x: i for x in t}
 
 
@@ -88,7 +88,7 @@ class OperatorPrioritiesRewriter(AbstractASTTreeVisitor):
             this_index = PRIORITY_INDEX_MAP[operator.operator]
             inner_index = PRIORITY_INDEX_MAP[operator.lhs.operator]
 
-            if this_index > inner_index:
+            if this_index < inner_index:
                 operator.replace_with(
                     operator := SingletonOperator(
                         operator.lhs.operator,
@@ -106,7 +106,7 @@ class OperatorPrioritiesRewriter(AbstractASTTreeVisitor):
             this_index = PRIORITY_INDEX_MAP[operator.operator]
             inner_index = PRIORITY_INDEX_MAP[operator.lhs.operator]
 
-            if this_index > inner_index:
+            if this_index < inner_index:
                 operator.replace_with(
                     operator := BinaryOperator(
                         operator.lhs.operator,
@@ -132,7 +132,7 @@ class OperatorPrioritiesRewriter(AbstractASTTreeVisitor):
                         BinaryOperator(
                             operator.operator,
                             operator.lhs,
-                            operator.rhs.rhs,
+                            operator.rhs.lhs,
                         ),
                         operator.rhs.rhs,
                     ),

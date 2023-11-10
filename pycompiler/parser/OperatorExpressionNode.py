@@ -100,7 +100,7 @@ class BinaryOperator(AbstractSyntaxTreeExpressionNode):
         return self.lhs.get_tokens() + self.rhs.get_tokens()
 
     def __repr__(self):
-        return f"{self.lhs} {self.operator.operator} {self.rhs}"
+        return f"({self.lhs} {self.operator.operator} {self.rhs})"
 
     def __eq__(self, other: BinaryOperator):
         return (
