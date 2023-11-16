@@ -3,6 +3,7 @@ from __future__ import annotations
 import typing
 
 from pycompiler.Lexer import Token, TokenType
+from pycompiler.emitter.CodeBuilder import CodeBuilder
 from pycompiler.parser.AbstractSyntaxTreeNode import (
     AbstractSyntaxTreeNode,
     AbstractSyntaxTreeExpressionNode,
@@ -120,3 +121,12 @@ class RaiseStatement(AbstractSyntaxTreeNode):
             self.return_token,
             self.from_token,
         )
+
+    def push_code(self, builder: CodeBuilder) -> CodeBuilder.Source:
+        exception = self.value.push_code(builder) if self.value else builder.PY_NONE
+        from_node = (
+            self.from_node.push_code(builder) if self.from_node else builder.PY_NONE
+        )
+
+        # todo: link stdlib function
+        builder.push_evaluate_value(builder.push_call(None, exception, from_node))

@@ -4,6 +4,7 @@ import enum
 import typing
 from abc import ABC
 from pycompiler.Lexer import Token
+from pycompiler.emitter.CodeBuilder import CodeBuilder
 
 
 if typing.TYPE_CHECKING:
@@ -67,6 +68,12 @@ class AbstractSyntaxTreeNode(ABC):
 
     def copy(self) -> AbstractSyntaxTreeNode:
         raise NotImplementedError
+
+    def push_code(self, builder: CodeBuilder) -> CodeBuilder.Source:
+        raise NotImplementedError
+
+    def push_write_code(self, builder: CodeBuilder, value: CodeBuilder.Source):
+        pass
 
 
 class AbstractSyntaxTreeExpressionNode(AbstractSyntaxTreeNode, ABC):

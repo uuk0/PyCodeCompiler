@@ -3,6 +3,7 @@ from __future__ import annotations
 import typing
 
 from pycompiler.Lexer import Token, TokenType
+from pycompiler.emitter.CodeBuilder import CodeBuilder
 from pycompiler.parser.AbstractSyntaxTreeNode import (
     AbstractSyntaxTreeNode,
 )
@@ -39,3 +40,6 @@ class PassStatement(AbstractSyntaxTreeNode):
 
     def copy(self) -> PassStatement:
         return PassStatement(self.pass_token)
+
+    def push_code(self, builder: CodeBuilder) -> CodeBuilder.Source:
+        pass

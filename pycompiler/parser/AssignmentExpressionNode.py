@@ -3,6 +3,7 @@ from __future__ import annotations
 import typing
 
 from pycompiler.Lexer import Token
+from pycompiler.emitter.CodeBuilder import CodeBuilder
 from pycompiler.parser.AbstractSyntaxTreeNode import (
     AbstractSyntaxTreeExpressionNode,
     AbstractSyntaxTreeNode,
@@ -75,3 +76,11 @@ class AssignmentExpressionNode(AbstractSyntaxTreeNode):
             self.base.copy(),
             self.equal_signs.copy(),
         )
+
+    def push_code(self, builder: CodeBuilder):
+        var = builder.get_temporary()
+        value = self.base.push_code(builder)
+        builder.push_store_local(value, var)
+
+        for lhs in self.targets:
+            lhs.push_write_code(builder, var)

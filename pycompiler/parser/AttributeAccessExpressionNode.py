@@ -3,6 +3,7 @@ from __future__ import annotations
 import typing
 
 from pycompiler.Lexer import Token
+from pycompiler.emitter.CodeBuilder import CodeBuilder
 from pycompiler.parser.AbstractSyntaxTreeNode import (
     AbstractSyntaxTreeNode,
     AbstractSyntaxTreeExpressionNode,
@@ -73,3 +74,13 @@ class AttributeAccessExpressionNode(AbstractSyntaxTreeExpressionNode):
 
     def can_be_assignment_target(self) -> bool:
         return True
+
+    def push_code(self, builder: CodeBuilder) -> CodeBuilder.Source:
+        base = self.base.push_code(builder)
+        return builder.push_call(None, base)  # todo: add target from stdlib
+
+    def push_write_code(self, builder: CodeBuilder, value: CodeBuilder.Source):
+        base = self.base.push_code(builder)
+        builder.push_evaluate_value(
+            builder.push_call(None, base)
+        )  # todo: add target from stdlib

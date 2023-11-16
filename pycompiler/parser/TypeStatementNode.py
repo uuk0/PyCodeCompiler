@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import typing
 
+from pycompiler.emitter.CodeBuilder import CodeBuilder
 from pycompiler.parser.AbstractSyntaxTreeNode import (
     AbstractSyntaxTreeExpressionNode,
     AbstractSyntaxTreeNode,
@@ -128,3 +129,9 @@ class TypeStatementNode(AbstractSyntaxTreeNode):
             self.base_type.copy(),
             self.real_type.copy(),
         )
+
+    def push_code(self, builder: CodeBuilder):
+        real = self.real_type.push_code(builder)
+
+        # todo: this should be the base name without generics!
+        self.base_type.push_write_code(builder, real)

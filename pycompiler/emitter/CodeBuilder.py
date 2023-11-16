@@ -151,11 +151,21 @@ class CodeBuilder:
         def get_code(self, builder: CodeBuilder) -> str:
             return f"void* {self.local.get_access_text(builder)} = {self.base.get_access_text(builder)}"
 
+    PY_NONE = None
+    PY_TRUE = None
+    PY_FALSE = None
+
     def __init__(self):
         self.blocks: typing.List[CodeBuilder.AbstractBlock] = []
         self.local_source_cache: typing.Dict[str, CodeBuilder.Source] = {}
         self._is_building = False
         self.name_cache_counter = 0
+
+    def get_stdlib_function(self, name: str) -> CodeBuilder.Source:
+        raise NotImplementedError
+
+    def get_stdlib_struct(self, name: str) -> CodeBuilder.Source:
+        raise NotImplementedError
 
     def get_fresh_name(self, hint: str = None) -> str:
         i = self.name_cache_counter
@@ -209,12 +219,15 @@ class CodeBuilder:
         raise NotImplementedError
 
     def push_store_local(
-        self, source: CodeBuilder.Source, name: str
+        self, source: CodeBuilder.Source, name: str | CodeBuilder.Source
     ) -> CodeBuilder.Source:
-        local = self.get_source_for_local(name)
+        local = self.get_source_for_local(name) if isinstance(name, str) else name
         local.real_value = CodeBuilder.StoreLocalBlock(local, source)
         self.blocks.append(local.real_value)
         return local
+
+    def push_return_statement(self, value: CodeBuilder.Source = None):
+        raise NotImplementedError
 
     def push_evaluate_value(self, expr: CodeBuilder.Source) -> typing.Self:
         expr.usage_count += 1
@@ -227,6 +240,9 @@ class CodeBuilder:
         ) or self.local_source_cache.setdefault(
             name, CodeBuilder.Source(enforce_local_storage=True, name_hint=name)
         )
+
+    def get_temporary(self, hint: str = None) -> CodeBuilder.Source:
+        return self.get_source_for_local(self.get_fresh_name(hint))
 
     def merge_blocks_if_possible(self):
         for block in self.blocks:

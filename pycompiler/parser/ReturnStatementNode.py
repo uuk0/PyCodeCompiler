@@ -3,6 +3,7 @@ from __future__ import annotations
 import typing
 
 from pycompiler.Lexer import Token, TokenType
+from pycompiler.emitter.CodeBuilder import CodeBuilder
 from pycompiler.parser.AbstractSyntaxTreeNode import (
     AbstractSyntaxTreeNode,
     AbstractSyntaxTreeExpressionNode,
@@ -67,3 +68,7 @@ class ReturnStatement(AbstractSyntaxTreeNode):
         return ReturnStatement(
             self.value.copy() if self.value else None, self.return_token
         )
+
+    def push_code(self, builder: CodeBuilder):
+        value = self.value.push_code(builder) if self.value else builder.PY_NONE
+        builder.push_return_statement(value)

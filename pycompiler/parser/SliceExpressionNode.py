@@ -3,6 +3,7 @@ from __future__ import annotations
 import typing
 
 from pycompiler.Lexer import Token
+from pycompiler.emitter.CodeBuilder import CodeBuilder
 from pycompiler.parser.AbstractSyntaxTreeNode import (
     AbstractSyntaxTreeNode,
     AbstractSyntaxTreeExpressionNode,
@@ -113,3 +114,11 @@ class SliceExpressionNode(AbstractSyntaxTreeExpressionNode):
             self.lhs_colon_token,
             self.rhs_colon_token,
         )
+
+    def push_code(self, builder: CodeBuilder) -> CodeBuilder.Source:
+        start = self.start.push_code(builder) if self.start else builder.PY_NONE
+        stop = self.stop.push_code(builder) if self.stop else builder.PY_NONE
+        step = self.step.push_code(builder) if self.step else builder.PY_NONE
+
+        # todo: add real function
+        return builder.push_call(None, start, stop, step)

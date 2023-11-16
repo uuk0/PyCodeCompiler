@@ -43,3 +43,6 @@ class ContinueStatement(AbstractSyntaxTreeNode):
 
     def copy(self) -> ContinueStatement:
         return ContinueStatement(self.continue_token)
+
+    def push_code(self, builder: CodeBuilder) -> CodeBuilder.Source:
+        raise RuntimeError("not implemented")

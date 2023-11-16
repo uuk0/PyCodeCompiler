@@ -3,6 +3,7 @@ from __future__ import annotations
 import typing
 
 from pycompiler.Lexer import Token, TokenType
+from pycompiler.emitter.CodeBuilder import CodeBuilder
 from pycompiler.parser.AbstractSyntaxTreeNode import (
     AbstractSyntaxTreeNode,
 )
@@ -43,3 +44,6 @@ class BreakStatement(AbstractSyntaxTreeNode):
 
     def copy(self) -> BreakStatement:
         return BreakStatement(self.break_token)
+
+    def push_code(self, builder: CodeBuilder) -> CodeBuilder.Source:
+        raise RuntimeError("not implemented")

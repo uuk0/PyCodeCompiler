@@ -3,6 +3,7 @@ from __future__ import annotations
 import typing
 
 from pycompiler.Lexer import Token
+from pycompiler.emitter.CodeBuilder import CodeBuilder
 from pycompiler.parser.AbstractSyntaxTreeNode import (
     AbstractSyntaxTreeNode,
     AbstractSyntaxTreeExpressionNode,
@@ -93,3 +94,17 @@ class SubscriptionAccessExpressionNode(AbstractSyntaxTreeExpressionNode):
             if base != NotImplemented and args != NotImplemented
             else NotImplemented
         )
+
+    def push_code(self, builder: CodeBuilder) -> CodeBuilder.Source:
+        base = self.base.push_code(builder)
+        index = self.inner.push_code(builder)
+
+        # todo: add stdlib function
+        return builder.push_call(None, base, index)
+
+    def push_write_code(self, builder: CodeBuilder, value: CodeBuilder.Source):
+        base = self.base.push_code(builder)
+        index = self.inner.push_code(builder)
+
+        # todo: add stdlib function
+        builder.push_call(None, base, index, value)

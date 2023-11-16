@@ -3,6 +3,7 @@ from __future__ import annotations
 import typing
 
 from pycompiler.Lexer import Token, TokenType
+from pycompiler.emitter.CodeBuilder import CodeBuilder
 from pycompiler.parser.AbstractSyntaxTreeNode import (
     AbstractSyntaxTreeNode,
     AbstractSyntaxTreeExpressionNode,
@@ -138,3 +139,12 @@ class WhileStatementNode(AbstractSyntaxTreeNode):
             self.while_token,
             self.colon_token,
         )
+
+    def push_code(self, builder: CodeBuilder):
+        condition = self.condition.push_code(builder)
+        inner_builder = builder.push_while_loop(condition)
+
+        for node in self.body:
+            inner_builder.push_evaluate_value(node.push_code(inner_builder))
+
+        # todo: else block

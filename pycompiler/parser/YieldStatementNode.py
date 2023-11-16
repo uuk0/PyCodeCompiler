@@ -3,6 +3,7 @@ from __future__ import annotations
 import typing
 
 from pycompiler.Lexer import Token, TokenType
+from pycompiler.emitter.CodeBuilder import CodeBuilder
 from pycompiler.parser.AbstractSyntaxTreeNode import (
     AbstractSyntaxTreeNode,
     AbstractSyntaxTreeExpressionNode,
@@ -85,3 +86,6 @@ class YieldStatement(AbstractSyntaxTreeNode):
 
     def copy(self) -> YieldStatement:
         return YieldStatement(self.value.copy(), self.return_token, self.is_yield_from)
+
+    def push_code(self, builder: CodeBuilder) -> CodeBuilder.Source:
+        raise RuntimeError("not implemented!")
