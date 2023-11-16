@@ -3,6 +3,7 @@ from __future__ import annotations
 import typing
 
 from pycompiler.Lexer import Token
+from pycompiler.emitter.CodeBuilder import CodeBuilder
 from pycompiler.parser.AbstractSyntaxTreeNode import (
     AbstractSyntaxTreeExpressionNode,
     AbstractSyntaxTreeNode,
@@ -30,6 +31,9 @@ class NameAccessNode(AbstractSyntaxTreeExpressionNode):
     def can_be_assignment_target(self) -> bool:
         return True
 
+    def push_code(self, builder: CodeBuilder) -> CodeBuilder.Source:
+        return builder.get_source_for_local(self.name)
+
 
 class NameWriteAccessNode(AbstractSyntaxTreeExpressionNode):
     def __init__(self, name: str, token: Token = None):
@@ -54,6 +58,9 @@ class NameWriteAccessNode(AbstractSyntaxTreeExpressionNode):
 
     def can_be_assignment_target(self) -> bool:
         return True
+
+    def push_write_code(self, builder: CodeBuilder) -> CodeBuilder.Source:
+        return builder.get_source_for_local(self.name)
 
 
 class NameAccessLocalNode(AbstractSyntaxTreeExpressionNode):

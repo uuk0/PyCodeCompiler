@@ -4,6 +4,7 @@ import inspect
 import typing
 
 from pycompiler.Lexer import Token, TokenType
+from pycompiler.emitter.CodeBuilder import CodeBuilder
 from pycompiler.parser.AbstractSyntaxTreeNode import (
     AbstractSyntaxTreeNode,
     AbstractSyntaxTreeExpressionNode,
@@ -340,3 +341,9 @@ class CallExpression(AbstractSyntaxTreeExpressionNode):
         return inspect.Signature(
             args,
         )
+
+    def push_code(self, builder: CodeBuilder) -> CodeBuilder.Source:
+        base = self.base.push_code(builder)
+        args = [arg.expr.push_code(builder) for arg in self.args]
+        # todo: check arg types
+        return builder.push_call(base, *args)

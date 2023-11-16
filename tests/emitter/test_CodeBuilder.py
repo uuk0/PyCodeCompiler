@@ -15,7 +15,7 @@ class TestCodeBuilder(unittest.TestCase):
         builder = CodeBuilder()
         target = builder.get_source_for_local("test")
         builder.push_call(target)
-        self.assertEqual("test1();", builder.get_full_code())
+        self.assertEqual("test0();", builder.get_full_code())
 
     def test_call_not_merge(self):
         builder = CodeBuilder()
@@ -23,7 +23,7 @@ class TestCodeBuilder(unittest.TestCase):
         call1 = builder.push_call(target)
         call2 = builder.push_call(call1)
         self.assertEqual(
-            "void* var0 = test1();\nvar0();",
+            "void* var1 = test0();\nvar1();",
             builder.get_full_code(),
         )
 
@@ -51,4 +51,4 @@ class TestCodeBuilder(unittest.TestCase):
         builder = CodeBuilder()
         target = builder.get_source_for_local("test")
         builder.push_store_local(target, "var")
-        self.assertEqual("void* var1 = test2;", builder.get_full_code())
+        self.assertEqual("void* var0 = test1;", builder.get_full_code())

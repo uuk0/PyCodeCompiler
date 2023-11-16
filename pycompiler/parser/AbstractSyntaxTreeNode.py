@@ -70,7 +70,7 @@ class AbstractSyntaxTreeNode(ABC):
         raise NotImplementedError
 
     def push_code(self, builder: CodeBuilder) -> CodeBuilder.Source:
-        raise NotImplementedError
+        raise NotImplementedError(self)
 
     def push_write_code(self, builder: CodeBuilder, value: CodeBuilder.Source):
         pass

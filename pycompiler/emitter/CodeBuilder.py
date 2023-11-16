@@ -48,11 +48,6 @@ class CodeBuilder:
             if self._access_name:
                 return self._access_name
 
-            name = (
-                builder.get_fresh_name(type(self).__name__)
-                if self.target is None
-                else self.target.get_access_text(builder)
-            )
             code = self.get_code(builder)
 
             if (
@@ -61,6 +56,12 @@ class CodeBuilder:
                 and (not self.target or self.target.usage_count == 0)
             ):
                 return code
+
+            name = (
+                builder.get_fresh_name(type(self).__name__)
+                if self.target is None
+                else self.target.get_access_text(builder)
+            )
 
             if include_base_assignment:
                 builder.add_code_line(f"void* {name} = {code};")
@@ -81,8 +82,11 @@ class CodeBuilder:
             self.base = base
             self.base.usage_count += 1
             self.args = args
+
             for arg in self.args:
+                assert isinstance(arg, CodeBuilder.Source), arg
                 arg.usage_count += 1
+
             self.enforce_local_storage = True
 
         def check_for_merging(self):
