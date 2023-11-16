@@ -6,26 +6,50 @@
   "attributes": [
     {
       "type": "subscription",
-      "data type": "T | list[T]"
+      "input type": "int",
+      "data type": "T"
+    },
+    {
+      "type": "subscription",
+      "input type": "slice[int, int, int]",
+      "data type": "list[T]"
     },
     {
       "type": "operator",
       "operator": "+",
+      "input_type": "list[T]",
+      "data type": "list[T]"
+    },
+    {
+      "type": "operator",
+      "operator": "+",
+      "input_type": "list[U]",
+      "captured generics": ["U"],
+      "data type": "list[T | U]"
+    },
+    {
+      "type": "operator",
+      "operator": "+=",
+      "input_type": "list[T]",
       "data type": "list[T]"
     },
     {
       "type": "operator",
       "operator": "+=",
-      "data type": "list[T]"
+      "input_type": "list[U]",
+      "captured generics": ["U"],
+      "data type": "list[T | U]"
     },
     {
       "type": "operator",
       "operator": "*",
+      "input type": "int",
       "data type": "list[T]"
     },
     {
       "type": "operator",
       "operator": "*=",
+      "input type": "int",
       "data type": "list[T]"
     },
     {
@@ -41,17 +65,17 @@
     {
       "type": "attribute",
       "name": "__len__",
-      "data type": "int"
+      "data type": "typing.Callable[[], int]"
     },
     {
       "type": "attribute",
       "name": "__min__",
-      "data type": "T"
+      "data type": "typing.Callable[[], T]"
     },
     {
       "type": "attribute",
       "name": "__max__",
-      "data type": "T"
+      "data type": "typing.Callable[[], T]"
     },
     {
       "type": "attribute",

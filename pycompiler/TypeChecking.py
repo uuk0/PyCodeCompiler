@@ -135,8 +135,10 @@ class Callable(typing.Protocol):
                     generics[generic] = TypeInformationHolder.GenericReference(i)
 
             for entry in definition.get("attributes", []):
+                local_generics = {key: TypeInformationHolder.GenericReference(-1) for key in entry.get("captured generics", [])}
+
                 try:
-                    data_type = eval(entry["data type"], globals(), generics) if "data type" in entry else typing.Any
+                    data_type = eval(entry["data type"], globals(), generics | local_generics) if "data type" in entry else typing.Any
                 except:
                     print(f"issue while evaluating data type '{entry.get("data type", None)}'")
                     traceback.print_exc()
@@ -150,9 +152,11 @@ class Callable(typing.Protocol):
                     obj.add_attribute_type(entry["name"], data_type)
 
                 elif entry["type"] == "subscription":
+                    # todo: key "input_type"!
                     obj.add_subscription_type(data_type)
 
                 elif entry["type"] == "operator":
+                    # todo: key "input_type"!
                     OPERATOR_STRING_TO_TYPE = SINGLETON_OPERATOR_STRING_TO_TYPE | BINARY_OPERATOR_STRING_TO_TYPE | INPLACE_BINARY_OPERATOR_STRING_TO_TYPE
 
                     if entry.get("operator", None) not in OPERATOR_STRING_TO_TYPE:

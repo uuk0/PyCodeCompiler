@@ -1,0 +1,44 @@
+{
+  "type": "type",
+  "name": "dict",
+  "generics": ["T", "U"],
+  "type variable": null,
+  "attributes": [
+    {
+      "type": "subscription",
+      "input type": "T",
+      "data type": "U"
+    },
+    {
+      "type": "operator",
+      "operator": "|",
+      "input type": "dict[T, U]",
+      "data type": "dict[T, U]"
+    },
+    {
+      "type": "operator",
+      "operator": "|",
+      "input type": "dict[X, Y]",
+      "captured generics": ["X", "Y"],
+      "data type": "dict[T | X, U | Y]"
+    },
+    {
+      "type": "operator",
+      "operator": "|=",
+      "input type": "dict[T, U]",
+      "data type": "dict[T, U]"
+    },
+    {
+      "type": "operator",
+      "operator": "|=",
+      "input type": "dict[X, Y]",
+      "captured generics": ["X", "Y"],
+      "data type": "dict[T | X, U | Y]"
+    },
+    {
+      "type": "attribute",
+      "name": "get",
+      "data type": "Callable([T], U, [('default=', U)])"
+    }
+  ]
+}
