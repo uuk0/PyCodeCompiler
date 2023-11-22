@@ -8,6 +8,23 @@ INVALID_CHARS_IN_HINT = " \t\n\r+-*~'#.,:;()&%$§\"!{[]}\\€@"
 
 
 class CodeBuilder:
+    """
+    CodeBuilder - Building Tools for creating c-code
+
+    The basic element are 'Source'-objects, which are created by certain 'push_XX' calls
+    on the builder object.
+    To evaluate these expressions, use push_evaluate_value(<source>).
+
+    Source-objects are required for certain expressions, like operators requiring the operands to be 'Source' objects.
+
+    With 'source' objects, you can also create control structures, like loops.
+
+    Variable Assignments also require a 'Source' object.
+
+    The Builder decides automatically (when not specified) what variables should be stored in temporary variables,
+    and will optimise cases where it is not needed.
+    """
+
     class Source:
         def __init__(
             self,
@@ -159,19 +176,49 @@ class CodeBuilder:
     PY_TRUE = None
     PY_FALSE = None
 
-    def __init__(self):
+    def __init__(self, parent: CodeBuilder = None):
+        self.parent = parent
         self.blocks: typing.List[CodeBuilder.AbstractBlock] = []
         self.local_source_cache: typing.Dict[str, CodeBuilder.Source] = {}
         self._is_building = False
         self.name_cache_counter = 0
 
+        # The Block currently being targets for break and continue
+        self.enclosing_loop = parent.enclosing_loop if parent else None
+
+        # The Block in use currently for building if-elseif-else statements
+        # todo: this is very tricky!
+        self.if_building_block = None
+
+        if parent is not None:
+            # replace our variant of get_fresh_name with the parent variant, so we don't get conflicting names
+            self.get_fresh_name = parent.get_fresh_name
+
     def get_stdlib_function(self, name: str) -> CodeBuilder.Source:
+        """
+        Returns a 'Source' object onto a 'function' definition somewhere in the standard-library
+
+        Ensures that the necessary files are included.
+        """
         raise NotImplementedError
 
     def get_stdlib_struct(self, name: str) -> CodeBuilder.Source:
+        """
+        Returns a 'Source' object onto a 'struct' definition somewhere in the standard-library
+
+        Ensures that the necessary files are included.
+        """
         raise NotImplementedError
 
     def get_fresh_name(self, hint: str = None) -> str:
+        """
+        Returns a new unique name for code generation.
+
+        In most cases only useful for internal functions
+
+        WARNING: when using child-CodeBuilder objects, this function will be replaced with the parent variant,
+        to avoid name conflicts
+        """
         i = self.name_cache_counter
         self.name_cache_counter += 1
         if not hint:
@@ -191,6 +238,12 @@ class CodeBuilder:
     def push_call(
         self, base: CodeBuilder.Source, *args: CodeBuilder.Source
     ) -> CodeBuilder.Source:
+        """
+        Returns a 'Source' representing a function call to 'base' with 'args'.
+
+        The function ensures parameter evaluation order to be left-to-right, and as such must create
+        local temporary variables.
+        """
         target = CodeBuilder.Source()
         target.real_value = CodeBuilder.CallBlock(target, base, list(args))
         self.blocks.append(target.real_value)
@@ -211,15 +264,27 @@ class CodeBuilder:
         return target
 
     def push_if_condition(self, condition: CodeBuilder.Source) -> CodeBuilder:
+        # todo: set self.if_building_block
         raise NotImplementedError
 
     def push_else_if_condition(self, condition: CodeBuilder.Source) -> CodeBuilder:
         raise NotImplementedError
 
     def push_else_block(self) -> CodeBuilder:
+        # todo: set self.if_building_block
         raise NotImplementedError
 
     def push_while_loop(self, condition: CodeBuilder.Source) -> CodeBuilder:
+        # todo: set self.if_building_block
+        raise NotImplementedError
+
+    def push_for_loop(
+        self,
+        base_target: CodeBuilder.Source,
+        base_expression: CodeBuilder.Source,
+        condition: CodeBuilder.Source,
+        step: CodeBuilder.Source,
+    ) -> CodeBuilder:
         raise NotImplementedError
 
     def push_store_local(
@@ -228,12 +293,26 @@ class CodeBuilder:
         local = self.get_source_for_local(name) if isinstance(name, str) else name
         local.real_value = CodeBuilder.StoreLocalBlock(local, source)
         self.blocks.append(local.real_value)
+        self.if_building_block = None
         return local
+
+    def push_continue_statement(self, loop: CodeBuilder = None):
+        raise NotImplementedError
+
+    def push_break_statement(self, loop: CodeBuilder = None):
+        raise NotImplementedError
 
     def push_return_statement(self, value: CodeBuilder.Source = None):
         raise NotImplementedError
 
     def push_evaluate_value(self, expr: CodeBuilder.Source) -> typing.Self:
+        """
+        Pushes the given 'expr' as a single-line statement into the source;
+        this ensures that the given expression will be evaluated and not discarded
+
+        :param expr: the expr to use
+        :return: the builder itself
+        """
         expr.usage_count += 1
         expr.enforce_local_storage = True
         return self
@@ -249,6 +328,11 @@ class CodeBuilder:
         return self.get_source_for_local(self.get_fresh_name(hint))
 
     def merge_blocks_if_possible(self):
+        """
+        Util function for merging blocks from the current block list together
+
+        WARNING: modifies the internal state of some Source-like objects
+        """
         for block in self.blocks:
             block.check_for_merging()
 
@@ -270,7 +354,7 @@ class CodeBuilder:
         lines = []
 
         old_add_line = self.add_code_line
-        self.add_code_line = lines.append
+        self.add_code_line = lines.append  # temporarily replace this function
 
         # Prevent Sourcery in this case, as we dynamically append from outside while in the loop
         # sourcery skip: for-append-to-extend

@@ -19,8 +19,11 @@ class TestCallExpressions(unittest.TestCase):
     def test_basic(self):
         self.helper("test()", "test0();")
 
-    def test_single_assignment(self):
+    def test_single_parameters(self):
         self.helper("test(a)", "test0(a1);")
 
     def test_chained_calls(self):
         self.helper("test()()", "void* var1 = test0();\nvar1();")
+
+    def test_multi_parameters(self):
+        self.helper("test(a, b)", "test0(a1, b2);")
