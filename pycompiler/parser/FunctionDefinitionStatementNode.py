@@ -120,6 +120,9 @@ class FunctionDefinitionArgReference(AbstractSyntaxTreeExpressionNode):
     def can_be_assignment_target(self) -> bool:
         return True
 
+    def push_code(self, builder: CodeBuilder) -> CodeBuilder.Source:
+        return builder.enclosing_function.parameter_references[builder.enclosing_function.parameters.index(self.arg_ref)]
+
 
 class FunctionDefinitionGenericReference(AbstractSyntaxTreeExpressionNode):
     def __init__(self, name: str, index: int, name_token: Token = None):
@@ -517,6 +520,7 @@ class FunctionDefinitionNode(AbstractSyntaxTreeNode):
         self.parameters = parameters or []
         self.body = body
         self.return_type = return_type
+        self.parameter_references: typing.List[CodeBuilder.Source] | None = None
 
     def update_result_type(self):
         pass  # todo: collect info from return statements & type hint!
@@ -628,7 +632,8 @@ class FunctionDefinitionNode(AbstractSyntaxTreeNode):
     
     def get_function_definition(self) -> str:
         builder = CodeBuilder()
-        parameters = [builder.get_source_for_local(param.name) for param in self.parameters]
+        builder.enclosing_function = self
+        self.parameter_references = [builder.get_source_for_local(param.name) for param in self.parameters]
         
         for node in self.body:
             builder.push_evaluate_value(node.push_code(builder))

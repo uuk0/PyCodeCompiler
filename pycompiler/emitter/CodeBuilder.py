@@ -4,6 +4,10 @@ import typing
 from abc import ABC
 
 
+if typing.TYPE_CHECKING:
+    from pycompiler.parser.FunctionDefinitionStatementNode import FunctionDefinitionNode
+
+
 INVALID_CHARS_IN_HINT = " \t\n\r+-*~'#.,:;()&%$§\"!{[]}\\€@"
 
 
@@ -182,6 +186,7 @@ class CodeBuilder:
         self.local_source_cache: typing.Dict[str, CodeBuilder.Source] = {}
         self._is_building = False
         self.name_cache_counter = 0
+        self.enclosing_function: FunctionDefinitionNode | None = None
 
         # The Block currently being targets for break and continue
         self.enclosing_loop = parent.enclosing_loop if parent else None
