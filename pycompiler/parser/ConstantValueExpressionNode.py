@@ -4,6 +4,7 @@ import typing
 
 from pycompiler.Lexer import Token
 from pycompiler.TypeChecking import typeof
+from pycompiler.emitter.CodeBuilder import CodeBuilder
 from pycompiler.parser.AbstractSyntaxTreeNode import (
     AbstractSyntaxTreeExpressionNode,
 )
@@ -27,3 +28,9 @@ class ConstantValueExpressionNode(AbstractSyntaxTreeExpressionNode):
 
     def __eq__(self, other: ConstantValueExpressionNode):
         return type(other) is ConstantValueExpressionNode and self.value == other.value
+
+    def push_code(self, builder: CodeBuilder) -> CodeBuilder.Source:
+        if isinstance(self.value, int):
+            return builder.push_constant_expression(str(self.value))
+
+        raise NotImplementedError

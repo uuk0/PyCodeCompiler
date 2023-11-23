@@ -19,11 +19,13 @@ class ContinueStatement(AbstractSyntaxTreeNode):
         continue_token = parser.lexer.parse_token()
 
         if (
-            continue_token.token_type != TokenType.IDENTIFIER
+            continue_token is None
+            or continue_token.token_type != TokenType.IDENTIFIER
             or continue_token.text != "continue"
         ):
             parser.rollback_state()
             return
+
         parser.pop_state()
         return ContinueStatement(continue_token=continue_token)
 

@@ -71,7 +71,7 @@ class ImportStatement(AbstractSyntaxTreeNode):
 
         token = parser.lexer.parse_token()
 
-        if token.token_type != TokenType.IDENTIFIER or token.text not in ("from", "import"):
+        if token is None or token.token_type != TokenType.IDENTIFIER or token.text not in ("from", "import"):
             parser.rollback_state()
             return
         

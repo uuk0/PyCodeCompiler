@@ -39,6 +39,10 @@ class TypeStatementNode(AbstractSyntaxTreeNode):
         parser.push_state()
         token = parser.lexer.parse_token()
 
+        if token is None:
+            parser.rollback_state()
+            return
+
         if (
             token.token_type != TokenType.IDENTIFIER
             or token.text != "type"

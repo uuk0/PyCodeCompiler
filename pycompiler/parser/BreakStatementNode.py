@@ -20,11 +20,13 @@ class BreakStatement(AbstractSyntaxTreeNode):
         break_token = parser.lexer.parse_token()
 
         if (
-            break_token.token_type != TokenType.IDENTIFIER
+            break_token is None
+            or break_token.token_type != TokenType.IDENTIFIER
             or break_token.text != "break"
         ):
             parser.rollback_state()
             return
+
         parser.pop_state()
         return BreakStatement(break_token=break_token)
 

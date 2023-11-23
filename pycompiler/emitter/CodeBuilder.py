@@ -161,6 +161,14 @@ class CodeBuilder:
         def get_code(self, builder: CodeBuilder) -> str:
             return f"({self.lhs.get_access_text(builder)} {self.operator} {self.rhs.get_access_text(builder)})"
 
+    class ConstantValueBlock(AbstractBlock):
+        def __init__(self, code: str):
+            super().__init__(self)
+            self.code = code
+
+        def get_code(self, builder: CodeBuilder) -> str:
+            return self.code
+
     class StoreLocalBlock(AbstractBlock):
         def __init__(self, local: CodeBuilder.Source, base: CodeBuilder.Source):
             super().__init__(self)
@@ -327,6 +335,9 @@ class CodeBuilder:
         expr.usage_count += 1
         expr.enforce_local_storage = True
         return self
+
+    def push_constant_expression(self, code: str) -> CodeBuilder.Source:
+        return CodeBuilder.ConstantValueBlock(code)
 
     def get_source_for_local(self, name: str) -> CodeBuilder.Source:
         return self.local_source_cache.get(

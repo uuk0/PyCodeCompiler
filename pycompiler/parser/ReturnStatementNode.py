@@ -23,9 +23,14 @@ class ReturnStatement(AbstractSyntaxTreeNode):
 
         token = parser.lexer.parse_token()
 
-        if token.token_type != TokenType.IDENTIFIER or token.text != "return":
+        if (
+            token is None
+            or token.token_type != TokenType.IDENTIFIER
+            or token.text != "return"
+        ):
             parser.rollback_state()
             return
+
         parser.pop_state()
         expr = parser.try_parse_expression()
         return ReturnStatement(expr, return_token=token)

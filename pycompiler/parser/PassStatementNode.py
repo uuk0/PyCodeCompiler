@@ -19,9 +19,14 @@ class PassStatement(AbstractSyntaxTreeNode):
 
         pass_token = parser.lexer.parse_token()
 
-        if pass_token.token_type != TokenType.IDENTIFIER or pass_token.text != "pass":
+        if (
+            pass_token is None
+            or pass_token.token_type != TokenType.IDENTIFIER
+            or pass_token.text != "pass"
+        ):
             parser.rollback_state()
             return
+
         parser.pop_state()
         return PassStatement(pass_token=pass_token)
 

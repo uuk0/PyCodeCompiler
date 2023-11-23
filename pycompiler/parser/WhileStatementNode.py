@@ -21,7 +21,8 @@ class WhileStatementNode(AbstractSyntaxTreeNode):
         while_token = parser.lexer.parse_token()
 
         if (
-            while_token.token_type != TokenType.IDENTIFIER
+            while_token is None
+            or while_token.token_type != TokenType.IDENTIFIER
             or while_token.text != "while"
         ):
             parser.rollback_state()

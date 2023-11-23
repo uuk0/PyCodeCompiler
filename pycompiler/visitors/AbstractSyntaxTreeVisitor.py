@@ -3,6 +3,7 @@ from __future__ import annotations
 import typing
 from abc import ABC
 from pycompiler.parser.AbstractSyntaxTreeNode import AbstractSyntaxTreeNode
+from pycompiler.parser.ModuleNode import ModuleNode
 
 from pycompiler.parser.NameAccessNode import (
     NameAccessNode,
@@ -245,3 +246,7 @@ class AbstractASTTreeVisitor(ABC):
     def visit_binary_inplace_operator(self, operator: BinaryInplaceOperator):
         self.visit_any(operator.lhs)
         self.visit_any(operator.rhs)
+
+    @_bind_to_datatype(ModuleNode)
+    def visit_module_node(self, module: ModuleNode):
+        self.visit_any_list(module.nodes)

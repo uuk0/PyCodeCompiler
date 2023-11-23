@@ -59,8 +59,8 @@ class NameWriteAccessNode(AbstractSyntaxTreeExpressionNode):
     def can_be_assignment_target(self) -> bool:
         return True
 
-    def push_write_code(self, builder: CodeBuilder) -> CodeBuilder.Source:
-        return builder.get_source_for_local(self.name)
+    def push_write_code(self, builder: CodeBuilder, value: CodeBuilder.Source):
+        builder.push_store_local(value, self.name)
 
 
 class NameAccessLocalNode(AbstractSyntaxTreeExpressionNode):

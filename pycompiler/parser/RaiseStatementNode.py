@@ -24,9 +24,14 @@ class RaiseStatement(AbstractSyntaxTreeNode):
 
         token = parser.lexer.parse_token()
 
-        if token.token_type != TokenType.IDENTIFIER or token.text != "raise":
+        if (
+            token is None
+            or token.token_type != TokenType.IDENTIFIER
+            or token.text != "raise"
+        ):
             parser.rollback_state()
             return
+
         parser.pop_state()
         expr = parser.try_parse_expression()
         from_expr = None

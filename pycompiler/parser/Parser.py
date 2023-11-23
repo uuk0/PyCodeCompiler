@@ -9,6 +9,7 @@ from pycompiler.parser.AbstractSyntaxTreeNode import (
 )
 from pycompiler.parser.BreakStatementNode import BreakStatement
 from pycompiler.parser.ContinueStatementNode import ContinueStatement
+from pycompiler.parser.ModuleNode import ModuleNode
 from pycompiler.parser.NameAccessNode import NameAccessNode, NameWriteAccessNode
 from pycompiler.parser.AssignmentExpressionNode import AssignmentExpressionNode
 from pycompiler.parser.AttributeAccessExpressionNode import (
@@ -77,6 +78,9 @@ class Parser:
     def rollback_state(self):
         self.lexer.rollback_state()
 
+    def parse_module(self) -> ModuleNode:
+        return ModuleNode(self.parse_code_block(first_needs_indent=False))
+
     def parse_code_block(
         self, expected_indent=0, first_needs_indent=True
     ) -> list[AbstractSyntaxTreeNode]:
@@ -109,6 +113,9 @@ class Parser:
                 return []
 
         while True:
+            if self.lexer.get_chars(1) is None:
+                break
+
             expr = self.try_parse_code_line_obj()
 
             if expr is None:

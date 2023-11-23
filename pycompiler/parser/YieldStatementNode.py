@@ -21,7 +21,11 @@ class YieldStatement(AbstractSyntaxTreeNode):
 
         token = parser.lexer.parse_token()
 
-        if token.token_type != TokenType.IDENTIFIER or token.text != "yield":
+        if (
+            token is None
+            or token.token_type != TokenType.IDENTIFIER
+            or token.text != "yield"
+        ):
             parser.rollback_state()
             return
 
