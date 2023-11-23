@@ -78,6 +78,11 @@ class AssignmentExpressionNode(AbstractSyntaxTreeNode):
         )
 
     def push_code(self, builder: CodeBuilder):
+        if len(self.targets) == 1:
+            value = self.base.push_code(builder)
+            self.targets[0].push_write_code(builder, value)
+            return
+
         var = builder.get_temporary()
         value = self.base.push_code(builder)
         builder.push_store_local(value, var)
