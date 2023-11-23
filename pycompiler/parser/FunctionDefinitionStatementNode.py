@@ -642,8 +642,7 @@ class FunctionDefinitionNode(AbstractSyntaxTreeNode):
 
         # todo: set void in args when empty!
         return f"""void* {self.normal_name}({', '.join(f"void* {param.name}" for param in self.parameters)}) {{
-    {'\n    '.join(inner_code.split("\n"))}
-}}"""
+{f"    {inner_code}\n" if inner_code else ""}}}"""
     
     def get_wrapper_function_declaration(self) -> str:
         raise NotImplementedError

@@ -194,7 +194,9 @@ class CodeBuilder:
         self.local_source_cache: typing.Dict[str, CodeBuilder.Source] = {}
         self._is_building = False
         self.name_cache_counter = 0
-        self.enclosing_function: FunctionDefinitionNode | None = parent.enclosing_function if parent else None
+        self.enclosing_function: FunctionDefinitionNode | None = (
+            parent.enclosing_function if parent else None
+        )
 
         # The Block currently being targets for break and continue
         self.enclosing_loop = parent.enclosing_loop if parent else None
@@ -213,10 +215,10 @@ class CodeBuilder:
 
         Ensures that the necessary files are included.
         """
-        raise NotImplementedError
+        return self.push_constant_expression(name)
 
     def get_stdlib_global_variable(self, name: str) -> CodeBuilder.Source:
-        raise NotImplementedError
+        return self.push_constant_expression(name)
 
     def get_stdlib_struct(self, name: str) -> CodeBuilder.Source:
         """
@@ -224,7 +226,7 @@ class CodeBuilder:
 
         Ensures that the necessary files are included.
         """
-        raise NotImplementedError
+        return self.push_constant_expression(name)
 
     def get_fresh_name(self, hint: str = None) -> str:
         """

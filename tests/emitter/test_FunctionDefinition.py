@@ -17,7 +17,7 @@ class TestFunctionDefinition(unittest.TestCase):
         self.assertEqual(ccode.split("{")[0].rstrip(), node.get_function_declaration())
 
     def test_basic(self):
-        self.helper("def test(): pass", "void* test() {\n    \n}")
+        self.helper("def test(): pass", "void* test() {\n}")
 
     def test_parameter_propagation(self):
-        self.helper("def test(x): pass", "void* test(void* x) {\n    \n}")
+        self.helper("def test(x): pass", "void* test(void* x) {\n}")

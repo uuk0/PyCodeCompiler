@@ -17,3 +17,6 @@ class TestIntegration(unittest.TestCase):
 
     def test_basic(self):
         self.helper("basic")
+
+    def test_function_definition(self):
+        self.helper("function_definition")
