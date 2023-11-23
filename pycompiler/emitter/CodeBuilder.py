@@ -202,6 +202,9 @@ class CodeBuilder:
         """
         raise NotImplementedError
 
+    def get_stdlib_global_variable(self, name: str) -> CodeBuilder.Source:
+        raise NotImplementedError
+
     def get_stdlib_struct(self, name: str) -> CodeBuilder.Source:
         """
         Returns a 'Source' object onto a 'struct' definition somewhere in the standard-library
@@ -313,6 +316,9 @@ class CodeBuilder:
         :param expr: the expr to use
         :return: the builder itself
         """
+        if expr is None:
+            return self
+
         expr.usage_count += 1
         expr.enforce_local_storage = True
         return self

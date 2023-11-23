@@ -10,6 +10,7 @@ from pycompiler.parser.AbstractSyntaxTreeNode import (
     ParentAttributeSection,
 )
 from pycompiler.parser.util import ArgType
+from pycompiler.emitter.CodeBuilder import CodeBuilder
 
 if typing.TYPE_CHECKING:
     from pycompiler.parser.Parser import Parser
@@ -168,6 +169,9 @@ class StaticFunctionReferenceNode(AbstractSyntaxTreeExpressionNode):
 
     def copy(self) -> StaticFunctionReferenceNode:
         return StaticFunctionReferenceNode(self.func_def)
+
+    def push_code(self, builder: CodeBuilder) -> CodeBuilder.Source:
+        return self.func_def.get_function_container_node(builder)
 
 
 class FunctionDefinitionNode(AbstractSyntaxTreeNode):
@@ -508,6 +512,7 @@ class FunctionDefinitionNode(AbstractSyntaxTreeNode):
         self.generic_name_tokens = generic_name_tokens
         self.generic_bracket_tokens = generic_bracket_tokens
         self.name = name
+        self.normal_name = name  # todo: check
         self.generics = generics or []
         self.parameters = parameters or []
         self.body = body
@@ -617,3 +622,32 @@ class FunctionDefinitionNode(AbstractSyntaxTreeNode):
             args,
             return_annotation=self.return_type or typing.Any,
         )
+    
+    def get_function_declaration(self) -> str:
+        return f"void* {self.normal_name}({', '.join(f"void* {param.name}" for param in self.parameters)})"
+    
+    def get_function_definition(self) -> str:
+        builder = CodeBuilder()
+        parameters = [builder.get_source_for_local(param.name) for param in self.parameters]
+        
+        for node in self.body:
+            builder.push_evaluate_value(node.push_code(builder))
+            
+        inner_code = builder.get_full_code()
+
+        # todo: set void in args when empty!
+        return f"""void* {self.normal_name}({', '.join(f"void* {param.name}" for param in self.parameters)}) {{
+    {'\n    '.join(inner_code.split("\n"))}
+}}"""
+    
+    def get_wrapper_function_declaration(self) -> str:
+        raise NotImplementedError
+    
+    def get_wrapper_function_definition(self) -> str:
+        raise NotImplementedError
+    
+    def get_function_reference_node(self, builder: CodeBuilder) -> CodeBuilder.Source:
+        return builder.get_stdlib_function(self.normal_name)
+    
+    def get_function_container_node(self, builder: CodeBuilder) -> CodeBuilder.Source:
+        return builder.get_stdlib_global_variable(f"{self.normal_name}_CONTAINER")
