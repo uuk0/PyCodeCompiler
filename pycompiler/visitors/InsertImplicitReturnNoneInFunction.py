@@ -6,7 +6,7 @@ from pycompiler.parser.ConstantValueExpressionNode import ConstantValueExpressio
 from pycompiler.visitors.AbstractSyntaxTreeVisitor import AbstractASTTreeVisitor
 
 
-class MergeGenericsIntoReferenceVisitor(AbstractASTTreeVisitor):
+class InsertImplicitReturnNoneInFunction(AbstractASTTreeVisitor):
     def visit_function_definition_node(self, definition: FunctionDefinitionNode):
         if not definition.body or not isinstance(definition.body[-1], ReturnStatement):
             definition.body.append(ReturnStatement(ConstantValueExpressionNode(None)))

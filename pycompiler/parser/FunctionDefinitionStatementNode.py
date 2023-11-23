@@ -638,7 +638,7 @@ class FunctionDefinitionNode(AbstractSyntaxTreeNode):
         for node in self.body:
             builder.push_evaluate_value(node.push_code(builder))
             
-        inner_code = builder.get_full_code()
+        inner_code = "\n    ".join(builder.get_full_code().split("\n"))
 
         # todo: set void in args when empty!
         return f"""void* {self.normal_name}({', '.join(f"void* {param.name}" for param in self.parameters)}) {{

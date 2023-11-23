@@ -184,6 +184,19 @@ class CodeBuilder:
         def get_code(self, builder: CodeBuilder) -> str:
             return f"void* {self.local.get_access_text(builder)} = {self.base.get_access_text(builder)}"
 
+    class ReturnBlock(AbstractBlock):
+        def __init__(self, value: CodeBuilder.Source):
+            super().__init__(self)
+            self.enforce_local_storage = True
+            self.value = value
+
+        def check_for_merging(self):
+            if self.value.real_value is not None:
+                self.value.real_value = self.value
+
+        def get_code(self, builder: CodeBuilder) -> str:
+            return f"return {self.value.get_access_text(builder)}"
+
     PY_NONE = None
     PY_TRUE = None
     PY_FALSE = None
@@ -321,7 +334,10 @@ class CodeBuilder:
         raise NotImplementedError
 
     def push_return_statement(self, value: CodeBuilder.Source = None):
-        raise NotImplementedError
+        self.blocks.append(
+            CodeBuilder.ReturnBlock(value or self.get_stdlib_global_variable("PY_NONE"))
+        )
+        return self
 
     def push_evaluate_value(self, expr: CodeBuilder.Source) -> typing.Self:
         """

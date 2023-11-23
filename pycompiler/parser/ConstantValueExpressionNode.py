@@ -33,4 +33,7 @@ class ConstantValueExpressionNode(AbstractSyntaxTreeExpressionNode):
         if isinstance(self.value, int):
             return builder.push_constant_expression(str(self.value))
 
+        if self.value is None:
+            return builder.get_stdlib_global_variable("PY_NONE")
+
         raise NotImplementedError

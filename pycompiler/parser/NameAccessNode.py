@@ -83,3 +83,47 @@ class NameAccessLocalNode(AbstractSyntaxTreeExpressionNode):
 
     def __eq__(self, other: NameAccessLocalNode):
         return type(other) is NameAccessLocalNode and self.name == other.name
+
+
+class NameAccessModuleNode(AbstractSyntaxTreeExpressionNode):
+    def __init__(self, name: str, token: Token = None):
+        super().__init__()
+        self.name = name
+        self.token = token
+
+    def update_result_type(self):
+        pass  # todo: poll type from scope
+
+    def get_tokens(self) -> list[Token]:
+        return [self.token]
+
+    def copy(self) -> NameAccessModuleNode:
+        return NameAccessModuleNode(self.name, self.token)
+
+    def __repr__(self):
+        return f"NAME-MODULE[{self.name}]"
+
+    def __eq__(self, other: NameAccessModuleNode):
+        return type(other) is NameAccessModuleNode and self.name == other.name
+
+
+class NameWriteAccessModuleNode(AbstractSyntaxTreeExpressionNode):
+    def __init__(self, name: str, token: Token = None):
+        super().__init__()
+        self.name = name
+        self.token = token
+
+    def update_result_type(self):
+        pass  # todo: poll type from scope
+
+    def get_tokens(self) -> list[Token]:
+        return [self.token]
+
+    def copy(self) -> NameWriteAccessModuleNode:
+        return NameWriteAccessModuleNode(self.name, self.token)
+
+    def __repr__(self):
+        return f"NAME-MODULE-WRITE[{self.name}]"
+
+    def __eq__(self, other: NameWriteAccessModuleNode):
+        return type(other) is NameWriteAccessModuleNode and self.name == other.name

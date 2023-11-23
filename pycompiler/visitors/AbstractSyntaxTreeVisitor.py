@@ -15,6 +15,7 @@ from pycompiler.parser.AttributeAccessExpressionNode import (
     AttributeAccessExpressionNode,
 )
 from pycompiler.parser.PassStatementNode import PassStatement
+from pycompiler.parser.ReturnStatementNode import ReturnStatement
 from pycompiler.parser.SubscriptionAccessExpressionNode import (
     SubscriptionAccessExpressionNode,
 )
@@ -255,3 +256,7 @@ class AbstractASTTreeVisitor(ABC):
     @_bind_to_datatype(PassStatement)
     def visit_pass_statement(self, statement: PassStatement):
         pass
+
+    @_bind_to_datatype(ReturnStatement)
+    def visit_return_statement(self, statement: ReturnStatement):
+        self.visit_any(statement.value)

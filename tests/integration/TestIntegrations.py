@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import difflib
 import os
 import unittest
 
@@ -13,7 +14,11 @@ class TestIntegration(unittest.TestCase):
     def helper(self, file: str):
         project = Project()
         code = project.compile_file(open(f"{local}/tests/{file}/test.py").read())
-        self.assertEqual(open(f"{local}/tests/{file}/test.c").read(), code)
+        ecode = open(f"{local}/tests/{file}/test.c").read()
+
+        if code != ecode:
+            print("\n\n".join(list(difflib.unified_diff([ecode], [code]))))
+            self.assertEqual(code, ecode)
 
     def test_basic(self):
         self.helper("basic")
