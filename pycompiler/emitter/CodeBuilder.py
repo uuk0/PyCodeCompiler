@@ -194,7 +194,7 @@ class CodeBuilder:
         self.local_source_cache: typing.Dict[str, CodeBuilder.Source] = {}
         self._is_building = False
         self.name_cache_counter = 0
-        self.enclosing_function: FunctionDefinitionNode | None = None
+        self.enclosing_function: FunctionDefinitionNode | None = parent.enclosing_function if parent else None
 
         # The Block currently being targets for break and continue
         self.enclosing_loop = parent.enclosing_loop if parent else None
