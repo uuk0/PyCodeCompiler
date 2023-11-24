@@ -292,7 +292,7 @@ class Lexer:
             self.pop_state()
             return token
 
-        if token.token_type in (TokenType.PLUS, TokenType.MINUS):
+        if token.token_type == TokenType.MINUS:
             self.pop_state()
             if number := self.try_parse_number():
                 merged = token.merge(number, TokenType.NUMBER)
@@ -356,6 +356,7 @@ class Lexer:
             else:
                 self.rollback_state()
                 break
+
             self.pop_state()
 
         total = "".join(token.text for token in fragments).lower()
@@ -372,6 +373,7 @@ class Lexer:
             else:
                 result = int(total)
         except ValueError:
+            print(fragments)
             self.raise_positioned_syntax_error("expected <integer literal>")
 
         return Token(

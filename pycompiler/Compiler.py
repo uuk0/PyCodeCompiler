@@ -20,8 +20,8 @@ class Project:
     def __init__(self, build_folder: str = None):
         self.build_folder = build_folder
 
-    def compile_file(self, code: str) -> str:
-        parser = Parser(code)
+    def compile_file(self, code: str, file: str = None) -> str:
+        parser = Parser(code, filename=file)
         module = parser.parse_module()
 
         module.update_child_parent_relation()

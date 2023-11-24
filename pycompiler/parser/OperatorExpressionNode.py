@@ -3,6 +3,7 @@ from __future__ import annotations
 import typing
 
 from pycompiler.Lexer import Token
+from pycompiler.emitter.CodeBuilder import CodeBuilder
 from pycompiler.parser.AbstractSyntaxTreeNode import (
     AbstractSyntaxTreeExpressionNode,
     AbstractSyntaxTreeNode,
@@ -60,6 +61,14 @@ class SingletonOperator(AbstractSyntaxTreeExpressionNode):
     def copy(self) -> SingletonOperator:
         return SingletonOperator(self.operator, self.arg.copy())
 
+    def push_code(self, builder: CodeBuilder) -> CodeBuilder.Source:
+        return builder.push_call(
+            builder.get_stdlib_function(
+                f"PY_STD_GENERIC_OP_{self.operator.name.lower()}"
+            ),
+            self.arg.push_code(builder),
+        )
+
 
 class BinaryOperator(AbstractSyntaxTreeExpressionNode):
     def __init__(
@@ -112,6 +121,15 @@ class BinaryOperator(AbstractSyntaxTreeExpressionNode):
 
     def copy(self) -> BinaryOperator:
         return BinaryOperator(self.operator, self.lhs.copy(), self.rhs.copy())
+
+    def push_code(self, builder: CodeBuilder) -> CodeBuilder.Source:
+        return builder.push_call(
+            builder.get_stdlib_function(
+                f"PY_STD_GENERIC_OP_{self.operator.name.lower()}"
+            ),
+            self.lhs.push_code(builder),
+            self.rhs.push_code(builder),
+        )
 
 
 class BinaryInplaceOperator(AbstractSyntaxTreeNode):
@@ -206,6 +224,16 @@ class BinaryInplaceOperator(AbstractSyntaxTreeNode):
 
     def copy(self) -> BinaryInplaceOperator:
         return BinaryInplaceOperator(self.operator, self.lhs.copy(), self.rhs.copy())
+
+    def push_code(self, builder: CodeBuilder) -> CodeBuilder.Source:
+        value = builder.push_call(
+            builder.get_stdlib_function(
+                f"PY_STD_GENERIC_OP_INPLACE_{self.operator.name.lower()}"
+            ),
+            self.lhs.push_code(builder),
+            self.rhs.push_code(builder),
+        )
+        self.lhs.push_write_code(builder, value)
 
 
 TYPE_TYPE_TO_CLASS = {
