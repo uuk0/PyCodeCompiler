@@ -4,7 +4,7 @@ import difflib
 import os
 import unittest
 
-from pycompiler.Compiler import Project
+from pycompiler.Compiler import FileInstance
 
 
 local = os.path.dirname(__file__)
@@ -12,11 +12,10 @@ local = os.path.dirname(__file__)
 
 class TestIntegration(unittest.TestCase):
     def helper(self, file: str):
-        project = Project()
-        code = project.compile_file(
-            open(f"{local}/tests/{file}/test.py").read(),
-            file=f"{local}/tests/{file}/test.py",
-        )
+        file_obj = FileInstance(f"{local}/tests/{file}/test.py")
+        file_obj.parse()
+        file_obj.apply_ast_operations()
+        code = file_obj.get_c_code()
         ecode = open(f"{local}/tests/{file}/test.c").read()
 
         if code != ecode:
