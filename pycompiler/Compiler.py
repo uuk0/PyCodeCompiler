@@ -50,6 +50,8 @@ class Project:
             function_definition_visitor.definitions
         )
 
+        module.update_child_parent_relation()
+        static_function.update_child_parent_relation()
         Local2ModuleRewriter().visit_any(static_function)
 
         functions = [
@@ -57,4 +59,23 @@ class Project:
             for function in function_definition_visitor.definitions
         ]
 
-        return "\n\n".join(functions)
+        return f"""// PyCodeCompiler output
+#include <stdlib.h>
+#include "pyinclude.h"
+
+// Functions
+
+{"\n\n".join(functions)}
+"""
+
+    def add_file(self, file: str):
+        pass
+
+    def add_source_directory(self, directory: str):
+        pass
+
+    def ensure_module_included(self, module_name: str):
+        pass
+
+    def build(self, reuse_intermediates=False):
+        pass

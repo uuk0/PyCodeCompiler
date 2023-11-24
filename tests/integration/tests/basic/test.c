@@ -1,3 +1,9 @@
+// PyCodeCompiler output
+#include <stdlib.h>
+#include "pyinclude.h"
+
+// Functions
+
 void* _STATIC() {
-    void* hello0 = 0;
+    return PY_NONE;
 }
