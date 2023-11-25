@@ -1,0 +1,131 @@
+{
+  "type": "type",
+  "name": "list",
+  "generics": ["T"],
+  "type variable": null,
+  "attributes": [
+    {
+      "type": "subscription",
+      "input type": "int",
+      "data type": "T"
+    },
+    {
+      "type": "subscription",
+      "input type": "slice[int, int, int]",
+      "data type": "list[T]"
+    },
+    {
+      "type": "operator",
+      "operator": "+",
+      "input_type": "list[T]",
+      "data type": "list[T]"
+    },
+    {
+      "type": "operator",
+      "operator": "+",
+      "input_type": "list[U]",
+      "captured generics": ["U"],
+      "data type": "list[T | U]"
+    },
+    {
+      "type": "operator",
+      "operator": "+=",
+      "input_type": "list[T]",
+      "data type": "list[T]"
+    },
+    {
+      "type": "operator",
+      "operator": "+=",
+      "input_type": "list[U]",
+      "captured generics": ["U"],
+      "data type": "list[T | U]"
+    },
+    {
+      "type": "operator",
+      "operator": "*",
+      "input type": "int",
+      "data type": "list[T]"
+    },
+    {
+      "type": "operator",
+      "operator": "*=",
+      "input type": "int",
+      "data type": "list[T]"
+    },
+    {
+      "type": "operator",
+      "operator": "in",
+      "data type": "bool"
+    },
+    {
+      "type": "attribute",
+      "name": "sort",
+      "data type": "Callable([], None, [('key=', typing.Callable[[T], typing.Any]), ('reverse=', bool)])"
+    },
+    {
+      "type": "attribute",
+      "name": "__len__",
+      "data type": "typing.Callable[[], int]"
+    },
+    {
+      "type": "attribute",
+      "name": "__min__",
+      "data type": "typing.Callable[[], T]"
+    },
+    {
+      "type": "attribute",
+      "name": "__max__",
+      "data type": "typing.Callable[[], T]"
+    },
+    {
+      "type": "attribute",
+      "name": "index",
+      "data type": "Callable([T], int, [('i=', int), ('j=', int)])"
+    },
+    {
+      "type": "attribute",
+      "name": "count",
+      "data type": "typing.Callable[[T], int]"
+    },
+    {
+      "type": "attribute",
+      "name": "append",
+      "data type": "typing.Callable[[T], None]"
+    },
+    {
+      "type": "attribute",
+      "name": "clear",
+      "data type": "typing.Callable[[], None]"
+    },
+    {
+      "type": "attribute",
+      "name": "copy",
+      "data type": "typing.Callable[[], list[T]]"
+    },
+    {
+      "type": "attribute",
+      "name": "extend",
+      "data type": "typing.Callable[[list[T]], None]"
+    },
+    {
+      "type": "attribute",
+      "name": "insert",
+      "data type": "typing.Callable[[int, T], None]"
+    },
+    {
+      "type": "attribute",
+      "name": "pop",
+      "data type": "Callable([], T, [('i=', int)])"
+    },
+    {
+      "type": "attribute",
+      "name": "remove",
+      "data type": "typing.Callable[[T], None]"
+    },
+    {
+      "type": "attribute",
+      "name": "reverse",
+      "data type": "typing.Callable[[], None]"
+    }
+  ]
+}

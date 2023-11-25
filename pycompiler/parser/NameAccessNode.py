@@ -1,0 +1,129 @@
+from __future__ import annotations
+
+import typing
+
+from pycompiler.Lexer import Token
+from pycompiler.emitter.CodeBuilder import CodeBuilder
+from pycompiler.parser.AbstractSyntaxTreeNode import (
+    AbstractSyntaxTreeExpressionNode,
+    AbstractSyntaxTreeNode,
+)
+
+
+class NameAccessNode(AbstractSyntaxTreeExpressionNode):
+    def __init__(self, name: str, token: Token = None):
+        super().__init__()
+        self.name = name
+        self.token = token
+
+    def get_tokens(self) -> list[Token]:
+        return [self.token]
+
+    def copy(self) -> NameAccessNode:
+        return NameAccessNode(self.name, self.token)
+
+    def __repr__(self):
+        return f"NAME[{self.name}]"
+
+    def __eq__(self, other: NameAccessNode):
+        return type(other) is NameAccessNode and self.name == other.name
+
+    def can_be_assignment_target(self) -> bool:
+        return True
+
+    def push_code(self, builder: CodeBuilder) -> CodeBuilder.Source:
+        return builder.get_source_for_local(self.name)
+
+
+class NameWriteAccessNode(AbstractSyntaxTreeExpressionNode):
+    def __init__(self, name: str, token: Token = None):
+        super().__init__()
+        self.name = name
+        self.token = token
+
+    def update_result_type(self):
+        pass  # todo: validate type compatibility with scope type!
+
+    def get_tokens(self) -> list[Token]:
+        return [self.token]
+
+    def copy(self) -> NameWriteAccessNode:
+        return NameWriteAccessNode(self.name, self.token)
+
+    def __repr__(self):
+        return f"NAME_W[{self.name}]"
+
+    def __eq__(self, other: NameWriteAccessNode):
+        return type(other) is NameWriteAccessNode and self.name == other.name
+
+    def can_be_assignment_target(self) -> bool:
+        return True
+
+    def push_write_code(self, builder: CodeBuilder, value: CodeBuilder.Source):
+        builder.push_store_local(value, self.name)
+
+
+class NameAccessLocalNode(AbstractSyntaxTreeExpressionNode):
+    def __init__(self, name: str, token: Token = None):
+        super().__init__()
+        self.name = name
+        self.token = token
+
+    def update_result_type(self):
+        pass  # todo: poll type from scope
+
+    def get_tokens(self) -> list[Token]:
+        return [self.token]
+
+    def copy(self) -> NameAccessLocalNode:
+        return NameAccessLocalNode(self.name, self.token)
+
+    def __repr__(self):
+        return f"NAME-LOCAL[{self.name}]"
+
+    def __eq__(self, other: NameAccessLocalNode):
+        return type(other) is NameAccessLocalNode and self.name == other.name
+
+
+class NameAccessModuleNode(AbstractSyntaxTreeExpressionNode):
+    def __init__(self, name: str, token: Token = None):
+        super().__init__()
+        self.name = name
+        self.token = token
+
+    def update_result_type(self):
+        pass  # todo: poll type from scope
+
+    def get_tokens(self) -> list[Token]:
+        return [self.token]
+
+    def copy(self) -> NameAccessModuleNode:
+        return NameAccessModuleNode(self.name, self.token)
+
+    def __repr__(self):
+        return f"NAME-MODULE[{self.name}]"
+
+    def __eq__(self, other: NameAccessModuleNode):
+        return type(other) is NameAccessModuleNode and self.name == other.name
+
+
+class NameWriteAccessModuleNode(AbstractSyntaxTreeExpressionNode):
+    def __init__(self, name: str, token: Token = None):
+        super().__init__()
+        self.name = name
+        self.token = token
+
+    def update_result_type(self):
+        pass  # todo: poll type from scope
+
+    def get_tokens(self) -> list[Token]:
+        return [self.token]
+
+    def copy(self) -> NameWriteAccessModuleNode:
+        return NameWriteAccessModuleNode(self.name, self.token)
+
+    def __repr__(self):
+        return f"NAME-MODULE-WRITE[{self.name}]"
+
+    def __eq__(self, other: NameWriteAccessModuleNode):
+        return type(other) is NameWriteAccessModuleNode and self.name == other.name

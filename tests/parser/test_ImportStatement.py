@@ -1,53 +1,68 @@
 from unittest import TestCase
-from pycompiler import Parser, Lexer, TypeResolver
-from pycompiler.Parser import (
-    FunctionDefinitionNode,
-    AssignmentExpression,
-    NameAccessExpression,
-    ConstantAccessExpression,
-    PyNewlineNode,
-    ImportStatement,
-)
-from pycompiler.Lexer import TokenType
+
+from pycompiler.parser.Parser import Parser
+from pycompiler.parser.NameAccessNode import NameAccessNode
+from pycompiler.parser.ImportStatementNode import ImportStatement
 
 
-class TestImportStatement(TestCase):
-    def test_basic(self):
-        parser = Parser.Parser("import typing")
-        expr = parser.parse()
-        self.assertEqual(
-            [
-                ImportStatement("typing"),
-            ],
-            expr,
+class TestAssignmentParsing(TestCase):
+    def helper(self, code: str, expected: ImportStatement):
+        parser = Parser(code)
+        self.assertEqual(parser.try_parse_code_line_obj(), expected)
+        parser = Parser(code)
+        self.assertEqual(parser.parse_code_block(), [expected])
+
+    def test_raw_import(self):
+        self.helper("import test", ImportStatement("test"))
+
+    def test_raw_import_with_dot(self):
+        self.helper("import test.part", ImportStatement("test.part"))
+
+    def test_from_import(self):
+        self.helper("from source import test", ImportStatement("test", "source"))
+
+    def test_from_import_lhs_dot(self):
+        self.helper(
+            "from source.part import test", ImportStatement("test", "source.part")
         )
 
-    def test_with_dots(self):
-        parser = Parser.Parser("import os.path")
-        expr = parser.parse()
-        self.assertEqual(
-            [
-                ImportStatement("os.path"),
-            ],
-            expr,
+    def test_from_import_rhs_dot(self):
+        self.helper(
+            "from source import test.part", ImportStatement("test.part", "source")
         )
 
-    def test_with_as(self):
-        parser = Parser.Parser("import typing as t")
-        expr = parser.parse()
-        self.assertEqual(
-            [
-                ImportStatement("typing", "t"),
-            ],
-            expr,
+    def test_from_import_lhs_rhs_dot(self):
+        self.helper(
+            "from source.part import test.portion",
+            ImportStatement("test.portion", "source.part"),
         )
 
-    def test_with_dots_and_as(self):
-        parser = Parser.Parser("import os.path as p")
-        expr = parser.parse()
-        self.assertEqual(
-            [
-                ImportStatement("os.path", "p"),
-            ],
-            expr,
+    def test_raw_import_with_as(self):
+        self.helper("import test as x", ImportStatement("test", as_name="x"))
+
+    def test_raw_import_with_dot_with_as(self):
+        self.helper("import test.part as x", ImportStatement("test.part", as_name="x"))
+
+    def test_from_import_with_as(self):
+        self.helper(
+            "from source import test as x",
+            ImportStatement("test", "source", as_name="x"),
+        )
+
+    def test_from_import_lhs_dot_with_as(self):
+        self.helper(
+            "from source.part import test as x",
+            ImportStatement("test", "source.part", as_name="x"),
+        )
+
+    def test_from_import_rhs_dot_with_as(self):
+        self.helper(
+            "from source import test.part as x",
+            ImportStatement("test.part", "source", as_name="x"),
+        )
+
+    def test_from_import_lhs_rhs_dot_with_as(self):
+        self.helper(
+            "from source.part import test.portion as x",
+            ImportStatement("test.portion", "source.part", as_name="x"),
         )

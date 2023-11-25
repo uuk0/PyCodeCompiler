@@ -1,323 +1,192 @@
-import os
+from __future__ import annotations
+
 import pathlib
-import shutil
 import subprocess
 import typing
 
-from pycompiler.Parser import Parser, AbstractASTNode, Scope, ConstantAccessExpression
-from pycompiler.TypeResolver import (
-    GetModuleImports,
-    GetHeaderRelatedInfo,
-    ModuleReferencesResolver,
+from pycompiler.emitter.CodeBuilder import CodeBuilder
+from pycompiler.parser.ModuleNode import ModuleNode
+from pycompiler.parser.Parser import Parser
+from pycompiler.parser.FunctionDefinitionStatementNode import FunctionDefinitionNode
+from pycompiler.visitors.FunctionDefinitionExtractor import FunctionDefinitionExtractor
+from pycompiler.visitors.Local2ModuleRewriter import Local2ModuleRewriter
+from pycompiler.visitors.ScopeAssigner import ScopeAssigner
+from pycompiler.visitors.OperatorPrioritiesRewriter import OperatorPrioritiesRewriter
+from pycompiler.visitors.MergeGenericsIntoReference import (
+    MergeGenericsIntoReferenceVisitor,
 )
-from pycompiler.TypeResolver import (
-    ResolveParentAttribute,
-    ScopeGeneratorVisitor,
-    LocalNameValidator,
-    ResolveKnownDataTypes,
-    ResolveLocalVariableAccessTypes,
-    ResolveClassFunctionNode,
-    ResolveStaticNames,
-    ResolveGlobalNames,
-    NameNormalizer,
-    BinaryOperatorPriorityRewriter,
+from pycompiler.visitors.InsertImplicitReturnNoneInFunction import (
+    InsertImplicitReturnNoneInFunction,
 )
-
-_local = os.path.dirname(os.path.dirname(__file__))
-
-STANDARD_LIBRARY_FILES = []
+from pycompiler.visitors.Scope import Scope
 
 
-for r, dirs, files in os.walk(f"{_local}/pycompiler/templates/standard_library"):
-    STANDARD_LIBRARY_FILES.extend(
-        os.path.join(r, file).replace("\\", "/")
-        for file in files
-        if file.endswith(".c")
-    )
+class FileInstance:
+    def __init__(self, file: str, module_name: str = None):
+        self.file = file
+        self.module_name = module_name or file.split("/")[-1].split("\\")[-1].split(".")[0]
+        self.code: str | None = None
+        self.ast_base: ModuleNode | None = None
+        self.function_definitions: typing.List[FunctionDefinitionNode] = []
+
+    def parse(self):
+        if self.code is None:
+            self.code = pathlib.Path(self.file).read_text()
+
+        parser = Parser(self.code, filename=self.file)
+        self.ast_base = parser.parse_module()
+        return self
+
+    def apply_ast_operations(self):
+        self.ast_base.update_child_parent_relation()
+
+        module_scope = Scope()
+        ScopeAssigner(module_scope).visit_any(self.ast_base)
+
+        function_definition_visitor = FunctionDefinitionExtractor()
+        function_definition_visitor.visit_any(self.ast_base)
+
+        function_definition_visitor.definitions.append(
+            static_function := FunctionDefinitionNode(
+                "_STATIC", None, None, self.ast_base.nodes
+            )
+        )
+
+        InsertImplicitReturnNoneInFunction().visit_any_list(
+            function_definition_visitor.definitions
+        )
+        MergeGenericsIntoReferenceVisitor().visit_any(self.ast_base)
+        MergeGenericsIntoReferenceVisitor().visit_any_list(
+            function_definition_visitor.definitions
+        )
+        OperatorPrioritiesRewriter().visit_any(self.ast_base)
+        OperatorPrioritiesRewriter().visit_any_list(
+            function_definition_visitor.definitions
+        )
+
+        self.ast_base.update_child_parent_relation()
+        static_function.update_child_parent_relation()
+        Local2ModuleRewriter().visit_any(static_function)
+
+        self.function_definitions[:] = function_definition_visitor.definitions
+
+        return self
+
+    def apply_interleaved_optimisations(self):
+        pass
+
+    def get_c_code(self) -> str:
+        return f"""// PyCodeCompiler output for module {self.module_name}
+#include <stdlib.h>
+#include "pyinclude.h"
+
+// Functions
+
+{"\n\n".join([
+    function.get_function_definition()
+    for function in self.function_definitions
+])}
+"""
+
+    def get_header_code(self) -> str:
+        return f"""// PyCodeCompiler HEADER output for module {self.module_name}
+#include <stdlib.h>
+#include "pyinclude.h"
+
+// Functions
+
+{"\n\n".join([
+    function.get_function_declaration()
+    for function in self.function_definitions
+])}
+"""
 
 
 class Project:
-    def __init__(
-        self,
-        build_folder: str = None,
-        compiler="gcc",
-        compile_only=False,
-        compiler_output=None,
-    ):
-        self.path: typing.List[str] = []
-        self.entry_points = []
+    def __init__(self, build_folder: str = None):
         self.build_folder = build_folder
-        self.compiler = compiler
-        self.compile_only = compile_only
-        self.compiler_output = (
-            compiler_output
-            or f"{build_folder}/result" + (".o" if compile_only else ".exe")
-            if build_folder
-            else None
-        )
-        self.add_main_function_flag = False
+        self.path = []
+        self.known_module_instances: typing.Dict[str, FileInstance] = {}
+        self.entry_files: typing.List[FileInstance] = []
+        self.pending_module_parsing: typing.List[FileInstance] = []
+        self.concrete_module_references: typing.Dict[str, object] = {}  # todo: implement
 
-    def add_folder(self, path: str):
-        if not os.path.isdir(path):
-            raise ValueError(path)
-        self.path.append(path)
+    def get_concrete_module_reference(self, name: str):
+        pass
 
-    def add_main_function(self):
-        self.add_main_function_flag = True
+    def add_file(self, file: str, entry=False):
+        file_obj = FileInstance(file)
+        self.known_module_instances[file_obj.module_name] = file_obj
+
+        if entry:
+            self.entry_files.append(file_obj)
+
         return self
 
-    def add_file(self, path: str, is_entry=False):
-        if not os.path.isfile(path):
-            raise ValueError(path)
+    def add_source_directory(self, directory: str):
+        self.path.append(directory)
+        return self
 
-        self.path.append(path)
-        if is_entry:
-            self.add_entry_point(path)
+    def ensure_module_included(self, module_name: str):
+        if module_name in self.known_module_instances:
+            return
 
-    def add_entry_point(self, path_or_module: str):
-        self.entry_points.append(path_or_module)
+        # todo: discover via path
+        raise ModuleNotFoundError(module_name)
 
-    def build(self):
-        build = self.build_folder or f"{_local}/build"
+    def build(self, output_file: str, reuse_intermediates=False):
+        include_c_files: typing.List[str] = []
 
-        if os.path.exists(build):
-            shutil.rmtree(build)
+        for module in self.known_module_instances.values():
+            self.concrete_module_references[module.module_name] = None  # todo: implement
 
-        os.makedirs(build)
+        for module in self.known_module_instances.values():
+            module.parse()
+            module.apply_ast_operations()
 
-        include_files = []
+        while self.pending_module_parsing:
+            task = self.pending_module_parsing.pop(-1)
+            assert task.module_name in self.known_module_instances, "guard against issue when a file is required by multiple other modules"
+            task.parse()
+            task.apply_ast_operations()
 
-        pending_compilation_files: typing.List[typing.Tuple[str, str]] = []
-        compiled_files = set()
-        prepared_module_files: typing.List[
-            typing.Tuple[str, typing.List[AbstractASTNode], Parser, str, Scope]
-        ] = []
-        entry_module_names = set()
+        for module in self.known_module_instances.values():
+            module.apply_interleaved_optimisations()
 
-        if self.add_main_function_flag:
-            content = """// Generated Entry File
-#include <assert.h>
+        for module in self.known_module_instances.values():
+            c_file = f"{self.build_folder}/{module.module_name.replace(".", "__")})"
+            h_file = f"{self.build_folder}/{module.module_name.replace(".", "__")})"
+            include_c_files.append(c_file)
+
+            with open(c_file, mode="w") as f:
+                f.write(module.get_c_code())
+
+            with open(h_file, mode="w") as f:
+                f.write(module.get_header_code())
+
+        entry_file = f"""// Entry Code created by PyCodeCompiler
+#include <stdlib.h>
 #include "pyinclude.h"
-#include "standard_library/exceptions.h"
+
+// Entry Modules
+// TODO
+
+int main(int argc, char* args[])
+{{
+    // TODO: call the entry points one after another!
+}}
 """
 
-            for entry_point in self.entry_points:
-                if entry_point.endswith(".py"):
-                    module_name = (
-                        entry_point.split("/")[-1].split("\\")[-1].removesuffix(".py")
-                    )
-                    content += f'\n#include "{module_name}.h"'
+        with open(f"{self.build_folder}/entry.c", mode="w") as f:
+            f.write(entry_file)
 
-            content += """
-int main(int argc, char** args)
-{"""
-            for entry_point in self.entry_points:
-                if entry_point.endswith(".py"):
-                    module_name = (
-                        entry_point.split("/")[-1].split("\\")[-1].removesuffix(".py")
-                    )
-                    content += f"\n    PY_CHECK_EXCEPTION_AND_EXIT(PY_MODULE_{module_name}_init());"
-
-            content += "\n}\n"
-
-            with open(f"{build}/entry.c", mode="w") as f:
-                f.write(content)
-
-            self.add_file(f"{build}/entry.c", is_entry=True)
-
-        for entry_point in self.entry_points:
-            if entry_point.endswith(".c"):
-                include_files.append(entry_point)
-                continue
-
-            if not entry_point.endswith(".py"):
-                raise NotImplementedError
-
-            pending_compilation_files.append(
-                (
-                    entry_point,
-                    module_name := entry_point.split("/")[-1]
-                    .split("\\")[-1]
-                    .removesuffix(".py"),
-                )
-            )
-            entry_module_names.add(module_name)
-
-        while pending_compilation_files:
-            file, module = pending_compilation_files.pop()
-
-            if file in compiled_files:
-                continue
-
-            compiled_files.add(file)
-
-            py = pathlib.Path(file).read_text()
-            parser = Parser(py)
-            ast_nodes = parser.parse()
-
-            prepared_module_files.append((file, ast_nodes, parser, module, Scope()))
-
-            resolver = GetModuleImports()
-            resolver.visit_any_list(ast_nodes)
-
-            for module in resolver.modules:
-                if module in Scope.STANDARD_LIBRARY_MODULES:
-                    continue
-
-                for f in self.path:
-                    p = pathlib.Path(f)
-
-                    if (
-                        p.is_file()
-                        and "." not in module
-                        and p.name.removesuffix(".py") == module
-                    ):
-                        pending_compilation_files.append((str(p.absolute()), module))
-                        break
-
-                    elif p.is_dir():
-                        for file in p.glob("**/*.py"):
-                            if (
-                                file.is_file()
-                                and str(file).endswith(".py")
-                                and (
-                                    str(file.relative_to(p))
-                                    .removesuffix(".py")
-                                    .replace("/", ".")
-                                    .replace("\\", ".")
-                                    == module
-                                )
-                            ):
-                                pending_compilation_files.append(
-                                    (str(file.absolute()), module)
-                                )
-                                break
-                        else:
-                            continue
-                        break
-
-                else:
-                    print(self.path)
-                    raise ModuleNotFoundError(module)
-
-        for file, ast_nodes, parser, module, scope in prepared_module_files:
-            Scope.STANDARD_LIBRARY_VALUES["__name__"] = {
-                "*": module if module not in entry_module_names else "__main__"
-            }
-            self.apply_prep_optimisation_on_module(scope, ast_nodes)
-
-        module_table: typing.Dict[str, dict] = {
-            module: parser.get_module_content(ast_nodes)
-            for _, ast_nodes, parser, module, __ in prepared_module_files
-        }
-
-        for file, ast_nodes, parser, module, scope in prepared_module_files:
-            Scope.STANDARD_LIBRARY_VALUES["__name__"] = {
-                "*": module if module not in entry_module_names else "__main__"
-            }
-            ModuleReferencesResolver(module_table).visit_any_list(ast_nodes)
-
-        for file, ast_nodes, parser, module, scope in prepared_module_files:
-            Scope.STANDARD_LIBRARY_VALUES["__name__"] = {
-                "*": module if module not in entry_module_names else "__main__"
-            }
-            self.apply_big_optimisation_on_module(ast_nodes)
-
-        for file, ast_nodes, parser, module, scope in prepared_module_files:
-            Scope.STANDARD_LIBRARY_VALUES["__name__"] = {
-                "*": module if module not in entry_module_names else "__main__"
-            }
-            c_source = parser.emit_c_code(
-                expr=ast_nodes, module_name=module, scope=scope
-            )
-
-            out_file = file.split("/")[-1].split("\\")[-1].removesuffix(".py") + ".c"
-            with open(f"{build}/{out_file}", mode="w") as f:
-                f.write(c_source)
-
-            include_files.append(f"{build}/{out_file}")
-
-            header_info = GetHeaderRelatedInfo()
-            header_info.visit_any_list(ast_nodes)
-
-            header = f"""#include "pyinclude.h"
-#include "standard_library/generator.h"
-            
-// Header for the module {module}
-
-// Functions
-PyObjectContainer* PY_MODULE_{module.replace('.', '___')}_init(void);
-"""
-
-            for signature in header_info.function_signatures:
-                header += f"{signature};\n"
-
-            header += f"\n// Variables\nextern PyObjectContainer* PY_MODULE_INSTANCE_{module.replace('.', '___')};\n"
-
-            for variable in header_info.global_variables:
-                header += f"extern {variable};\n"
-
-            with open(f"{build}/{out_file.removesuffix('.c')}.h", mode="w") as f:
-                f.write(header)
-
-        command = (
-            [
-                self.compiler,
-                "-g",
-                # "-Wall",
-                # "-Wextra",
-            ]
-            + include_files
-            + [
-                f"-I{_local}/pycompiler/templates",
-                f"-I{build}",
-            ]
-            + (
-                ["-c"]
-                if self.compile_only
-                else STANDARD_LIBRARY_FILES
-                + [
-                    f"{_local}/pycompiler/templates/pyinclude.c",
-                ]
-            )
-            + (
-                [
-                    "-o",
-                    self.compiler_output,
-                ]
-                if self.compiler_output
-                else []
-            )
-            + [
-                "-lm",  # math
-            ]
-        )
-
-        # print(command)
-
+        command = [
+            "gcc",
+            "-o",
+            output_file,
+            f"{self.build_folder}/entry.c",
+        ] + include_c_files
         exit_code = subprocess.call(command)
 
-        # todo: can we use the defined code for success?
         if exit_code != 0:
-            raise RuntimeError(
-                f"exit code {exit_code} of compiler {self.compiler} != 0"
-            )
-
-    def apply_big_optimisation_on_module(self, ast_nodes):
-        ResolveLocalVariableAccessTypes.DIRTY = True
-        while ResolveLocalVariableAccessTypes.DIRTY:
-            ResolveKnownDataTypes().visit_any_list(ast_nodes)
-            ResolveClassFunctionNode().visit_any_list(ast_nodes)
-
-            ResolveLocalVariableAccessTypes.DIRTY = False
-            ResolveLocalVariableAccessTypes().visit_any_list(ast_nodes)
-        ResolveGlobalNames().visit_any_list(ast_nodes)
-
-    def apply_prep_optimisation_on_module(self, scope, ast_nodes):
-        assert scope is not None
-        ResolveParentAttribute().visit_any_list(ast_nodes)
-        BinaryOperatorPriorityRewriter().visit_any_list(ast_nodes)
-        ScopeGeneratorVisitor(scope).visit_any_list(ast_nodes)
-        NameNormalizer().visit_any_list(ast_nodes)
-        LocalNameValidator().visit_any_list(ast_nodes)
-        ResolveStaticNames().visit_any_list(ast_nodes)
+            raise RuntimeError("compilation failed; see above for more information!")

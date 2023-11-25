@@ -1,4 +1,0 @@
-# ninja log v5
-2	121	7125841345987655	build.ninja	50b8c7e47f2076bc
-0	73	7125841753818450	CMakeFiles/tests_class_decl_with_function.dir/emitter/examples/class_declaration_with_function/result.c.obj	e433f9d52c1b5c29
-4	75	7125841753838252	CMakeFiles/tests_class_decl_with_function.dir/emitter/examples/class_declaration_with_function/test.c.obj	5d47d6150f851078

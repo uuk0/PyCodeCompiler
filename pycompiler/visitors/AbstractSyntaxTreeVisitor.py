@@ -1,0 +1,262 @@
+from __future__ import annotations
+
+import typing
+from abc import ABC
+from pycompiler.parser.AbstractSyntaxTreeNode import AbstractSyntaxTreeNode
+from pycompiler.parser.ModuleNode import ModuleNode
+
+from pycompiler.parser.NameAccessNode import (
+    NameAccessNode,
+    NameWriteAccessNode,
+    NameAccessLocalNode,
+)
+from pycompiler.parser.AssignmentExpressionNode import AssignmentExpressionNode
+from pycompiler.parser.AttributeAccessExpressionNode import (
+    AttributeAccessExpressionNode,
+)
+from pycompiler.parser.PassStatementNode import PassStatement
+from pycompiler.parser.ReturnStatementNode import ReturnStatement
+from pycompiler.parser.SubscriptionAccessExpressionNode import (
+    SubscriptionAccessExpressionNode,
+)
+from pycompiler.parser.FunctionDefinitionStatementNode import (
+    FunctionDefinitionNode,
+    FunctionDefinitionArg,
+    FunctionDefinitionGenericReference,
+    FunctionDefinitionArgReference,
+    StaticFunctionReferenceNode,
+)
+from pycompiler.parser.CallExpression import CallExpression, CallExpressionArgument
+from pycompiler.parser.SliceExpressionNode import SliceExpressionNode
+from pycompiler.parser.ConstantValueExpressionNode import ConstantValueExpressionNode
+from pycompiler.parser.ImportStatementNode import ImportStatement, ModuleReferenceNode
+from pycompiler.parser.TypeStatementNode import (
+    TypeStatementNode,
+    StaticTypeDefinitionReference,
+)
+from pycompiler.parser.ScopeReferences import ParentScopeReference, ChildScopeExported
+from pycompiler.parser.ClassDefinitionStatementNode import (
+    ClassDefinitionNode,
+    ClassDefinitionGenericReference,
+    StaticClassReferenceNode,
+    StaticClassReferenceNodeWithGeneric,
+)
+from pycompiler.parser.WhileStatementNode import WhileStatementNode
+from pycompiler.parser.ListConstruction import (
+    ListConstructorNode,
+    ListComprehensionNode,
+)
+from pycompiler.parser.OperatorExpressionNode import (
+    SingletonOperator,
+    BinaryOperator,
+    BinaryInplaceOperator,
+)
+
+from pycompiler.specification.Spec import SpecifiedClass, SpecifiedFunction
+
+from pycompiler.parser.util import ArgType
+
+
+def _bind_to_datatype(
+    datatype: typing.Type[AbstractSyntaxTreeNode],
+) -> typing.Callable[
+    [typing.Callable[[AbstractSyntaxTreeNode], None]],
+    typing.Callable[[AbstractSyntaxTreeNode], None],
+]:
+    def target(bind_target: typing.Callable):
+        _KNOWN_NAME_MAP[datatype] = bind_target.__name__
+        return bind_target
+
+    return target
+
+
+_KNOWN_NAME_MAP: dict[typing.Type, str] = {}
+
+
+class AbstractASTTreeVisitor(ABC):
+    KNOWN_NAME_MAP: dict[typing.Type, str] = _KNOWN_NAME_MAP
+    BINDING_MAP: dict[typing.Type, typing.Callable] = {}
+
+    @classmethod
+    def __init_subclass__(cls, **kwargs):
+        cls.BINDING_MAP = {}
+        for t, key in cls.KNOWN_NAME_MAP.items():
+            cls.BINDING_MAP[t] = getattr(cls, key)
+
+    def visit_any(self, obj: AbstractSyntaxTreeNode):
+        if obj is None:
+            return
+
+        if type(obj) not in self.BINDING_MAP:
+            raise NotImplementedError(f"failed to find visitor for type {type(obj)}!")
+
+        self.BINDING_MAP[type(obj)](self, obj)
+
+    def visit_any_list(self, objs: list[AbstractSyntaxTreeNode]):
+        for node in objs:
+            self.visit_any(node)
+
+    @_bind_to_datatype(NameAccessNode)
+    def visit_name_access(self, access: NameAccessNode):
+        pass
+
+    @_bind_to_datatype(NameWriteAccessNode)
+    def visit_write_name_access(self, access: NameWriteAccessNode):
+        pass
+
+    @_bind_to_datatype(NameAccessLocalNode)
+    def visit_local_name_access(self, access: NameAccessLocalNode):
+        pass
+
+    @_bind_to_datatype(AssignmentExpressionNode)
+    def visit_assignment_expression(self, assignment: AssignmentExpressionNode):
+        self.visit_any_list(assignment.targets)
+        self.visit_any(assignment.base)
+
+    @_bind_to_datatype(AttributeAccessExpressionNode)
+    def visit_attribute_access_expression(self, access: AttributeAccessExpressionNode):
+        self.visit_any(access.base)
+
+    @_bind_to_datatype(SubscriptionAccessExpressionNode)
+    def visit_subscription_access_expression(
+        self, expression: SubscriptionAccessExpressionNode
+    ):
+        self.visit_any(expression.base)
+        self.visit_any(expression.inner)
+
+    @_bind_to_datatype(FunctionDefinitionNode)
+    def visit_function_definition_node(self, definition: FunctionDefinitionNode):
+        self.visit_any_list(definition.parameters)
+        self.visit_any_list(definition.body)
+
+    @_bind_to_datatype(FunctionDefinitionArg)
+    def visit_function_definition_arg(self, arg: FunctionDefinitionArg):
+        if arg.arg_type == ArgType.KEYWORD:
+            self.visit_any(arg.default_value)
+
+    @_bind_to_datatype(FunctionDefinitionArgReference)
+    def visit_function_definition_arg_ref(self, ref: FunctionDefinitionArgReference):
+        pass
+
+    @_bind_to_datatype(FunctionDefinitionGenericReference)
+    def visit_function_definition_generic_ref(
+        self, ref: FunctionDefinitionGenericReference
+    ):
+        pass
+
+    @_bind_to_datatype(StaticFunctionReferenceNode)
+    def visit_static_function_reference(self, ref: StaticFunctionReferenceNode):
+        pass
+
+    @_bind_to_datatype(CallExpression)
+    def visit_call_expression(self, call: CallExpression):
+        self.visit_any(call.base)
+        self.visit_any_list(call.args)
+
+    @_bind_to_datatype(CallExpressionArgument)
+    def visit_call_expression_arg(self, call: CallExpressionArgument):
+        self.visit_any(call.expr)
+
+    @_bind_to_datatype(SliceExpressionNode)
+    def visit_slice_expression(self, expression: SliceExpressionNode):
+        self.visit_any(expression.start)
+        self.visit_any(expression.stop)
+        self.visit_any(expression.step)
+
+    @_bind_to_datatype(ConstantValueExpressionNode)
+    def visit_constant_access(self, expression: ConstantValueExpressionNode):
+        pass
+
+    @_bind_to_datatype(ImportStatement)
+    def visit_import_statement(self, statement: ImportStatement):
+        pass
+
+    @_bind_to_datatype(ModuleReferenceNode)
+    def visit_module_reference(self, reference: ModuleReferenceNode):
+        pass
+
+    @_bind_to_datatype(TypeStatementNode)
+    def visit_type_statement(self, statement: TypeStatementNode):
+        self.visit_any(statement.base_type)
+        self.visit_any(statement.real_type)
+
+    @_bind_to_datatype(StaticTypeDefinitionReference)
+    def visit_static_type_reference(self, statement: StaticTypeDefinitionReference):
+        pass
+
+    @_bind_to_datatype(ParentScopeReference)
+    def visit_parent_scope_reference(self, reference: ParentScopeReference):
+        pass
+
+    @_bind_to_datatype(ChildScopeExported)
+    def visit_child_scope_exported(self, reference: ChildScopeExported):
+        pass
+
+    @_bind_to_datatype(ClassDefinitionNode)
+    def visit_class_definition(self, definition: ClassDefinitionNode):
+        self.visit_any_list(definition.parent_references)
+        self.visit_any_list(definition.body)
+
+    @_bind_to_datatype(ClassDefinitionGenericReference)
+    def visit_class_generic_reference(self, reference: ClassDefinitionGenericReference):
+        pass
+
+    @_bind_to_datatype(StaticClassReferenceNode)
+    def visit_static_class_reference(self, reference: StaticClassReferenceNode):
+        pass
+
+    @_bind_to_datatype(StaticClassReferenceNodeWithGeneric)
+    def visit_static_class_reference_with_generic(
+        self, reference: StaticClassReferenceNodeWithGeneric
+    ):
+        self.visit_any_list(reference.generic_annotations)
+
+    @_bind_to_datatype(WhileStatementNode)
+    def visit_while_statement(self, while_statement: WhileStatementNode):
+        self.visit_any(while_statement.condition)
+        self.visit_any_list(while_statement.body)
+
+    @_bind_to_datatype(SpecifiedClass)
+    def visit_specified_class(self, cls: SpecifiedClass):
+        pass
+
+    @_bind_to_datatype(SpecifiedFunction)
+    def visit_specified_function(self, function: SpecifiedFunction):
+        pass
+
+    @_bind_to_datatype(ListConstructorNode)
+    def visit_list_constructor(self, constructor: ListConstructorNode):
+        self.visit_any_list(constructor.items)
+
+    @_bind_to_datatype(ListComprehensionNode)
+    def visit_list_comprehension(self, comprehension: ListComprehensionNode):
+        self.visit_any(comprehension.source_expr)
+        self.visit_any(comprehension.assignment_target)
+        self.visit_any(comprehension.if_cond)
+        self.visit_any(comprehension.base_expr)
+
+    @_bind_to_datatype(SingletonOperator)
+    def visit_singleton_operator(self, operator: SingletonOperator):
+        self.visit_any(operator.arg)
+
+    @_bind_to_datatype(BinaryOperator)
+    def visit_binary_operator(self, operator: BinaryOperator):
+        self.visit_any(operator.lhs)
+        self.visit_any(operator.rhs)
+
+    @_bind_to_datatype(BinaryInplaceOperator)
+    def visit_binary_inplace_operator(self, operator: BinaryInplaceOperator):
+        self.visit_any(operator.lhs)
+        self.visit_any(operator.rhs)
+
+    @_bind_to_datatype(ModuleNode)
+    def visit_module_node(self, module: ModuleNode):
+        self.visit_any_list(module.nodes)
+
+    @_bind_to_datatype(PassStatement)
+    def visit_pass_statement(self, statement: PassStatement):
+        pass
+
+    @_bind_to_datatype(ReturnStatement)
+    def visit_return_statement(self, statement: ReturnStatement):
+        self.visit_any(statement.value)
