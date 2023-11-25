@@ -1,4 +1,4 @@
-// PyCodeCompiler output
+// PyCodeCompiler output for module test
 #include <stdlib.h>
 #include "pyinclude.h"
 
